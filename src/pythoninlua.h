@@ -24,7 +24,9 @@
 #define PYTHONINLUA_H
 
 #include "lua.h"
+
 #define POBJECT "POBJECT"
+#define ASINDX "ASINDX"
 
 #if defined(WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
