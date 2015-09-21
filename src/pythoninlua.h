@@ -23,7 +23,17 @@
 #ifndef PYTHONINLUA_H
 #define PYTHONINLUA_H
 
+#include "lua.h"
 #define POBJECT "POBJECT"
+
+#if defined(WIN32) //  Microsoft
+#define LUA_API __declspec(dllexport)
+#else //  GCC
+#define LUA_API __attribute__((visibility("default")))
+#endif
+
+//Todo: remove this!
+lua_State *LuaState;
 
 int py_convert(lua_State *L, PyObject *o, int withnone);
 

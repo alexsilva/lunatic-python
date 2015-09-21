@@ -26,7 +26,7 @@
 #define LUA_COMPAT_ALL
 
 #include <lua.h>
-#include <luaconf.h>
+// #include <luaconf.h>
 #include <lauxlib.h>
 #include <lualib.h>
 
@@ -37,28 +37,28 @@ lua_State *LuaState = NULL;
 
 static PyObject *LuaObject_New(int n);
 
-PyObject *LuaConvert(lua_State *L, int n)
-{
-    
+PyObject *LuaConvert(lua_State *L, int n) {
+
     PyObject *ret = NULL;
+    lua_Object lobj = lua_getparam(L, n);
 
     switch (lua_type(L, n)) {
 
-        case LUA_TNIL:
+        case LUA_T_NIL:
             Py_INCREF(Py_None);
             ret = Py_None;
             break;
 
-        case LUA_TSTRING: {
-            const char *s = lua_tostring(L, n);
+        case LUA_T_STRING: {
+            const char *s = lua_getstring(L, n);
             int len = lua_strlen(L, n);
             ret = PyUnicode_FromStringAndSize(s, len);
             break;
         }
 
-        case LUA_TNUMBER: {
-            lua_Number num = lua_tonumber(L, n);
-            if (num != (long)num) {
+        case LUA_T_NUMBER: {
+            lua_Number num = lua_getnumber(L, n);
+            if (num != (long) num) {
                 ret = PyFloat_FromDouble(num);
             } else {
                 ret = PyLong_FromLong((long)num);
@@ -66,17 +66,17 @@ PyObject *LuaConvert(lua_State *L, int n)
             break;
         }
 
-        case LUA_TBOOLEAN:
-            if (lua_toboolean(L, n)) {
-                Py_INCREF(Py_True);
-                ret = Py_True;
-            } else {
-                Py_INCREF(Py_False);
-                ret = Py_False;
-            }
-            break;
+//        case LUA_TBOOLEAN:
+//            if (lua_toboolean(L, n)) {
+//                Py_INCREF(Py_True);
+//                ret = Py_True;
+//            } else {
+//                Py_INCREF(Py_False);
+//                ret = Py_False;
+//            }
+//            break;
 
-        case LUA_TUSERDATA: {
+        case LUA_T_USERDATA: {
             py_object *obj = luaPy_to_pobject(L, n);
 
             if (obj) {
@@ -84,7 +84,6 @@ PyObject *LuaConvert(lua_State *L, int n)
                 ret = obj->o;
                 break;
             }
-
             /* Otherwise go on and handle as custom. */
         }
 
