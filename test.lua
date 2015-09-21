@@ -16,5 +16,7 @@ print(python)
 
 local builtins = python.builtins()
 
-print(builtins.len)
+print("builtins: ", builtins)
+print("builtins.len:", builtins.len)
+print("builtins.len('lua'):", builtins.len("lua"))
 
