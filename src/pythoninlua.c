@@ -603,16 +603,18 @@ static int py_locals(lua_State *L) {
     }
 
     locals = PyEval_GetLocals();
-    if (!locals)
-        return py_globals(L);
+    if (!locals) return py_globals(L);
 
     return py_convert_custom(L, locals, 1);
+}
+
+static void lpy_locals(lua_State *L) {
+    py_locals(L);
 }
 
 static int py_builtins(lua_State *L) {
     PyObject *builtins;
 
-    // Todo:
     //if (lua_gettop(L) != 0) {
     //    return luaL_error(L, "invalid arguments");
     //}
@@ -676,7 +678,7 @@ static struct luaL_reg py_lib[] = {
 //    {"asindx",  py_asindx},
 //    {"asattr",  py_asattr},
 //    {"asfunc",  py_asfunc},
-//    {"locals",  py_locals},
+        {"locals",  lpy_locals},
         {"globals", lpy_globals},
         {"builtins", lpy_builtins},
 //    {"import",  py_import},
@@ -691,8 +693,7 @@ static struct luaL_reg py_lib[] = {
     lua_settable(L);
 
 
-LUA_API int luaopen_python(lua_State *L)
-{
+LUA_API int luaopen_python(lua_State *L) {
     int rc;
 
     /* Register module */
