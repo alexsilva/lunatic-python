@@ -226,7 +226,7 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
         ret = 1;
     } else {
         int asindx = 0;
-        if (PyDict_Check(o) || PyList_Check(o) || PyTuple_Check(o))
+        if (PyList_Check(o) || PyTuple_Check(o))
             asindx = 1;
         ret = py_convert_custom(L, o, asindx);
 
@@ -364,8 +364,11 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
 
     if (!key) luaL_argerror(L, 1, "failed to convert key");
 
-    item = PyObject_GetItem(pobj->o, key);
-
+    if (PyObject_HasAttr(pobj->o, key)) {
+        item = PyObject_GetAttr(pobj->o, key);
+    } else {
+        item = PyObject_GetItem(pobj->o, key);
+    }
     Py_DECREF(key);
 
     if (item) {
@@ -381,58 +384,10 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
     return ret;
 }
 
-static int py_object_index_get(lua_State *L) {
-    py_object *obj = get_py_object(L, 1, POBJECT);
-    int top = lua_gettop(L);
-    if (top < 1 || top > 2) {
-        return luaL_error(L, "invalid arguments");
-    }
-    return _p_object_index_get(L, obj, 1);
-}
-
-static void lpy_object_index_get(lua_State *L) {
-    py_object_index_get(L);
-}
-
 static int py_object_index(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
-    const char *attr;
-    PyObject *value;
-    int ret = 0;
-
     if (!obj) luaL_argerror(L, 1, "not a python object");
-
-    if (obj->asindx) {
-        return _p_object_index_get(L, obj, 2);
-    }
-
-    attr = luaL_check_string(L, 2);
-    if (!attr) luaL_argerror(L, 2, "string needed");
-
-    if (attr[0] == '_' && strcmp(attr, "__get") == 0) {
-
-        // lua_pushvalue(L, 1);
-        lua_pushcclosure(L, lpy_object_index_get, 1);
-
-        return 1;
-    } else if (attr[0] == '_' && strcmp(attr, "__set") == 0) {
-
-        // lua_pushvalue(L, 1);
-        lua_pushcclosure(L, lpy_object_index_get, 1);
-
-        return 1;
-    }
-
-    value = PyObject_GetAttrString(obj->o, (char*)attr);
-    if (value) {
-        ret = py_convert(L, value, 0);
-        Py_DECREF(value);
-    } else {
-        PyErr_Clear();
-        luaL_error(L, "unknown attribute in python object");
-    }
-
-    return ret;
+    return _p_object_index_get(L, obj, 2);
 }
 
 static void lpy_object_index(lua_State *L) {
