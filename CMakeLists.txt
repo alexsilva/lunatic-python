@@ -19,7 +19,7 @@ include_directories(${PYTHON_INCLUDE_DIR})
 #set_target_properties(python PROPERTIES
 #                             PREFIX "")
 
-add_library(lua MODULE src/pythoninlua.h src/pythoninlua.c)
+add_library(python MODULE src/pythoninlua.h src/pythoninlua.c)
 
 # add_library(lua MODULE $<TARGET_OBJECTS:src>)
 #if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -31,10 +31,10 @@ add_library(lua MODULE src/pythoninlua.h src/pythoninlua.c)
 #                            PREFIX "")
 #endif ()
 
-target_link_libraries(lua ${LUA_LIBRARIES} ${PYTHON_LIBRARIES})
+target_link_libraries(python ${LUA_LIBRARIES} ${PYTHON_LIBRARIES})
 #target_link_libraries(python ${LUA_LIBRARIES} ${PYTHON_LIBRARIES})
 
 
 # =====================
-set_target_properties(lua PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+set_target_properties(python PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 # =====================
