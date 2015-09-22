@@ -11,6 +11,18 @@ callfromlib(handle, 'luaopen_python')
 
 assert(python, "undefined python object")
 
+-- python home
+python.system_init("C:\\Python27");
+
+print("Python sys.path")
+local builtins = python.builtins()
+local sys = python.import("sys")
+local index = builtins.len(sys.path)
+while (index > 0) do
+    print(index, sys.path[index - 1])
+    index = index - 1
+end
+
 local globals = python.globals()
 assert(type(globals) == "table", "globals is not a table")
 
