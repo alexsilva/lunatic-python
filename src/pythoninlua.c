@@ -119,16 +119,16 @@ static PyObject *LuaConvert(lua_State *L, int n) {
 }
 
 // ----------------------------------------
-
 static void lpy_object_index(lua_State *L);
 static void lpy_object_call(lua_State *L);
 static void py_object_newindex_set(lua_State *L);
+static void py_object_gc(lua_State *L);
 
 static struct luaL_reg lua_tag_methods[] = {
     {"function",  lpy_object_call},
     {"index", lpy_object_index},
     {"settable", py_object_newindex_set},
-//  {"__gc",    py_object_gc},
+    {"gc", py_object_gc},
     {NULL, NULL}
 };
 
@@ -395,12 +395,12 @@ static void lpy_object_index(lua_State *L) {
     py_object_index(L);
 }
 
-static int py_object_gc(lua_State *L) {
-    py_object *obj = get_py_object(L, 1);
-    if (obj) {
-        Py_DECREF(obj->o);
+static void py_object_gc(lua_State *L) {
+    py_object *pobj = get_py_object(L, 1);
+    if (pobj) {
+        Py_DECREF(pobj->o);
     }
-    return 0;
+    free(pobj);
 }
 
 static void py_object_tostring(lua_State *L) {
