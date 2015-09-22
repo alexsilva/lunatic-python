@@ -20,3 +20,5 @@ print("builtins: ", builtins)
 print("builtins.len:", builtins.len)
 print("builtins.len('lua'):", builtins.len("lua"))
 
+python.execute('import pymodule')
+print("builtins.eval:", python.eval('pymodule.say()'))
