@@ -630,6 +630,8 @@ py_object* luaPy_to_pobject(lua_State *L, int n) {
     return NULL;
 }
 
+void python_system_init(lua_State *L);
+
 static struct luaL_reg py_lib[] = {
         {"execute", lpy_execute},
         {"eval", lpy_eval},
@@ -640,6 +642,7 @@ static struct luaL_reg py_lib[] = {
         {"globals", lpy_globals},
         {"builtins", lpy_builtins},
         {"import",  lpy_import},
+        {"system_init", python_system_init},
         {NULL, NULL}
 };
 
@@ -650,11 +653,8 @@ static struct luaL_reg py_lib[] = {
     lua_pushcfunction(L, value); \
     lua_settable(L);
 
-
+/* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    int rc;
-
-    /* Register module */
     lua_Object python = lua_createtable(L);
 
     lua_pushobject(L, python);
@@ -665,8 +665,15 @@ LUA_API int luaopen_python(lua_State *L) {
         set_table(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
+    // try startup system
+    // python_system_init(L);
+    return 0;
+}
 
-    /* Initialize Python interpreter */
+/* Initialize Python interpreter */
+void python_system_init(lua_State *L) {
+    char *python_home = luaL_check_string(L, 1);
+
     if (!Py_IsInitialized()) {
         PyObject *luam, *mainm, *maind;
 #if PY_MAJOR_VERSION >= 3
@@ -675,7 +682,7 @@ LUA_API int luaopen_python(lua_State *L) {
         char *argv[] = {"<lua>", 0};
 #endif
         Py_SetProgramName(argv[0]);
-        //Py_SetPythonHome("");
+        Py_SetPythonHome(python_home);
         Py_Initialize();
         PySys_SetArgv(1, argv);
         /* Import 'lua' automatically. */
@@ -693,10 +700,9 @@ LUA_API int luaopen_python(lua_State *L) {
             }
         }
     }
-
     /* Register 'none' */
     lua_pushstring(L, "Py_None");
-    rc = py_convert_custom(L, Py_None, 0);
+    int rc = py_convert_custom(L, Py_None, 0);
     if (rc) {
         lua_pushstring(L, "none");
         //Todo:
@@ -707,6 +713,4 @@ LUA_API int luaopen_python(lua_State *L) {
         //Todo: lua_pop(L, 1);
         luaL_error(L, "failed to convert none object");
     }
-
-    return 0;
 }
