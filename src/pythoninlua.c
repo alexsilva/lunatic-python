@@ -707,11 +707,6 @@ LUA_API int luaopen_python(lua_State *L)
         index++;
     }
 
-    /* Register python object metatable */
-    // luaL_newmetatable(L, POBJECT);
-    // luaL_register(L, NULL, py_object_lib);
-    // lua_pop(L, 1);
-
     /* Initialize Lua state in Python territory */
     if (!LuaState) LuaState = L;
 
