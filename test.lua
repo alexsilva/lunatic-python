@@ -29,6 +29,16 @@ assert(type(globals) == "table", "globals is not a table")
 local builtins = python.builtins()
 assert(type(builtins) == "table", "builtins is not a table")
 
+python.execute('import sys')
+local sys = python.eval("sys")
+
+sys.MYVAR = 100
+local path = "/user/local"
+sys.path[0] = path
+
+assert(python.eval("sys.MYVAR") == 100, "set attribute error")
+assert(python.eval("sys.path[0]") == path, "set index error")
+
 local string = [[
 Lua is an extension programming language designed to support general procedural programming with data description facilities.
 Lua also offers good support for object-oriented programming, functional programming, and data-driven programming.

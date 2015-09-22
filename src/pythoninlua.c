@@ -129,32 +129,20 @@ static PyObject *LuaConvert(lua_State *L, int n) {
 
 static void lpy_object_index(lua_State *L);
 static void lpy_object_call(lua_State *L);
+static void py_object_newindex_set(lua_State *L);
 
-static struct luaL_reg py_object_lib[] = {
-        {"function",  lpy_object_call},
-        {"index", lpy_object_index},
-//    {"__newindex",  py_object_newindex},
-//    {"__gc",    py_object_gc},
-//    {"__tostring",  py_object_tostring},
-        {NULL, NULL}
+static struct luaL_reg lua_tag_methods[] = {
+    {"function",  lpy_object_call},
+    {"index", lpy_object_index},
+    {"settable", py_object_newindex_set},
+//  {"__gc",    py_object_gc},
+    {NULL, NULL}
 };
 
 static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     Py_INCREF(pobj);
 
     lua_Object ltable = lua_createtable(L);
-
-    // register all tag methods
-    int ntag = lua_newtag(L);
-    lua_pushobject(L, ltable);
-    lua_settag(L, ntag);
-
-    int index = 0;
-    while (py_object_lib[index].name) {
-        lua_pushcfunction(L, py_object_lib[index].func);
-        lua_settagmethod(L, ntag, py_object_lib[index].name);
-        index++;
-    }
 
     // insert table
     lua_pushobject(L, ltable);
@@ -166,6 +154,18 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     lua_pushstring(L, ASINDX);
     lua_pushnumber(L, asindx);
     lua_settable(L);
+
+    // register all tag methods
+    int ntag = lua_newtag(L);
+    int index = 0;
+    while (lua_tag_methods[index].name) {
+        lua_pushcfunction(L, lua_tag_methods[index].func);
+        lua_settagmethod(L, ntag, lua_tag_methods[index].name);
+        index++;
+    }
+    // set tag
+    lua_pushobject(L, ltable);
+    lua_settag(L, ntag);
 
     // returning table
     lua_pushobject(L, ltable);
@@ -299,12 +299,16 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
             Py_DECREF(key);
             luaL_argerror(L, 1, "failed to convert value");
         }
-
-        if (PyObject_SetItem(obj->o, key, value) == -1) {
+        // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
+        if (PyInt_Check(key)) {
+            if (PyObject_SetItem(obj->o, key, value) == -1) {
+                PyErr_Print();
+                luaL_error(L, "failed to set item");
+            }
+        } else if (PyObject_SetAttr(obj->o, key, value) == -1) {
             PyErr_Print();
             luaL_error(L, "failed to set item");
         }
-
         Py_DECREF(value);
     } else {
         if (PyObject_DelItem(obj->o, key) == -1) {
@@ -317,15 +321,16 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
     return 0;
 }
 
-static int py_object_newindex_set(lua_State *L) {
+static void py_object_newindex_set(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
-    if (lua_gettop(L) != 2) {
-        return luaL_error(L, "invalid arguments");
+    if (lua_gettop(L) < 2) {
+        luaL_error(L, "invalid arguments");
+        return;
     }
-    return _p_object_newindex_set(L, obj, 1, 2);
+    _p_object_newindex_set(L, obj, 2, 3);
 }
 
-static int py_object_newindex(lua_State *L) {
+static void py_object_newindex(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
     const char *attr;
     PyObject *value;
@@ -334,9 +339,10 @@ static int py_object_newindex(lua_State *L) {
         luaL_argerror(L, 1, "not a python object");
     }
 
-    if (obj->asindx)
-        return _p_object_newindex_set(L, obj, 2, 3);
-
+    if (obj->asindx) {
+        _p_object_newindex_set(L, obj, 2, 3);
+        return;
+    }
     attr = luaL_check_string(L, 2);
     if (!attr) {
         luaL_argerror(L, 2, "string needed");
@@ -350,11 +356,10 @@ static int py_object_newindex(lua_State *L) {
     if (PyObject_SetAttrString(obj->o, (char*)attr, value) == -1) {
         Py_DECREF(value);
         PyErr_Print();
-        return luaL_error(L, "failed to set value");
+        luaL_error(L, "failed to set value");
     }
 
     Py_DECREF(value);
-    return 0;
 }
 
 static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
@@ -402,7 +407,7 @@ static int py_object_gc(lua_State *L) {
     return 0;
 }
 
-static int py_object_tostring(lua_State *L) {
+static void py_object_tostring(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
 
     if (obj) {
@@ -418,7 +423,6 @@ static int py_object_tostring(lua_State *L) {
             Py_DECREF(repr);
         }
     }
-    return 1;
 }
 
 static int py_run(lua_State *L, int eval) {
