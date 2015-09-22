@@ -53,7 +53,7 @@ static py_object *get_py_object(lua_State *L, int n) {
     lua_Object ltable = lua_getparam(L, n);
 
     if (!lua_istable(L, ltable))
-        lua_error(L, "metatable error!");
+        lua_error(L, "wrap table not found!");
 
     py_object *po = (py_object *) malloc(sizeof(py_object));
 
