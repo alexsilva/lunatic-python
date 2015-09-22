@@ -34,7 +34,6 @@
 #define LUA_API __attribute__((visibility("default")))
 #endif
 
-lua_State *LuaState;
 PyTypeObject LuaObject_Type;
 
 #define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)

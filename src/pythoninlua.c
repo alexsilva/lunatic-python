@@ -666,9 +666,6 @@ LUA_API int luaopen_python(lua_State *L) {
         index++;
     }
 
-    /* Initialize Lua state in Python territory */
-    if (!LuaState) LuaState = L;
-
     /* Initialize Python interpreter */
     if (!Py_IsInitialized()) {
         PyObject *luam, *mainm, *maind;
@@ -678,7 +675,7 @@ LUA_API int luaopen_python(lua_State *L) {
         char *argv[] = {"<lua>", 0};
 #endif
         Py_SetProgramName(argv[0]);
-        //PyImport_AppendInittab("lua", PyInit_lua);
+        //Py_SetPythonHome("");
         Py_Initialize();
         PySys_SetArgv(1, argv);
         /* Import 'lua' automatically. */
