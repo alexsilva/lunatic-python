@@ -250,14 +250,14 @@ static int py_object_call(lua_State *L) {
         luaL_argerror(L, 1, "not a python object");
     }
     if (!PyCallable_Check(pobj->o)) {
-        luaL_error(L, "object is not callable");
+        lua_error(L, "object is not callable");
         return 0;
     }
 
     args = PyTuple_New(nargs);
     if (!args) {
         PyErr_Print();
-        luaL_error(L, "failed to create arguments tuple");
+        lua_error(L, "failed to create arguments tuple");
         return 0;
     }
 
@@ -265,7 +265,10 @@ static int py_object_call(lua_State *L) {
         PyObject *arg = LuaConvert(L, i+2);
         if (!arg) {
             Py_DECREF(args);
-            luaL_error(L, "failed to convert argument");// #%d", i+1);
+            char *error = "failed to convert argument #%d";
+            char buff[strlen(error) + 10];
+            sprintf(buff, error, i+1);
+            lua_error(L, &buff[0]);
         }
         PyTuple_SetItem(args, i, arg);
     }
@@ -276,7 +279,7 @@ static int py_object_call(lua_State *L) {
         Py_DECREF(value);
     } else {
         PyErr_Print();
-        luaL_error(L, "error calling python function");
+        lua_error(L, "error calling python function");
     }
     free(pobj);
     return ret;
