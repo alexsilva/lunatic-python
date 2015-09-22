@@ -15,10 +15,12 @@ callfromlib(handle, 'luaopen_python')
 print(python)
 
 local builtins = python.builtins()
-
 print("builtins: ", builtins)
 print("builtins.len:", builtins.len)
 print("builtins.len('lua'):", builtins.len("lua"))
 
-python.execute('import pymodule')
-print("builtins.eval:", python.eval('pymodule.say()'))
+python.execute('import json')
+local data = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300}')]])
+print("builtins.eval:", data)
+print(data["a"])
+

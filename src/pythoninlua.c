@@ -71,7 +71,6 @@ py_object *get_py_object(lua_State *L, int n, char *name) {
 }
 
 PyObject *LuaConvert(lua_State *L, int n) {
-
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
 
@@ -79,14 +78,14 @@ PyObject *LuaConvert(lua_State *L, int n) {
         Py_INCREF(Py_None);
         ret = Py_None;
 
+    } else if (lua_isnumber(L, lobj)) {
+        double num = lua_getnumber(L, lobj);
+        ret = PyFloat_FromDouble(num);
+
     } else if (lua_isstring(L, lobj)) {
         const char *s = lua_getstring(L, lobj);
         int len = lua_strlen(L, lobj);
         ret = PyUnicode_FromStringAndSize(s, len);
-
-    } else if (lua_isnumber(L, lobj)) {
-        double num = lua_getnumber(L, lobj);
-        ret = PyFloat_FromDouble(num);
 
 //Todo: not has boolean!
 //        case LUA_TBOOLEAN:
@@ -203,9 +202,10 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
     } else if (PyFloat_Check(o)) {
         lua_pushnumber(L, PyFloat_AsDouble(o));
         ret = 1;
-        //} else if (LuaObject_Check(o)) {
-        //    lua_rawgeti(L, LUA_REGISTRYINDEX, ((LuaObject*)o)->ref);
-        //    ret = 1;
+    } else if (LuaObject_Check(o)) {
+        //lua_rawgeti(L, LUA_REGISTRYINDEX, ((LuaObject*)o)->ref);
+        lua_error(L, "lua object: no implemented!");
+        ret = 1;
     } else {
         int asindx = 0;
         if (PyDict_Check(o) || PyList_Check(o) || PyTuple_Check(o))

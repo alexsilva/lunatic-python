@@ -34,8 +34,16 @@
 #define LUA_API __attribute__((visibility("default")))
 #endif
 
-//Todo: remove this!
 lua_State *LuaState;
+PyTypeObject LuaObject_Type;
+
+#define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)
+
+typedef struct {
+    PyObject_HEAD
+    int ref;
+    int refiter;
+} LuaObject;
 
 int py_convert(lua_State *L, PyObject *o, int withnone);
 
