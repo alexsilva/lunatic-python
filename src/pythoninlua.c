@@ -189,10 +189,10 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
             ret = 1;
         }
     } else if (o == Py_True) {
-        lua_pushnumber(L, 1); //Todo: lua_pushboolean
+        lua_pushnumber(L, 1);
         ret = 1;
     } else if (o == Py_False) {
-        lua_pushnumber(L, 0);  //Todo: lua_pushboolean
+        lua_pushnil(L);
         ret = 1;
 #if PY_MAJOR_VERSION >= 3
         } else if (PyUnicode_Check(o)) {
