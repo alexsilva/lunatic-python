@@ -51,7 +51,7 @@ static py_object *get_py_object(lua_State *L, int n, char *name) {
     if (!lua_istable(L, ltable))
         lua_error(L, "metatable error!");
 
-    py_object *po = (py_object *) malloc(sizeof(py_object*));
+    py_object *po = (py_object *) malloc(sizeof(py_object));
 
     if (po == NULL)
         return NULL;
@@ -67,6 +67,13 @@ static py_object *get_py_object(lua_State *L, int n, char *name) {
 
     po->asindx = (int) lua_getnumber(L, lua_rawgettable(L));
 
+    return po;
+}
+
+static PyObject *LuaObject_New(lua_State *L, int n) {
+    py_object *pobj = get_py_object(L, n, POBJECT);
+    PyObject *po = pobj->o;
+    free(pobj);
     return po;
 }
 
@@ -109,7 +116,7 @@ static PyObject *LuaConverter(lua_State *L, int n, py_object *o) {
         }
         /* Otherwise go on and handle as custom. */
     } else {
-        ret = NULL; //Todo: LuaObject_New(n);
+        ret = LuaObject_New(L, n);
     }
     return ret;
 }
@@ -271,7 +278,7 @@ static int py_object_call(lua_State *L) {
         PyErr_Print();
         luaL_error(L, "error calling python function");
     }
-
+    free(pobj);
     return ret;
 }
 
@@ -565,10 +572,9 @@ static int py_asfunc(lua_State *L) {
 
 static int py_globals(lua_State *L) {
     PyObject *globals;
-    //Todo:
-    //if (lua_gettop(L) != 0) {
-    //    return luaL_error(L, "invalid arguments");
-    //}
+    if (lua_gettop(L) != 0) {
+        return luaL_error(L, "invalid arguments");
+    }
     globals = PyEval_GetGlobals();
     if (!globals) {
         PyObject *module = PyImport_AddModule("__main__");
@@ -610,9 +616,9 @@ static void lpy_locals(lua_State *L) {
 static int py_builtins(lua_State *L) {
     PyObject *builtins;
 
-    //if (lua_gettop(L) != 0) {
-    //    return luaL_error(L, "invalid arguments");
-    //}
+    if (lua_gettop(L) != 0) {
+        return luaL_error(L, "invalid arguments");
+    }
 
     builtins = PyEval_GetBuiltins();
     if (!builtins) {
