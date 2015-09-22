@@ -77,7 +77,7 @@ static PyObject *LuaObject_New(lua_State *L, int n) {
     return po;
 }
 
-static PyObject *LuaConverter(lua_State *L, int n, py_object *o) {
+static PyObject *LuaConverter(lua_State *L, int n, py_object *pobj) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
 
@@ -87,7 +87,7 @@ static PyObject *LuaConverter(lua_State *L, int n, py_object *o) {
 
     } else if (lua_isnumber(L, lobj)) {
         double num = lua_getnumber(L, lobj);
-        if (PyList_Check(o->o) || PyTuple_Check(o->o)) {
+        if (rintf((float) num) == num) {  // is int?
             ret = PyInt_FromLong((long) num);
         } else {
             ret = PyFloat_FromDouble(num);
