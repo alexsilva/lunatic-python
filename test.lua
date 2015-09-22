@@ -5,22 +5,70 @@
 -- Time: 16:22
 -- To change this template use File | Settings | File Templates.
 --
-print(getenv("LIBRARY_PATH"))
 handle, msg = loadlib(getenv("LIBRARY_PATH"))
-
 if (not handle or handle == -1) then error(msg) end
-
 callfromlib(handle, 'luaopen_python')
 
-print(python)
+assert(python, "undefined python object")
+
+local globals = python.globals()
+assert(type(globals) == "table", "globals is not a table")
 
 local builtins = python.builtins()
-print("builtins: ", builtins)
-print("builtins.len:", builtins.len)
-print("builtins.len('lua'):", builtins.len("lua"))
+assert(type(builtins) == "table", "builtins is not a table")
+
+local string = [[
+Lua is an extension programming language designed to support general procedural programming with data description facilities.
+Lua also offers good support for object-oriented programming, functional programming, and data-driven programming.
+Lua is intended to be used as a powerful, lightweight, embeddable scripting language for any program that needs one.
+Lua is implemented as a library, written in clean C, the common subset of Standard C and C++.
+]]
+assert(builtins.len(string) == strlen(string))
 
 python.execute('import json')
-local data = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300}')]])
-print("builtins.eval:", data)
-print(data["a"])
+local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300}')]])
+assert(type(loadjson) == "table")
 
+assert(loadjson["a"] == 100)
+assert(loadjson["b"] == 2000)
+assert(loadjson["c"] == 300)
+
+local filename = "data.json"
+
+local path = python.import("os").path
+assert(path.exists(filename) == nil or path.exists(filename) == 1, "file does not exists")
+
+if (python.import("os.path").exists(filename)) then
+    local filedata = builtins.open(filename).read()
+    assert(builtins.len(filedata) > 0, "file size is zero")
+end
+
+local dict = python.eval("{'a': 'a value'}")
+local keys = dict.keys()
+assert(builtins.len(keys) == 1, "dict size no match")
+assert(keys[0] == 'a', "dict key no match")
+
+local list = python.eval("[1,2,3,3]")
+local lsize = builtins.len(list)
+
+assert(list[0] == 1, "list by index invalid value")
+assert(list.pop(0) == 1, "list pop invalid value")
+assert(lsize - 1 == builtins.len(list), "size of unexpected list")
+
+
+local re = python.import('re')
+local pattern = re.compile("Hel(lo) world!")
+local match = pattern.match("Hello world!")
+
+assert(builtins.len(match.groups()) > 0, "patten without groups")
+assert(match.group(1) == "lo",  "group value no match")
+
+local jsond = '["a", "b", "c"]'
+local json = python.import('json')
+
+assert(json.loads(jsond)[0] == 'a', "json parsed list 0 index invalid value")
+assert(json.loads(jsond)[1] == 'b', "json parsed list 1 index invalid value")
+assert(json.loads(jsond)[2] == 'c', "json parsed list 2 index invalid value")
+
+assert(python.eval("1") == 1, "eval int no match")
+assert(python.eval("1.0001") == 1.0001, "eval float no match")
