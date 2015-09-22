@@ -45,9 +45,6 @@ int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
-#define LUA_ARGERR_NUMBER 0
-
-
 py_object *get_py_object(lua_State *L, int n, char *name) {
     lua_Object ltable = lua_getparam(L, n);
 
@@ -320,7 +317,6 @@ static int py_object_newindex(lua_State *L) {
 
     if (!obj) {
         luaL_argerror(L, 1, "not a python object");
-        return LUA_ARGERR_NUMBER;
     }
 
     if (obj->asindx)
@@ -329,13 +325,11 @@ static int py_object_newindex(lua_State *L) {
     attr = luaL_check_string(L, 2);
     if (!attr) {
         luaL_argerror(L, 2, "string needed");
-        return LUA_ARGERR_NUMBER;
     }
 
     value = LuaConvert(L, 3);
     if (!value) {
         luaL_argerror(L, 1, "failed to convert value");
-        return LUA_ARGERR_NUMBER;
     }
 
     if (PyObject_SetAttrString(obj->o, (char*)attr, value) == -1) {
@@ -355,7 +349,6 @@ static int _p_object_index_get(lua_State *L, py_object *obj, int keyn) {
 
     if (!key) {
         luaL_argerror(L, 1, "failed to convert key");
-        return LUA_ARGERR_NUMBER;
     }
 
     item = PyObject_GetItem(obj->o, key);
@@ -544,7 +537,6 @@ static int py_asindx(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
     if (!obj) {
         luaL_argerror(L, 1, "not a python object");
-        return LUA_ARGERR_NUMBER;
     }
     return py_convert_custom(L, obj->o, 1);
 }
@@ -553,7 +545,6 @@ static int py_asattr(lua_State *L) {
     py_object *pobj = get_py_object(L, 1, POBJECT);
     if (!pobj) {
         luaL_argerror(L, 1, "not a python object");
-        return LUA_ARGERR_NUMBER;
     }
     return py_convert_custom(L, pobj->o, 0);
 }
@@ -646,7 +637,6 @@ static int py_import(lua_State *L) {
 
     if (!name) {
         luaL_argerror(L, 1, "module name expected");
-        return LUA_ARGERR_NUMBER;
     }
 
     module = PyImport_ImportModule((char*)name);
@@ -654,7 +644,6 @@ static int py_import(lua_State *L) {
     if (!module) {
         PyErr_Print();
         luaL_error(L, "failed importing"); //Todo: '%s'", name);
-        return LUA_ARGERR_NUMBER;
     }
 
     ret = py_convert_custom(L, module, 0);
