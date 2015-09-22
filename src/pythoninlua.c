@@ -45,7 +45,7 @@ int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
-py_object *get_py_object(lua_State *L, int n, char *name) {
+static py_object *get_py_object(lua_State *L, int n, char *name) {
     lua_Object ltable = lua_getparam(L, n);
 
     if (!lua_istable(L, ltable))
@@ -70,7 +70,7 @@ py_object *get_py_object(lua_State *L, int n, char *name) {
     return po;
 }
 
-PyObject *LuaConvert(lua_State *L, int n) {
+static PyObject *LuaConverter(lua_State *L, int n, py_object *o) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
 
@@ -80,8 +80,11 @@ PyObject *LuaConvert(lua_State *L, int n) {
 
     } else if (lua_isnumber(L, lobj)) {
         double num = lua_getnumber(L, lobj);
-        ret = PyFloat_FromDouble(num);
-
+        if (PyList_Check(o->o) || PyTuple_Check(o->o)) {
+            ret = PyInt_FromLong((long) num);
+        } else {
+            ret = PyFloat_FromDouble(num);
+        }
     } else if (lua_isstring(L, lobj)) {
         const char *s = lua_getstring(L, lobj);
         int len = lua_strlen(L, lobj);
@@ -110,6 +113,11 @@ PyObject *LuaConvert(lua_State *L, int n) {
     }
     return ret;
 }
+
+static PyObject *LuaConvert(lua_State *L, int n) {
+    return LuaConverter(L, n, NULL);
+}
+
 // ----------------------------------------
 
 static void lpy_object_index(lua_State *L);
@@ -274,15 +282,12 @@ static void lpy_object_call(lua_State *L) {
 static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
     PyObject *value;
     PyObject *key = LuaConvert(L, keyn);
-
-    if (!key) {
-        luaL_argerror(L, 1, "failed to convert key");
-    }
+    if (!key) luaL_argerror(L, 1, "failed to convert key");
 
     lua_Object lobj = lua_getparam(L, valuen);
 
     if (!lua_isnil(L, lobj)) {
-        value = NULL; //LuaConvert(L, valuen);
+        value = LuaConvert(L, valuen);
         if (!value) {
             Py_DECREF(key);
             luaL_argerror(L, 1, "failed to convert value");
@@ -345,16 +350,14 @@ static int py_object_newindex(lua_State *L) {
     return 0;
 }
 
-static int _p_object_index_get(lua_State *L, py_object *obj, int keyn) {
-    PyObject *key = LuaConvert(L, keyn);
+static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
+    PyObject *key = LuaConverter(L, keyn, pobj);
     PyObject *item;
     int ret = 0;
 
-    if (!key) {
-        luaL_argerror(L, 1, "failed to convert key");
-    }
+    if (!key) luaL_argerror(L, 1, "failed to convert key");
 
-    item = PyObject_GetItem(obj->o, key);
+    item = PyObject_GetItem(pobj->o, key);
 
     Py_DECREF(key);
 
@@ -368,18 +371,15 @@ static int _p_object_index_get(lua_State *L, py_object *obj, int keyn) {
             ret = 1;
         }
     }
-
     return ret;
 }
 
 static int py_object_index_get(lua_State *L) {
     py_object *obj = get_py_object(L, 1, POBJECT);
-
-    //int top = lua_gettop(L);
-    //if (top < 1 || top > 2) {
-    //    return luaL_error(L, "invalid arguments");
-    //}
-
+    int top = lua_gettop(L);
+    if (top < 1 || top > 2) {
+        return luaL_error(L, "invalid arguments");
+    }
     return _p_object_index_get(L, obj, 1);
 }
 
@@ -393,19 +393,14 @@ static int py_object_index(lua_State *L) {
     PyObject *value;
     int ret = 0;
 
-    if (!obj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
+    if (!obj) luaL_argerror(L, 1, "not a python object");
 
     if (obj->asindx) {
         return _p_object_index_get(L, obj, 2);
     }
 
     attr = luaL_check_string(L, 2);
-
-    if (!attr) {
-        luaL_argerror(L, 2, "string needed");
-    }
+    if (!attr) luaL_argerror(L, 2, "string needed");
 
     if (attr[0] == '_' && strcmp(attr, "__get") == 0) {
 
@@ -420,7 +415,6 @@ static int py_object_index(lua_State *L) {
 
         return 1;
     }
-
 
     value = PyObject_GetAttrString(obj->o, (char*)attr);
     if (value) {
