@@ -183,12 +183,15 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
         } else if (PyUnicode_Check(o)) {
         Py_ssize_t len;
         char *s = PyUnicode_AsUTF8AndSize(o, &len);
+#elif defined(PyUnicode_Check)
+    } else if (PyString_Check(o)  || PyUnicode_Check(o)) {
 #else
     } else if (PyString_Check(o)) {
+#endif
         Py_ssize_t len;
         char *s;
         PyString_AsStringAndSize(o, &s, &len);
-#endif
+
         lua_pushlstring(L, s, len);
         ret = 1;
 #if PY_MAJOR_VERSION < 3
@@ -455,9 +458,7 @@ static int py_object_tostring(lua_State *L) {
             PyErr_Clear();
         } else {
             py_convert(L, repr, 0);
-
             //Todo: assert(lua_type(L, -1) == LUA_TSTRING);
-
             Py_DECREF(repr);
         }
     }
@@ -637,11 +638,9 @@ static int py_import(lua_State *L) {
     PyObject *module;
     int ret;
 
-    if (!name) {
-        luaL_argerror(L, 1, "module name expected");
-    }
+    if (!name) luaL_argerror(L, 1, "module name expected");
 
-    module = PyImport_ImportModule((char*)name);
+    module = PyImport_ImportModule((char*) name);
 
     if (!module) {
         PyErr_Print();
@@ -651,6 +650,10 @@ static int py_import(lua_State *L) {
     ret = py_convert_custom(L, module, 0);
     Py_DECREF(module);
     return ret;
+}
+
+static void lpy_import(lua_State *L) {
+    py_import(L);
 }
 
 py_object* luaPy_to_pobject(lua_State *L, int n) {
@@ -681,7 +684,7 @@ static struct luaL_reg py_lib[] = {
         {"locals",  lpy_locals},
         {"globals", lpy_globals},
         {"builtins", lpy_builtins},
-//    {"import",  py_import},
+        {"import",  lpy_import},
         {NULL, NULL}
 };
 
