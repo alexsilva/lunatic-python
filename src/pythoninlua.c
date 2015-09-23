@@ -159,7 +159,7 @@ int py_convert(lua_State *L, PyObject *o) {
     } else if (PyString_Check(o)  || PyUnicode_Check(o)) {
 #endif
         Py_ssize_t len;
-        char *s;
+        char *s = NULL;
         PyString_AsStringAndSize(o, &s, &len);
 #ifndef PyUnicode_AsUTF8AndSize // Try convert to utf8
         if (s == NULL && PyUnicode_Check(o)) {
