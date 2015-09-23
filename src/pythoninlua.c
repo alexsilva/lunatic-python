@@ -24,7 +24,6 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <lapi.h>
 
 #include "pythoninlua.h"
 
