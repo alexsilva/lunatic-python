@@ -122,20 +122,7 @@ static PyObject *LuaConvert(lua_State *L, int n) {
     }
     return ret;
 }
-
 // ----------------------------------------
-static void py_object_index(lua_State *L);
-static void py_object_call(lua_State *L);
-static void py_object_newindex_set(lua_State *L);
-static void py_object_gc(lua_State *L);
-
-static struct luaL_reg lua_tag_methods[] = {
-    {"function", py_object_call},
-    {"index",    py_object_index},
-    {"settable", py_object_newindex_set},
-    {"gc", py_object_gc},
-    {NULL, NULL}
-};
 
 static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     Py_INCREF(pobj);
@@ -601,6 +588,14 @@ static struct luaL_reg py_lib[] = {
         {"builtins", py_builtins},
         {"import",   py_import},
         {"system_init", python_system_init},
+        {NULL, NULL}
+};
+
+static struct luaL_reg lua_tag_methods[] = {
+        {"function", py_object_call},
+        {"index",    py_object_index},
+        {"settable", py_object_newindex_set},
+        {"gc", py_object_gc},
         {NULL, NULL}
 };
 
