@@ -112,13 +112,6 @@ static PyObject *LuaConvert(lua_State *L, int n) {
             Py_INCREF(Py_False);
             ret = Py_False;
         }
-    } else if (lua_isuserdata(L, lobj)) {
-        py_object *obj = luaPy_to_pobject(L, n);
-        if (obj) {
-            Py_INCREF(obj->o);
-            ret = obj->o;
-        }
-        /* Otherwise go on and handle as custom. */
     }
     return ret;
 }
@@ -258,7 +251,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
             luaL_argerror(L, 1, "failed to convert value");
         }
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
-        if (PyInt_Check(key)) {
+        if (obj->asindx) {
             if (PyObject_SetItem(obj->o, key, value) == -1) {
                 PyErr_Print();
                 lua_error(L, "failed to set item");
@@ -518,19 +511,6 @@ static void py_import(lua_State *L) {
 
     py_convert_custom(L, module, 0);
     Py_DECREF(module);
-}
-
-py_object* luaPy_to_pobject(lua_State *L, int n) {
-    lua_Object lobj = lua_getparam(L, n);
-    //Todo:
-    //if(!lua_getmetatable(L, n)) {
-    //    return NULL;
-    //}
-    //luaL_getmetatable(L, POBJECT);
-    //int is_pobject = lua_rawequal(L, -1, -2);
-    //lua_pop(L, 2);
-    //return is_pobject ? (py_object *) lua_touserdata(L, n) : NULL;
-    return NULL;
 }
 
 void python_system_init(lua_State *L);
