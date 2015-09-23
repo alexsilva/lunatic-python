@@ -31,12 +31,6 @@
 static int py_asfunc_call(lua_State *L);
 
 // ----------------------------------------
-
-int luaL_error(lua_State *L, char *msg) {
-    lua_pushstring(L, msg);
-    return 0;
-}
-
 int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
@@ -178,10 +172,9 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
     if (o == Py_None) {
         if (withnone) {
             lua_pushstring(L, "Py_None");
-            //Todo: lua_rawget(L, LUA_REGISTRYINDEX);
             if (lua_isnil(L, -1)) {
                 //  lua_pop(L, 1);
-                luaL_error(L, "lost none from registry");
+                lua_error(L, "lost none from registry");
             }
         } else {
             /* Not really needed, but this way we may check
@@ -313,17 +306,17 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
         if (PyInt_Check(key)) {
             if (PyObject_SetItem(obj->o, key, value) == -1) {
                 PyErr_Print();
-                luaL_error(L, "failed to set item");
+                lua_error(L, "failed to set item");
             }
         } else if (PyObject_SetAttr(obj->o, key, value) == -1) {
             PyErr_Print();
-            luaL_error(L, "failed to set item");
+            lua_error(L, "failed to set item");
         }
         Py_DECREF(value);
     } else {
         if (PyObject_DelItem(obj->o, key) == -1) {
             PyErr_Print();
-            luaL_error(L, "failed to delete item");
+            lua_error(L, "failed to delete item");
         }
     }
 
@@ -334,8 +327,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
 static void py_object_newindex_set(lua_State *L) {
     py_object *obj = get_py_object(L, 1);
     if (lua_gettop(L) < 2) {
-        luaL_error(L, "invalid arguments");
-        return;
+        lua_error(L, "invalid arguments");
     }
     _p_object_newindex_set(L, obj, 2, 3);
 }
@@ -366,7 +358,7 @@ static void py_object_newindex(lua_State *L) {
     if (PyObject_SetAttrString(obj->o, (char*)attr, value) == -1) {
         Py_DECREF(value);
         PyErr_Print();
-        luaL_error(L, "failed to set value");
+        lua_error(L, "failed to set value");
     }
 
     Py_DECREF(value);
@@ -450,7 +442,7 @@ static int py_run(lua_State *L, int eval) {
         len = strlen(s)+1;
         buffer = (char *) malloc(len+1);
         if (!buffer) {
-            return luaL_error(L, "Failed allocating buffer for execution");
+            lua_error(L, "Failed allocating buffer for execution");
         }
         strcpy(buffer, s);
         buffer[len-1] = '\n';
@@ -461,7 +453,7 @@ static int py_run(lua_State *L, int eval) {
     m = PyImport_AddModule("__main__");
     if (!m) {
         free(buffer);
-        return luaL_error(L, "Can't get __main__ module");
+        lua_error(L, "Can't get __main__ module");
     }
     d = PyModule_GetDict(m);
 
@@ -542,20 +534,20 @@ static int py_asfunc(lua_State *L) {
 static int py_globals(lua_State *L) {
     PyObject *globals;
     if (lua_gettop(L) != 0) {
-        return luaL_error(L, "invalid arguments");
+        lua_error(L, "invalid arguments");
     }
     globals = PyEval_GetGlobals();
     if (!globals) {
         PyObject *module = PyImport_AddModule("__main__");
         if (!module) {
-            return luaL_error(L, "Can't get __main__ module");
+            lua_error(L, "Can't get __main__ module");
         }
         globals = PyModule_GetDict(module);
     }
 
     if (!globals) {
         PyErr_Print();
-        return luaL_error(L, "can't get globals");
+        lua_error(L, "can't get globals");
     }
 
     return py_convert_custom(L, globals, 1);
@@ -569,9 +561,8 @@ static int py_locals(lua_State *L) {
     PyObject *locals;
 
     if (lua_gettop(L) != 0) {
-        return luaL_error(L, "invalid arguments");
+        lua_error(L, "invalid arguments");
     }
-
     locals = PyEval_GetLocals();
     if (!locals) return py_globals(L);
 
@@ -586,13 +577,13 @@ static int py_builtins(lua_State *L) {
     PyObject *builtins;
 
     if (lua_gettop(L) != 0) {
-        return luaL_error(L, "invalid arguments");
+        lua_error(L, "invalid arguments");
     }
 
     builtins = PyEval_GetBuiltins();
     if (!builtins) {
         PyErr_Print();
-        return luaL_error(L, "failed to get builtins");
+        lua_error(L, "failed to get builtins");
     }
 
     return py_convert_custom(L, builtins, 1);
@@ -736,11 +727,11 @@ void python_system_init(lua_State *L) {
         /* Import 'lua' automatically. */
         luam = PyImport_ImportModule("lua");
         if (!luam) {
-            luaL_error(L, "Can't import lua module");
+            lua_error(L, "Can't import lua module");
         } else {
             mainm = PyImport_AddModule("__main__");
             if (!mainm) {
-                luaL_error(L, "Can't get __main__ module");
+                lua_error(L, "Can't get __main__ module");
             } else {
                 maind = PyModule_GetDict(mainm);
                 PyDict_SetItemString(maind, "lua", luam);
@@ -759,6 +750,6 @@ void python_system_init(lua_State *L) {
         //lua_rawset(L, LUA_REGISTRYINDEX); /* registry.Py_None */
     } else {
         //Todo: lua_pop(L, 1);
-        luaL_error(L, "failed to convert none object");
+        lua_error(L, "failed to convert none object");
     }
 }
