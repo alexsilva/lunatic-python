@@ -367,7 +367,6 @@ static void py_object_tostring(lua_State *L) {
             PyErr_Clear();
         } else {
             py_convert(L, repr);
-            //Todo: assert(lua_type(L, -1) == LUA_TSTRING);
             Py_DECREF(repr);
         }
     }
@@ -537,10 +536,11 @@ py_object* luaPy_to_pobject(lua_State *L, int n) {
 void python_system_init(lua_State *L);
 
 static struct luaL_reg py_lib[] = {
-        {"execute", py_execute},
-        {"eval",    py_eval},
+        {"execute",  py_execute},
+        {"eval",     py_eval},
         {"asindex",  py_asindx},
-        {"asattr",  py_asattr},
+        {"asattr",   py_asattr},
+        {"str",      py_object_tostring},
         {"locals",   py_locals},
         {"globals",  py_globals},
         {"builtins", py_builtins},
