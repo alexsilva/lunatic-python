@@ -329,10 +329,17 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
         Py_DECREF(item);
     } else {
         PyErr_Clear();
-        char *error = "%s not found";
-        char *name = pobj->asindx ? "index" : "attribute";
-        char buff[strlen(error) + strlen(name) + 1];
-        sprintf(buff, error, name);
+        char *keystr = "...";
+        if (py_convert(L, PyObject_Str(key))) {
+            lua_Object lstr = lua_pop(L);
+            if (lua_isstring(L, lstr)) {
+                keystr = lua_getstring(L, lstr);
+            }
+        }
+        char *error = "%s \"%s\" not found";
+        char *name = pobj->asindx ? "index or key" : "attribute";
+        char buff[strlen(error) + strlen(name) + strlen(keystr) + 1];
+        sprintf(buff, error, name, keystr);
         lua_error(L, &buff[0]);
     }
     return ret;
