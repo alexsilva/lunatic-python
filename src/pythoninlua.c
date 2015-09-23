@@ -151,26 +151,13 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
-int py_convert(lua_State *L, PyObject *o, int withnone) {
+int py_convert(lua_State *L, PyObject *o) {
     int ret = 0;
-    if (o == Py_None) {
-        if (withnone) {
-            lua_pushstring(L, "Py_None");
-            if (lua_isnil(L, -1)) {
-                //  lua_pop(L, 1);
-                lua_error(L, "lost none from registry");
-            }
-        } else {
-            /* Not really needed, but this way we may check
-             * for errors with ret == 0. */
-            lua_pushnil(L);
-            ret = 1;
-        }
+    if (o == Py_None || o == Py_False) {
+        lua_pushnil(L);
+        ret = 1;
     } else if (o == Py_True) {
         lua_pushnumber(L, 1);
-        ret = 1;
-    } else if (o == Py_False) {
-        lua_pushnil(L);
         ret = 1;
 #if PY_MAJOR_VERSION >= 3
     } else if (PyUnicode_Check(o)) {
@@ -204,19 +191,11 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
     } else if (PyFloat_Check(o)) {
         lua_pushnumber(L, PyFloat_AsDouble(o));
         ret = 1;
-    } else if (LuaObject_Check(o)) {
-        //lua_rawgeti(L, LUA_REGISTRYINDEX, ((LuaObject*)o)->ref);
-        lua_error(L, "lua object: no implemented!");
-        ret = 1;
     } else {
         int asindx = 0;
         if (PyList_Check(o) || PyTuple_Check(o))
             asindx = 1;
         ret = py_convert_custom(L, o, asindx);
-
-        //if (ret && !asindx && (PyFunction_Check(o) || PyCFunction_Check(o))) {
-        //    lua_pushcclosure(L, py_asfunc_call, 1);
-        //}
     }
     return ret;
 }
@@ -256,7 +235,7 @@ static void py_object_call(lua_State *L) {
 
     value = PyObject_CallObject(pobj->o, args);
     if (value) {
-        py_convert(L, value, 0);
+        py_convert(L, value);
         Py_DECREF(value);
     } else {
         PyErr_Print();
@@ -354,7 +333,7 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
     Py_DECREF(key);
 
     if (item) {
-        ret = py_convert(L, item, 0);
+        ret = py_convert(L, item);
         Py_DECREF(item);
     } else {
         PyErr_Clear();
@@ -391,7 +370,7 @@ static void py_object_tostring(lua_State *L) {
             lua_pushstring(L, buf);
             PyErr_Clear();
         } else {
-            py_convert(L, repr, 0);
+            py_convert(L, repr);
             //Todo: assert(lua_type(L, -1) == LUA_TSTRING);
             Py_DECREF(repr);
         }
@@ -438,7 +417,7 @@ static int py_run(lua_State *L, int eval) {
         return 0;
     }
 
-    if (py_convert(L, o, 0))
+    if (py_convert(L, o))
         ret = 1;
 
     Py_DECREF(o);

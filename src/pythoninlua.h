@@ -44,8 +44,6 @@ typedef struct {
     int refiter;
 } LuaObject;
 
-int py_convert(lua_State *L, PyObject *o, int withnone);
-
 typedef struct {
     PyObject *o;
     int asindx;
