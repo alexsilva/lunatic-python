@@ -74,6 +74,14 @@ static py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
+/*Base table object*/
+static int get_base_tag(lua_State *L) {
+    lua_Object python = lua_getglobal(L, "python");
+    lua_pushobject(L, python);
+    lua_pushstring(L, POBJECT);
+    return lua_tag(L, lua_gettable(L));
+}
+
 static PyObject *LuaConvert(lua_State *L, int n) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
@@ -95,9 +103,13 @@ static PyObject *LuaConvert(lua_State *L, int n) {
         ret = PyUnicode_FromStringAndSize(s, len);
 
     } else if (lua_istable(L, lobj)) {
-        py_object *pobj = get_py_object(L, n);
-        ret = pobj->o;
-        free(pobj);
+        if (get_base_tag(L) == lua_tag(L, lobj)) {
+            py_object *pobj = get_py_object(L, n);
+            ret = pobj->o;
+            free(pobj);
+        } else {
+            lua_error(L, "param not supported");
+        }
 
     } else if (lua_isboolean(L, lobj)) {
         if (lua_getboolean(L, lobj)) {
@@ -149,16 +161,9 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     lua_settable(L);
 
     // register all tag methods
-    int ntag = lua_newtag(L);
-    int index = 0;
-    while (lua_tag_methods[index].name) {
-        lua_pushcfunction(L, lua_tag_methods[index].func);
-        lua_settagmethod(L, ntag, lua_tag_methods[index].name);
-        index++;
-    }
-    // set tag
+    int tag = get_base_tag(L);
     lua_pushobject(L, ltable);
-    lua_settag(L, ntag);
+    lua_settag(L, tag);
 
     // returning table
     lua_pushobject(L, ltable);
@@ -668,6 +673,28 @@ LUA_API int luaopen_python(lua_State *L) {
         set_table(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
+
+    // base python object
+    lua_Object ltable = lua_createtable(L);
+
+    lua_pushobject(L, python); \
+    lua_pushstring(L, POBJECT); \
+    lua_pushobject(L, ltable); \
+    lua_settable(L);
+
+    // register all tag methods
+    int ntag = lua_newtag(L);
+    index = 0;
+    while (lua_tag_methods[index].name) {
+        lua_pushcfunction(L, lua_tag_methods[index].func);
+        lua_settagmethod(L, ntag, lua_tag_methods[index].name);
+        index++;
+    }
+
+    // set tag
+    lua_pushobject(L, ltable);
+    lua_settag(L, ntag);
+
     // try startup system
     // python_system_init(L);
     return 0;
