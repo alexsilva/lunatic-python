@@ -404,7 +404,7 @@ static void lpy_object_index(lua_State *L) {
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     if (pobj) {
-        Py_DECREF(pobj->o);
+        Py_CLEAR(pobj->o);
     }
     free(pobj);
 }
