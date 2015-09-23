@@ -34,16 +34,6 @@
 #define LUA_API __attribute__((visibility("default")))
 #endif
 
-PyTypeObject LuaObject_Type;
-
-#define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)
-
-typedef struct {
-    PyObject_HEAD
-    int ref;
-    int refiter;
-} LuaObject;
-
 typedef struct {
     PyObject *o;
     int asindx;
