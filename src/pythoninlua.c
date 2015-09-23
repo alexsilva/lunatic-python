@@ -42,11 +42,11 @@ int lua_gettop(lua_State *L) {
 }
 
 int lua_isboolean(lua_State *L, lua_Object obj) {
-    return 0; //Todo:
+    return lua_isuserdata(L, obj) && PyBool_Check((PyObject *) lua_getuserdata(L, obj));
 }
 
 int lua_getboolean(lua_State *L, lua_Object obj) {
-    return 0; //Todo:
+    return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
 }
 
 static py_object *get_py_object(lua_State *L, int n) {
@@ -670,6 +670,12 @@ static struct luaL_reg py_lib[] = {
     lua_pushcfunction(L, value); \
     lua_settable(L);
 
+#define set_table_userdata(L, obj, name, value) \
+    lua_pushobject(L, obj); \
+    lua_pushstring(L, name); \
+    lua_pushuserdata(L, value); \
+    lua_settable(L);
+
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
     lua_Object python = lua_createtable(L);
@@ -682,6 +688,9 @@ LUA_API int luaopen_python(lua_State *L) {
         set_table(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
+
+    set_table_userdata(L, python, "True", Py_True);
+    set_table_userdata(L, python, "False", Py_False);
 
     // base python object
     lua_Object ltable = lua_createtable(L);

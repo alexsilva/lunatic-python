@@ -16,6 +16,13 @@ python.system_init("C:\\Python27");
 
 print("Python sys.path")
 local builtins = python.builtins()
+
+local str = "maçã"
+assert(builtins.unicode(str, 'utf-8') == str)
+
+assert(builtins.bool(python.False) == nil, "False boolean check error")
+assert(builtins.bool(python.True) == 1, "True boolean check error")
+
 local sys = python.import("sys")
 local index = builtins.len(sys.path)
 while (index > 0) do
