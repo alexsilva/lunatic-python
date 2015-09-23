@@ -100,8 +100,10 @@ static PyObject *LuaConvert(lua_State *L, int n) {
     } else if (lua_isstring(L, lobj)) {
         const char *s = lua_getstring(L, lobj);
         int len = lua_strlen(L, lobj);
-        ret = PyUnicode_FromStringAndSize(s, len);
-
+        ret = PyString_FromStringAndSize(s, len);
+        if (!ret) {
+            ret = PyUnicode_FromStringAndSize(s, len);
+        }
     } else if (lua_istable(L, lobj)) {
         if (get_base_tag(L) == lua_tag(L, lobj)) {
             py_object *pobj = get_py_object(L, n);
@@ -194,18 +196,24 @@ int py_convert(lua_State *L, PyObject *o, int withnone) {
         lua_pushnil(L);
         ret = 1;
 #if PY_MAJOR_VERSION >= 3
-        } else if (PyUnicode_Check(o)) {
+    } else if (PyUnicode_Check(o)) {
         Py_ssize_t len;
         char *s = PyUnicode_AsUTF8AndSize(o, &len);
-#elif defined(PyUnicode_Check)
-    } else if (PyString_Check(o)  || PyUnicode_Check(o)) {
 #else
-    } else if (PyString_Check(o)) {
+    } else if (PyString_Check(o)  || PyUnicode_Check(o)) {
 #endif
         Py_ssize_t len;
         char *s;
         PyString_AsStringAndSize(o, &s, &len);
-
+#ifndef PyUnicode_AsUTF8AndSize // Try convert to utf8
+        if (s == NULL && PyUnicode_Check(o)) {
+            o = PyUnicode_AsUTF8String(o);
+            PyString_AsStringAndSize(o, &s, &len);
+            if (s == NULL) {
+                lua_error(L, "error converting unicode string");
+            }
+        }
+#endif
         lua_pushlstring(L, s, len);
         ret = 1;
 #if PY_MAJOR_VERSION < 3
