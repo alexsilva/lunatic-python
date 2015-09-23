@@ -663,17 +663,4 @@ void python_system_init(lua_State *L) {
             }
         }
     }
-    /* Register 'none' */
-    lua_pushstring(L, "Py_None");
-    int rc = py_convert_custom(L, Py_None, 0);
-    if (rc) {
-        lua_pushstring(L, "none");
-        //Todo:
-        //lua_pushvalue(L, -2);
-        //lua_rawset(L, -5); /* python.none */
-        //lua_rawset(L, LUA_REGISTRYINDEX); /* registry.Py_None */
-    } else {
-        //Todo: lua_pop(L, 1);
-        lua_error(L, "failed to convert none object");
-    }
 }
