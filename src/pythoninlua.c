@@ -599,7 +599,10 @@ static int py_import(lua_State *L) {
 
     if (!module) {
         PyErr_Print();
-        luaL_error(L, "failed importing"); //Todo: '%s'", name);
+        char *error = "failed importing '%s'";
+        char buff[strlen(error) + strlen(name) + 1];
+        sprintf(buff, error, name);
+        lua_error(L, &buff[0]);
     }
 
     ret = py_convert_custom(L, module, 0);
