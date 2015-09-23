@@ -55,12 +55,13 @@ Lua is implemented as a library, written in clean C, the common subset of Standa
 assert(builtins.len(string) == strlen(string))
 
 python.execute('import json')
-local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300}')]])
+local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300, "items": 100}')]])
 assert(type(loadjson) == "table")
 
 assert(loadjson["a"] == 100)
 assert(loadjson["b"] == 2000)
 assert(loadjson["c"] == 300)
+assert(loadjson["items"] == 100, "key 'items' not found")
 
 local filename = "data.json"
 
@@ -73,7 +74,8 @@ if (python.import("os.path").exists(filename)) then
 end
 
 local dict = python.eval("{'a': 'a value'}")
-local keys = dict.keys()
+local keys = python.asattr(dict).keys()
+
 assert(builtins.len(keys) == 1, "dict size no match")
 assert(keys[0] == 'a', "dict key no match")
 
@@ -81,9 +83,8 @@ local list = python.eval("[1,2,3,3]")
 local lsize = builtins.len(list)
 
 assert(list[0] == 1, "list by index invalid value")
-assert(list.pop(0) == 1, "list pop invalid value")
+assert(python.asattr(list).pop(0) == 1, "list pop invalid value")
 assert(lsize - 1 == builtins.len(list), "size of unexpected list")
-
 
 local re = python.import('re')
 local pattern = re.compile("Hel(lo) world!")

@@ -193,7 +193,7 @@ int py_convert(lua_State *L, PyObject *o) {
         ret = 1;
     } else {
         int asindx = 0;
-        if (PyList_Check(o) || PyTuple_Check(o))
+        if (PyList_Check(o) || PyTuple_Check(o) || PyDict_Check(o))
             asindx = 1;
         ret = py_convert_custom(L, o, asindx);
     }
@@ -325,10 +325,10 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
 
     if (!key) luaL_argerror(L, 1, "failed to convert key");
 
-    if (PyObject_HasAttr(pobj->o, key)) {
-        item = PyObject_GetAttr(pobj->o, key);
-    } else {
+    if (pobj->asindx) {
         item = PyObject_GetItem(pobj->o, key);
+    } else {
+        item = PyObject_GetAttr(pobj->o, key);
     }
     Py_DECREF(key);
     if (item) {
@@ -434,38 +434,22 @@ static void py_eval(lua_State *L) {
     py_run(L, 1);
 }
 
-static int py_asindx(lua_State *L) {
-    py_object *obj = get_py_object(L, 1);
-    if (!obj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
-    return py_convert_custom(L, obj->o, 1);
-}
-
-static int py_asattr(lua_State *L) {
+static void py_asindx(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     if (!pobj) {
         luaL_argerror(L, 1, "not a python object");
     }
-    return py_convert_custom(L, pobj->o, 0);
+    Py_DECREF(pobj->o);
+    py_convert_custom(L, pobj->o, 1);
 }
 
-static void py_asfunc_call(lua_State *L) {
-    // Todo:
-    // lua_pushvalue(L, lua_upvalueindex(1));
-    // lua_insert(L, 1);
-    py_object_call(L);
-}
-
-static int py_asfunc(lua_State *L) {
-    int ret = 0;
-    if (get_py_object(L, 1)) {
-        // lua_pushcclosure(L, py_asfunc_call, 1);
-        ret = 1;
-    } else {
+static void py_asattr(lua_State *L) {
+    py_object *pobj = get_py_object(L, 1);
+    if (!pobj) {
         luaL_argerror(L, 1, "not a python object");
     }
-    return ret;
+    Py_DECREF(pobj->o);
+    py_convert_custom(L, pobj->o, 0);
 }
 
 static void py_globals(lua_State *L) {
@@ -555,9 +539,8 @@ void python_system_init(lua_State *L);
 static struct luaL_reg py_lib[] = {
         {"execute", py_execute},
         {"eval",    py_eval},
-//    {"asindx",  py_asindx},
-//    {"asattr",  py_asattr},
-//    {"asfunc",  py_asfunc},
+        {"asindex",  py_asindx},
+        {"asattr",  py_asattr},
         {"locals",   py_locals},
         {"globals",  py_globals},
         {"builtins", py_builtins},
