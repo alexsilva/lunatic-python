@@ -146,6 +146,7 @@ static struct luaL_reg lua_tag_methods[] = {
 
 static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     Py_INCREF(pobj);
+    Py_INCREF(pobj);
 
     lua_Object ltable = lua_createtable(L);
 
