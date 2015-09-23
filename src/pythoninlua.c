@@ -331,16 +331,12 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
         item = PyObject_GetItem(pobj->o, key);
     }
     Py_DECREF(key);
-
     if (item) {
         ret = py_convert(L, item);
         Py_DECREF(item);
     } else {
         PyErr_Clear();
-        if (lua_gettop(L) > keyn) {
-            //lua_pushvalue(L, keyn+1);
-            ret = 1;
-        }
+        lua_error(L, "attribute not found");
     }
     return ret;
 }
