@@ -143,6 +143,7 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
+/* python string bytes */
 char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
     if (!s) {
@@ -152,13 +153,12 @@ char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     return s;
 }
 
+/* python string unicode */
 char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
-    if (PyUnicode_Check(o)) {  // need conversion
-        o = PyUnicode_AsUTF8String(o);
-        if (!o) {
-            PyErr_Print();
-            lua_error(L, "error converting unicode string");
-        }
+    o = PyUnicode_AsUTF8String(o);
+    if (!o) {
+        PyErr_Print();
+        lua_error(L, "error converting unicode string");
     }
     return get_pyobject_as_string(L, o);
 }
