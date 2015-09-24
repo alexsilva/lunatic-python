@@ -143,6 +143,20 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
+int py_convert(lua_State*, PyObject*);
+
+/* python object presentation */
+char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
+    char *repr = "...";
+    if (py_convert(L, PyObject_Str(pyobject))) {
+        lua_Object lstr = lua_pop(L);
+        if (lua_isstring(L, lstr)) {
+            repr = lua_getstring(L, lstr);
+        }
+    }
+    return repr;
+}
+
 /* python string bytes */
 char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
@@ -340,13 +354,7 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
         Py_DECREF(item);
     } else {
         PyErr_Clear();
-        char *keystr = "...";
-        if (py_convert(L, PyObject_Str(key))) {
-            lua_Object lstr = lua_pop(L);
-            if (lua_isstring(L, lstr)) {
-                keystr = lua_getstring(L, lstr);
-            }
-        }
+        char *keystr = get_pyobject_repr(L, key);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index or key" : "attribute";
         char buff[strlen(error) + strlen(name) + strlen(keystr) + 1];
