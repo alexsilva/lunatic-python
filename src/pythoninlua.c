@@ -735,10 +735,10 @@ LUA_API int luaopen_python(lua_State *L) {
     lua_Object python = lua_createtable(L);
 
     lua_pushcfunction(L, py_args);
-    lua_setglobal(L, "args");
+    lua_setglobal(L, "pyargs");
 
     lua_pushcfunction(L, py_kwargs);
-    lua_setglobal(L, "kwargs");
+    lua_setglobal(L, "pykwargs");
 
     lua_pushobject(L, python);
     lua_setglobal(L, "python");  // api python

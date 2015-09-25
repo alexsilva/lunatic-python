@@ -78,6 +78,6 @@ locals.TestFunc2(5, builtins.range(1,5))
 locals.TestFunc2(5, python.args(1,2,3,4))
 
 -- global args, kwargs
-locals.TestFunc3(args(1,2,3,4), kwargs{a=1, b=2, c=3})
-locals.TestFunc4(kwargs{a=1, b=2, c=3})
-locals.TestFunc5(args(1,2,3,4))
+locals.TestFunc3(pyargs(1,2,3,4), pykwargs{a=1, b=2, c=3})
+locals.TestFunc4(pykwargs{a=1, b=2, c=3})
+locals.TestFunc5(pyargs(1,2,3,4))
