@@ -101,7 +101,7 @@ static int get_base_tag(lua_State *L) {
     return lua_tag(L, lua_gettable(L));
 }
 
-static PyObject *LuaConvert(lua_State *L, int n) {
+static PyObject *lua_as_py_object(lua_State *L, int n) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
 
@@ -144,7 +144,7 @@ static PyObject *LuaConvert(lua_State *L, int n) {
 }
 // ----------------------------------------
 
-static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
+static int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     Py_INCREF(pobj);
     Py_INCREF(pobj);
 
@@ -235,7 +235,7 @@ static int py_convert(lua_State *L, PyObject *o) {
         int asindx = 0;
         if (PyList_Check(o) || PyTuple_Check(o) || PyDict_Check(o))
             asindx = 1;
-        ret = py_convert_custom(L, o, asindx);
+        ret = py_object_wrap_lua(L, o, asindx);
     }
     return ret;
 }
@@ -262,7 +262,7 @@ static void py_object_call(lua_State *L) {
     }
 
     for (i = 0; i != nargs; i++) {
-        PyObject *arg = LuaConvert(L, i + 2);
+        PyObject *arg = lua_as_py_object(L, i + 2);
         if (!arg) {
             Py_DECREF(args);
             char *error = "failed to convert argument #%d";
@@ -290,13 +290,13 @@ static void py_object_call(lua_State *L) {
 
 static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
     PyObject *value;
-    PyObject *key = LuaConvert(L, keyn);
+    PyObject *key = lua_as_py_object(L, keyn);
     if (!key) luaL_argerror(L, 1, "failed to convert key");
 
     lua_Object lobj = lua_getparam(L, valuen);
 
     if (!lua_isnil(L, lobj)) {
-        value = LuaConvert(L, valuen);
+        value = lua_as_py_object(L, valuen);
         if (!value) {
             Py_DECREF(key);
             luaL_argerror(L, 1, "failed to convert value");
@@ -349,7 +349,7 @@ static void py_object_newindex(lua_State *L) {
         luaL_argerror(L, 2, "string needed");
     }
 
-    value = LuaConvert(L, 3);
+    value = lua_as_py_object(L, 3);
     if (!value) {
         luaL_argerror(L, 1, "failed to convert value");
     }
@@ -365,7 +365,7 @@ static void py_object_newindex(lua_State *L) {
 }
 
 static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
-    PyObject *key = LuaConvert(L, keyn);
+    PyObject *key = lua_as_py_object(L, keyn);
     PyObject *item;
     int ret = 0;
 
@@ -491,7 +491,7 @@ static void py_asindx(lua_State *L) {
         luaL_argerror(L, 1, "not a python object");
     }
     Py_DECREF(pobj->o);
-    py_convert_custom(L, pobj->o, 1);
+    py_object_wrap_lua(L, pobj->o, 1);
     free(pobj);
 }
 
@@ -501,7 +501,7 @@ static void py_asattr(lua_State *L) {
         luaL_argerror(L, 1, "not a python object");
     }
     Py_DECREF(pobj->o);
-    py_convert_custom(L, pobj->o, 0);
+    py_object_wrap_lua(L, pobj->o, 0);
     free(pobj);
 }
 
@@ -522,7 +522,7 @@ static void py_globals(lua_State *L) {
         PyErr_Print();
         lua_error(L, "can't get globals");
     }
-    py_convert_custom(L, globals, 1);
+    py_object_wrap_lua(L, globals, 1);
 }
 
 static void py_locals(lua_State *L) {
@@ -536,7 +536,7 @@ static void py_locals(lua_State *L) {
         py_globals(L);
         return;
     }
-    py_convert_custom(L, locals, 1);
+    py_object_wrap_lua(L, locals, 1);
 }
 
 static void py_builtins(lua_State *L) {
@@ -551,7 +551,7 @@ static void py_builtins(lua_State *L) {
         PyErr_Print();
         lua_error(L, "failed to get builtins");
     }
-    py_convert_custom(L, builtins, 1);
+    py_object_wrap_lua(L, builtins, 1);
 }
 
 static void py_import(lua_State *L) {
@@ -570,7 +570,7 @@ static void py_import(lua_State *L) {
         lua_error(L, &buff[0]);
     }
 
-    py_convert_custom(L, module, 0);
+    py_object_wrap_lua(L, module, 0);
     Py_DECREF(module);
 }
 
