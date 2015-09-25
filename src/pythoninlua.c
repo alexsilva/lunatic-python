@@ -259,6 +259,65 @@ static int py_convert(lua_State *L, PyObject *o) {
     return ret;
 }
 
+/* convert to args python: fn(*args) */
+static void py_args(lua_State *L) {
+    int nargs = lua_gettop(L);
+
+    PyObject *args = PyTuple_New(nargs);
+    if (!args) {
+        PyErr_Print();
+        lua_error(L, "failed to create arguments tuple");
+    }
+
+    int i;
+    for (i = 0; i != nargs; i++) {
+        PyObject *arg = lua_as_py_object(L, i + 1);
+        if (!arg) {
+            Py_DECREF(args);
+            char *error = "failed to convert argument #%d";
+            char buff[strlen(error) + 10];
+            sprintf(buff, error, i + 1);
+            lua_error(L, &buff[0]);
+        }
+        PyTuple_SetItem(args, i, arg);
+    }
+    Py_INCREF(args);
+    lua_pushuserdata(L, args);
+}
+
+/* convert to kwargs python: fn(**kwargs) */
+static void py_kwargs(lua_State *L) {
+    int nargs = lua_gettop(L);
+    if (nargs < 1 || nargs > 1) {
+        lua_error(L, "only 1 table is expected");
+    }
+
+    lua_Object ltable = lua_getparam(L, 1);
+    if (!lua_istable(L, ltable)) {
+        lua_error(L, "first arg need be table ex: kwargs({a=10})");
+    }
+
+    PyObject *kwargs = PyDict_New();
+    if (!kwargs) {
+        PyErr_Print();
+        lua_error(L, "failed to create key words arguments dict");
+    }
+
+    PyObject *key, *value;
+    int index = lua_next(L, ltable, 1);
+
+    while (index != 0) {
+        key = lua_as_py_object(L, 1);
+        value = lua_as_py_object(L, 2);
+
+        PyDict_SetItem(kwargs, key, value);
+
+        index = lua_next(L, ltable, index);
+    }
+    Py_INCREF(kwargs);
+    lua_pushuserdata(L, kwargs);
+}
+
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     PyObject *args;
@@ -606,6 +665,8 @@ static struct luaL_reg py_lib[] = {
         {"builtins",    py_builtins},
         {"import",      py_import},
         {"system_init", python_system_init},
+        {"args"       , py_args},
+        {"kwargs"     , py_kwargs},
         {NULL, NULL}
 };
 
