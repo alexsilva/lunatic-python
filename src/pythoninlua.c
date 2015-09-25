@@ -184,7 +184,7 @@ static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
     if (!s) {
         PyErr_Print();
-        lua_error(L, "error converting python string");
+        lua_error(L, "converting python string");
     }
     return s;
 }
@@ -194,7 +194,7 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     o = PyUnicode_AsUTF8String(o);
     if (!o) {
         PyErr_Print();
-        lua_error(L, "error converting unicode string");
+        lua_error(L, "converting unicode string");
     }
     return get_pyobject_as_string(L, o);
 }
@@ -280,7 +280,7 @@ static void py_object_call(lua_State *L) {
     } else {
         PyErr_Print();
         char *name = get_pyobject_repr(L, pobj->o);
-        char *error = "error calling python function \"%s\"";
+        char *error = "calling python function \"%s\"";
         char buff[strlen(error) + strlen(name) + strlen(name) + 1];
         sprintf(buff, error, name);
         lua_error(L, &buff[0]);
