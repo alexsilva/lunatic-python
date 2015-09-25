@@ -168,6 +168,9 @@ static int py_convert(lua_State *, PyObject *);
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
+    char *attr_name = "__name__";
+    if (PyObject_HasAttrString(pyobject, attr_name)) // get real name!
+        pyobject = PyObject_GetAttrString(pyobject, attr_name);
     PyObject *str = PyObject_Str(pyobject);
     if (str && py_convert(L, str)) {
         lua_Object lstr = lua_pop(L);
