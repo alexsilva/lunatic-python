@@ -388,6 +388,8 @@ static void py_object_call(lua_State *L) {
                 args = pyobj;
             } else if (PyDict_Check(pyobj)) {
                 kwargs = pyobj;
+            } else {
+                args = _py_args(L, 0, true, true);
             }
         } else {
             args = _py_args(L, 0, true, true);
