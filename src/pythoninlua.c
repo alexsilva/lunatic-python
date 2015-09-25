@@ -148,7 +148,8 @@ static int py_convert(lua_State*, PyObject*);
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
-    if (py_convert(L, PyObject_Str(pyobject))) {
+    PyObject *str = PyObject_Str(pyobject);
+    if (str && py_convert(L, str)) {
         lua_Object lstr = lua_pop(L);
         if (lua_isstring(L, lstr)) {
             repr = lua_getstring(L, lstr);
