@@ -258,7 +258,7 @@ static void py_object_call(lua_State *L) {
     } else {
         PyErr_Print();
         char *name = get_pyobject_repr(L, pobj->o);
-        char *error = "error calling python \"%s\" function";
+        char *error = "error calling python function \"%s\"";
         char buff[strlen(error) + strlen(name) + strlen(name) + 1];
         sprintf(buff, error, name);
         lua_error(L, &buff[0]);
