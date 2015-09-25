@@ -68,14 +68,6 @@ static int lua_getboolean(lua_State *L, lua_Object obj) {
     lua_pushobject(L, obj);\
     lua_settable(L);
 
-static int str_format(char buff[], const char *format, ...) {
-    va_list argv;
-    va_start(argv, format);
-    vsprintf(buff, format, argv);
-    va_end(argv);
-    return 1;
-}
-
 static py_object *get_py_object(lua_State *L, int n) {
     lua_Object ltable = lua_getparam(L, n);
 
