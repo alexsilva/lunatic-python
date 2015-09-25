@@ -121,7 +121,7 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
     return 1;
 }
 
-static PyObject *_py_args(lua_State *, lua_Object, bool);
+static PyObject *_py_args(lua_State *, lua_Object, bool, bool);
 static PyObject *_py_kwargs(lua_State *, lua_Object);
 
 static PyObject *lua_as_py_object(lua_State *L, int n) {
@@ -153,7 +153,7 @@ static PyObject *lua_as_py_object(lua_State *L, int n) {
             free(pobj);
         } else {
             if (is_indexed_array(L, lobj)) {
-                ret = _py_args(L, lobj, false);
+                ret = _py_args(L, lobj, false, false);
             } else {
                 ret = _py_kwargs(L, lobj);
             }
@@ -166,10 +166,11 @@ static PyObject *lua_as_py_object(lua_State *L, int n) {
             Py_INCREF(Py_False);
             ret = Py_False;
         }
+    } else if (lua_isuserdata(L, lobj)) {
+        ret = (PyObject *) lua_getuserdata(L, lobj);
     }
     return ret;
 }
-// ----------------------------------------
 
 static int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     Py_INCREF(pobj);
@@ -268,10 +269,10 @@ static int py_convert(lua_State *L, PyObject *o) {
 }
 
 /* convert to args python: fn(*args) */
-static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
+static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
     int nargs;
     if (stacked) {
-        nargs = lua_gettop(L) - 1;
+        nargs = lua_gettop(L) - (wrapped ? 1 : 0);
     } else {
         lua_pushobject(L, ltable);
         lua_call(L, "getn");
@@ -285,7 +286,7 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
     if (stacked) {
         int i;
         for (i = 0; i != nargs; i++) {
-            PyObject *arg = lua_as_py_object(L, i + 2);
+            PyObject *arg = lua_as_py_object(L, i + (wrapped ? 2 : 1));
             if (!arg) {
                 Py_DECREF(args);
                 char *error = "failed to convert argument #%d";
@@ -298,7 +299,7 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
     } else {
         lua_beginblock(L);
         PyObject *value;
-        int index = lua_next(L, ltable, 1);
+        int index = lua_next(L, ltable, 0);
 
         while (index != 0) {
             value = lua_as_py_object(L, 2);
@@ -314,7 +315,7 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
 }
 
 static void py_args(lua_State *L) {
-    PyObject *args = _py_args(L, 0, true);
+    PyObject *args = _py_args(L, 0, true, false);
     Py_INCREF(args);
     lua_pushuserdata(L, args);
 }
@@ -389,17 +390,17 @@ static void py_object_call(lua_State *L) {
                 kwargs = pyobj;
             }
         } else {
-            args = _py_args(L, 0, true);
+            args = _py_args(L, 0, true, true);
         }
     } else if (nargs == 2) {  // is args and kwargs ?
         if (lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) { // convert to python
             args = (PyObject *) lua_getuserdata(L, largs);
             kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
         } else {
-            args = _py_args(L, 0, true);
+            args = _py_args(L, 0, true, true);
         }
     } else if (nargs > 0) {
-        args = _py_args(L, 0, true); // arbitrary args fn(1,2,'a')
+        args = _py_args(L, 0, true, true); // arbitrary args fn(1,2,'a')
     }
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {
