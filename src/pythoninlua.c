@@ -28,15 +28,15 @@
 #include "pythoninlua.h"
 
 // ----------------------------------------
-int lua_gettop(lua_State *L) {
+static int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
-int lua_isboolean(lua_State *L, lua_Object obj) {
+static int lua_isboolean(lua_State *L, lua_Object obj) {
     return lua_isuserdata(L, obj) && PyBool_Check((PyObject *) lua_getuserdata(L, obj));
 }
 
-int lua_getboolean(lua_State *L, lua_Object obj) {
+static int lua_getboolean(lua_State *L, lua_Object obj) {
     return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
 }
 
@@ -143,10 +143,10 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
-int py_convert(lua_State*, PyObject*);
+static int py_convert(lua_State*, PyObject*);
 
 /* python object presentation */
-char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
+static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
     if (py_convert(L, PyObject_Str(pyobject))) {
         lua_Object lstr = lua_pop(L);
@@ -158,7 +158,7 @@ char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
 }
 
 /* python string bytes */
-char *get_pyobject_as_string(lua_State *L, PyObject *o) {
+static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
     if (!s) {
         PyErr_Print();
@@ -168,7 +168,7 @@ char *get_pyobject_as_string(lua_State *L, PyObject *o) {
 }
 
 /* python string unicode */
-char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
+static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     o = PyUnicode_AsUTF8String(o);
     if (!o) {
         PyErr_Print();
@@ -177,7 +177,7 @@ char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     return get_pyobject_as_string(L, o);
 }
 
-int py_convert(lua_State *L, PyObject *o) {
+static int py_convert(lua_State *L, PyObject *o) {
     int ret = 0;
     if (o == Py_None || o == Py_False) {
         lua_pushnil(L);
@@ -627,7 +627,7 @@ LUA_API int luaopen_python(lua_State *L) {
 }
 
 /* Initialize Python interpreter */
-void python_system_init(lua_State *L) {
+static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
 
     if (!Py_IsInitialized()) {
