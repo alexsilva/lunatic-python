@@ -537,7 +537,7 @@ static void py_import(lua_State *L) {
 
     if (!module) {
         PyErr_Print();
-        char *error = "failed importing '%s'";
+        char *error = "failed importing \"%s\"";
         char buff[strlen(error) + strlen(name) + 1];
         sprintf(buff, error, name);
         lua_error(L, &buff[0]);
@@ -547,7 +547,7 @@ static void py_import(lua_State *L) {
     Py_DECREF(module);
 }
 
-void python_system_init(lua_State *L);
+static void python_system_init(lua_State *L);
 
 static struct luaL_reg py_lib[] = {
         {"execute",  py_execute},
