@@ -46,17 +46,24 @@ def TestFunc3(*args, **kwargs):
     _kwargs = {'a': 1, 'b': 2, 'c': 3}
     assert _args == args, '[TestFunc3] args no match!'
     for k in _kwargs:
-        assert k in kwargs, "[TestFunc] key not found"
-        assert kwargs[k] == _kwargs[k], "[TestFunc] data no match!"
+        assert k in kwargs, "[TestFunc3] key not found"
+        assert kwargs[k] == _kwargs[k], "[TestFunc3] data no match!"
 ]])
 
 python.execute([[
 def TestFunc4(*args, **kwargs):
     _kwargs = {'a': 1, 'b': 2, 'c': 3}
-    assert args == (), '[TestFunc3] args no match!'
+    assert args == (), '[TestFunc4] args no match!'
     for k in _kwargs:
-        assert k in kwargs, "[TestFunc] key not found"
-        assert kwargs[k] == _kwargs[k], "[TestFunc] data no match!"
+        assert k in kwargs, "[TestFunc4] key not found"
+        assert kwargs[k] == _kwargs[k], "[TestFunc4] data no match!"
+]])
+
+python.execute([[
+def TestFunc5(*args, **kwargs):
+    _args = (1,2,3,4)
+    assert args == _args, '[TestFunc5] args no match!'
+    assert kwargs == {}, '[TestFunc5] kwargs no match!'
 ]])
 
 local index = 0
@@ -73,3 +80,4 @@ locals.TestFunc2(5, python.args(1,2,3,4))
 -- global args, kwargs
 locals.TestFunc3(args(1,2,3,4), kwargs{a=1, b=2, c=3})
 locals.TestFunc4(kwargs{a=1, b=2, c=3})
+locals.TestFunc5(args(1,2,3,4))
