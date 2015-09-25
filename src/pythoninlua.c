@@ -26,6 +26,10 @@
 #include <lauxlib.h>
 
 #include "pythoninlua.h"
+#ifndef lua_next
+#include "lapi.h"
+#endif
+
 
 // ----------------------------------------
 static int lua_gettop(lua_State *L) {
@@ -101,6 +105,19 @@ static int get_base_tag(lua_State *L) {
     return lua_tag(L, lua_gettable(L));
 }
 
+/*checks if a table contains only numbers*/
+static int is_indexed_array(lua_State *L, lua_Object lobj) {
+    int index = lua_next(L, lobj, 1);
+    lua_Object key;
+    while (index != 0) {
+        key = lua_getparam(L, 1);
+        if (!lua_isnumber(L, key))
+            return 0;
+        index = lua_next(L, lobj, index);
+    }
+    return 1;
+}
+
 static PyObject *lua_as_py_object(lua_State *L, int n) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
@@ -129,7 +146,9 @@ static PyObject *lua_as_py_object(lua_State *L, int n) {
             ret = pobj->o;
             free(pobj);
         } else {
-            lua_error(L, "param not supported");
+            if (is_indexed_array(L, lobj)) {
+                lua_error(L, "param not supported");
+            }
         }
     } else if (lua_isboolean(L, lobj)) {
         if (lua_getboolean(L, lobj)) {
