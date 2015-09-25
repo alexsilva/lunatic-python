@@ -14,7 +14,9 @@ endif (UNIX)
 
 add_library(python MODULE
         src/pythoninlua.h
-        src/pythoninlua.c)
+        src/pythoninlua.c
+        src/lapi.c
+        src/lapi.h)
 # =====================
 set_target_properties(python PROPERTIES
         COMPILE_FLAGS "-m32"
