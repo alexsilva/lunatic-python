@@ -356,7 +356,7 @@ static void py_kwargs(lua_State *L) {
 
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    PyObject *args = NULL;
+    PyObject *args = PyTuple_New(0);
     PyObject *kwargs = NULL;
     PyObject *value;
 
@@ -393,10 +393,7 @@ static void py_object_call(lua_State *L) {
         }
     } else if (nargs > 0) {
         args = _py_args(L, 0, true); // arbitrary args fn(1,2,'a')
-    } else {
-        args = PyTuple_New(0);  // no args fn()
     }
-
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {
         py_convert(L, value);
