@@ -40,6 +40,42 @@ static int lua_getboolean(lua_State *L, lua_Object obj) {
     return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
 }
 
+/* set userdata */
+#define set_table_userdata(L, ltable, name, udata)\
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushuserdata(L, udata);\
+    lua_settable(L);
+
+/* set number */
+#define set_table_number(L, ltable, name, number)\
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushnumber(L, number);\
+    lua_settable(L);
+
+/* set function */
+#define set_table_fn(L, ltable, name, fn)\
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushcfunction(L, fn);\
+    lua_settable(L);
+
+/* set function */
+#define set_table_object(L, ltable, name, obj) \
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushobject(L, obj);\
+    lua_settable(L);
+
+static int str_format(char buff[], const char *format, ...) {
+    va_list argv;
+    va_start(argv, format);
+    vsprintf(buff, format, argv);
+    va_end(argv);
+    return 1;
+}
+
 static py_object *get_py_object(lua_State *L, int n) {
     lua_Object ltable = lua_getparam(L, n);
 
@@ -122,16 +158,8 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
 
     lua_Object ltable = lua_createtable(L);
 
-    // insert table
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, POBJECT);
-    lua_pushuserdata(L, pobj);
-    lua_settable(L);
-
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, ASINDX);
-    lua_pushnumber(L, asindx);
-    lua_settable(L);
+    set_table_userdata(L, ltable, POBJECT, pobj);
+    set_table_number(L, ltable, ASINDX, asindx);
 
     // register all tag methods
     int tag = get_base_tag(L);
@@ -143,7 +171,7 @@ static int py_convert_custom(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
-static int py_convert(lua_State*, PyObject*);
+static int py_convert(lua_State *, PyObject *);
 
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
@@ -241,12 +269,12 @@ static void py_object_call(lua_State *L) {
     }
 
     for (i = 0; i != nargs; i++) {
-        PyObject *arg = LuaConvert(L, i+2);
+        PyObject *arg = LuaConvert(L, i + 2);
         if (!arg) {
             Py_DECREF(args);
             char *error = "failed to convert argument #%d";
             char buff[strlen(error) + 10];
-            sprintf(buff, error, i+1);
+            sprintf(buff, error, i + 1);
             lua_error(L, &buff[0]);
         }
         PyTuple_SetItem(args, i, arg);
@@ -332,7 +360,7 @@ static void py_object_newindex(lua_State *L) {
         luaL_argerror(L, 1, "failed to convert value");
     }
 
-    if (PyObject_SetAttrString(obj->o, (char*)attr, value) == -1) {
+    if (PyObject_SetAttrString(obj->o, (char *) attr, value) == -1) {
         Py_DECREF(value);
         PyErr_Print();
         lua_error(L, "failed to set value");
@@ -412,13 +440,13 @@ static int py_run(lua_State *L, int eval) {
         return 0;
 
     if (!eval) {
-        len = strlen(s)+1;
-        buffer = (char *) malloc(len+1);
+        len = strlen(s) + 1;
+        buffer = (char *) malloc(len + 1);
         if (!buffer) {
             lua_error(L, "Failed allocating buffer for execution");
         }
         strcpy(buffer, s);
-        buffer[len-1] = '\n';
+        buffer[len - 1] = '\n';
         buffer[len] = '\0';
         s = buffer;
     }
@@ -534,7 +562,7 @@ static void py_import(lua_State *L) {
 
     if (!name) luaL_argerror(L, 1, "module name expected");
 
-    module = PyImport_ImportModule((char*) name);
+    module = PyImport_ImportModule((char *) name);
 
     if (!module) {
         PyErr_Print();
@@ -551,15 +579,15 @@ static void py_import(lua_State *L) {
 static void python_system_init(lua_State *L);
 
 static struct luaL_reg py_lib[] = {
-        {"execute",  py_execute},
-        {"eval",     py_eval},
-        {"asindex",  py_asindx},
-        {"asattr",   py_asattr},
-        {"str",      py_object_tostring},
-        {"locals",   py_locals},
-        {"globals",  py_globals},
-        {"builtins", py_builtins},
-        {"import",   py_import},
+        {"execute",     py_execute},
+        {"eval",        py_eval},
+        {"asindex",     py_asindx},
+        {"asattr",      py_asattr},
+        {"str",         py_object_tostring},
+        {"locals",      py_locals},
+        {"globals",     py_globals},
+        {"builtins",    py_builtins},
+        {"import",      py_import},
         {"system_init", python_system_init},
         {NULL, NULL}
 };
@@ -568,22 +596,10 @@ static struct luaL_reg lua_tag_methods[] = {
         {"function", py_object_call},
         {"index",    py_object_index},
         {"settable", py_object_newindex_set},
-        {"gc", py_object_gc},
+        {"gc",       py_object_gc},
         {NULL, NULL}
 };
 
-
-#define set_table(L, obj, name, value) \
-    lua_pushobject(L, obj); \
-    lua_pushstring(L, name); \
-    lua_pushcfunction(L, value); \
-    lua_settable(L);
-
-#define set_table_userdata(L, obj, name, value) \
-    lua_pushobject(L, obj); \
-    lua_pushstring(L, name); \
-    lua_pushuserdata(L, value); \
-    lua_settable(L);
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
@@ -594,7 +610,7 @@ LUA_API int luaopen_python(lua_State *L) {
 
     int index = 0;
     while (py_lib[index].name) {
-        set_table(L, python, py_lib[index].name, py_lib[index].func);
+        set_table_fn(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
 
@@ -603,11 +619,7 @@ LUA_API int luaopen_python(lua_State *L) {
 
     // base python object
     lua_Object ltable = lua_createtable(L);
-
-    lua_pushobject(L, python); \
-    lua_pushstring(L, POBJECT); \
-    lua_pushobject(L, ltable); \
-    lua_settable(L);
+    set_table_object(L, python, POBJECT, ltable);
 
     // register all tag methods
     int ntag = lua_newtag(L);
