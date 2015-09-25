@@ -24,6 +24,7 @@
 
 #include <lua.h>
 #include <lauxlib.h>
+#include <stdbool.h>
 
 #include "pythoninlua.h"
 #ifndef lua_next
@@ -118,6 +119,9 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
     return 1;
 }
 
+static PyObject *_py_args(lua_State *, lua_Object, bool);
+static PyObject *_py_kwargs(lua_State *, lua_Object);
+
 static PyObject *lua_as_py_object(lua_State *L, int n) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
@@ -147,7 +151,9 @@ static PyObject *lua_as_py_object(lua_State *L, int n) {
             free(pobj);
         } else {
             if (is_indexed_array(L, lobj)) {
-                lua_error(L, "param not supported");
+                ret = _py_args(L, lobj, false);
+            } else {
+                ret = _py_kwargs(L, lobj);
             }
         }
     } else if (lua_isboolean(L, lobj)) {
@@ -260,7 +266,7 @@ static int py_convert(lua_State *L, PyObject *o) {
 }
 
 /* convert to args python: fn(*args) */
-static void py_args(lua_State *L) {
+static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
     int nargs = lua_gettop(L);
 
     PyObject *args = PyTuple_New(nargs);
@@ -269,34 +275,43 @@ static void py_args(lua_State *L) {
         lua_error(L, "failed to create arguments tuple");
     }
 
-    int i;
-    for (i = 0; i != nargs; i++) {
-        PyObject *arg = lua_as_py_object(L, i + 1);
-        if (!arg) {
-            Py_DECREF(args);
-            char *error = "failed to convert argument #%d";
-            char buff[strlen(error) + 10];
-            sprintf(buff, error, i + 1);
-            lua_error(L, &buff[0]);
+    if (stacked) {
+        int i;
+        for (i = 0; i != nargs; i++) {
+            PyObject *arg = lua_as_py_object(L, i + 1);
+            if (!arg) {
+                Py_DECREF(args);
+                char *error = "failed to convert argument #%d";
+                char buff[strlen(error) + 10];
+                sprintf(buff, error, i + 1);
+                lua_error(L, &buff[0]);
+            }
+            PyTuple_SetItem(args, i, arg);
         }
-        PyTuple_SetItem(args, i, arg);
+    } else {
+        PyObject *value;
+        int index = lua_next(L, ltable, 1);
+
+        while (index != 0) {
+            lua_getnumber(L, 1);
+            value = lua_as_py_object(L, 2);
+
+            PyTuple_SetItem(args, index - 1, value);
+
+            index = lua_next(L, ltable, index);
+        }
     }
+    return args;
+}
+
+static void py_args(lua_State *L) {
+    PyObject *args = _py_args(L, 0, true);
     Py_INCREF(args);
     lua_pushuserdata(L, args);
 }
 
 /* convert to kwargs python: fn(**kwargs) */
-static void py_kwargs(lua_State *L) {
-    int nargs = lua_gettop(L);
-    if (nargs < 1 || nargs > 1) {
-        lua_error(L, "only 1 table is expected");
-    }
-
-    lua_Object ltable = lua_getparam(L, 1);
-    if (!lua_istable(L, ltable)) {
-        lua_error(L, "first arg need be table ex: kwargs({a=10})");
-    }
-
+static PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
     PyObject *kwargs = PyDict_New();
     if (!kwargs) {
         PyErr_Print();
@@ -314,13 +329,29 @@ static void py_kwargs(lua_State *L) {
 
         index = lua_next(L, ltable, index);
     }
+    return kwargs;
+}
+
+static void py_kwargs(lua_State *L) {
+    int nargs = lua_gettop(L);
+    if (nargs < 1 || nargs > 1) {
+        lua_error(L, "only 1 table is expected");
+    }
+
+    lua_Object ltable = lua_getparam(L, 1);
+    if (!lua_istable(L, ltable)) {
+        lua_error(L, "first arg need be table ex: kwargs({a=10})");
+    }
+
+    PyObject *kwargs = _py_kwargs(L, ltable);
     Py_INCREF(kwargs);
     lua_pushuserdata(L, kwargs);
 }
 
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    PyObject *args;
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
     PyObject *value;
 
     int nargs = lua_gettop(L)-1;
@@ -333,25 +364,32 @@ static void py_object_call(lua_State *L) {
         lua_error(L, "object is not callable");
     }
 
-    args = PyTuple_New(nargs);
-    if (!args) {
-        PyErr_Print();
-        lua_error(L, "failed to create arguments tuple");
-    }
+    lua_Object largs = lua_getparam(L, 2);
+    lua_Object lkwargs = lua_getparam(L, 3);
 
-    for (i = 0; i != nargs; i++) {
-        PyObject *arg = lua_as_py_object(L, i + 2);
-        if (!arg) {
-            Py_DECREF(args);
-            char *error = "failed to convert argument #%d";
-            char buff[strlen(error) + 10];
-            sprintf(buff, error, i + 1);
-            lua_error(L, &buff[0]);
+    if (nargs == 1) { // is args in py_object format ?!
+        if (lua_isuserdata(L, largs)) {
+            PyObject *pyobj = (PyObject *) lua_getuserdata(L, largs);
+            if (PyTuple_Check(pyobj)) {
+                args = pyobj;
+            } else if (PyDict_Check(pyobj)) {
+                kwargs = pyobj;
+            }
+        } else {
+            args = _py_args(L, 0, true);
         }
-        PyTuple_SetItem(args, i, arg);
+    } else if (nargs == 2) {  // is args and kwargs ?
+        if (lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) { // convert to python
+            args = (PyObject *) lua_getuserdata(L, largs);
+            kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
+        } else {
+            args = _py_args(L, 0, true);
+        }
+    } else {
+        args = _py_args(L, 0, true); // arbitrary args fn(1,2,'a')
     }
 
-    value = PyObject_CallObject(pobj->o, args);
+    value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {
         py_convert(L, value);
         Py_DECREF(value);
