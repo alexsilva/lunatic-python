@@ -109,7 +109,7 @@ static int get_base_tag(lua_State *L) {
 /*checks if a table contains only numbers*/
 static int is_indexed_array(lua_State *L, lua_Object lobj) {
     lua_beginblock(L);
-    int index = lua_next(L, lobj, 1);
+    int index = lua_next(L, lobj, 0);
     lua_Object key;
     while (index != 0) {
         key = lua_getparam(L, 1);
@@ -296,16 +296,19 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked) {
             PyTuple_SetItem(args, i, arg);
         }
     } else {
+        lua_beginblock(L);
         PyObject *value;
         int index = lua_next(L, ltable, 1);
 
         while (index != 0) {
             value = lua_as_py_object(L, 2);
+            Py_INCREF(value);
 
             PyTuple_SetItem(args, index - 2, value);
 
             index = lua_next(L, ltable, index);
         }
+        lua_endblock(L);
     }
     return args;
 }
@@ -323,18 +326,22 @@ static PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
         PyErr_Print();
         lua_error(L, "failed to create key words arguments dict");
     }
-
+    lua_beginblock(L);
     PyObject *key, *value;
-    int index = lua_next(L, ltable, 1);
+    int index = lua_next(L, ltable, 0);
 
     while (index != 0) {
         key = lua_as_py_object(L, 1);
+        Py_INCREF(key);
+
         value = lua_as_py_object(L, 2);
+        Py_INCREF(value);
 
         PyDict_SetItem(kwargs, key, value);
 
         index = lua_next(L, ltable, index);
     }
+    lua_endblock(L);
     return kwargs;
 }
 
