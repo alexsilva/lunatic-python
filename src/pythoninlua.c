@@ -168,15 +168,13 @@ static int py_convert(lua_State *, PyObject *);
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
-    char *attr_name = "__name__";
-    if (PyObject_HasAttrString(pyobject, attr_name)) // get real name!
-        pyobject = PyObject_GetAttrString(pyobject, attr_name);
+    char *name = "__name__"; // get real name!
+    if (PyObject_HasAttrString(pyobject, name)) {
+        pyobject = PyObject_GetAttrString(pyobject, name);
+    }
     PyObject *str = PyObject_Str(pyobject);
-    if (str && py_convert(L, str)) {
-        lua_Object lstr = lua_pop(L);
-        if (lua_isstring(L, lstr)) {
-            repr = lua_getstring(L, lstr);
-        }
+    if (str) {
+        repr = PyString_AsString(pyobject);
     }
     return repr;
 }
