@@ -168,8 +168,6 @@ PyObject *lua_convert(lua_State *L, int n) {
         }
     } else if (lua_isuserdata(L, lobj)) {
         ret = (PyObject *) lua_getuserdata(L, lobj);
-    } else {
-        ret = Py_None;
     }
     return ret;
 }

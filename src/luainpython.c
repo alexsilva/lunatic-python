@@ -302,10 +302,9 @@ static PyObject *LuaObject_str(PyObject *obj)
 
 static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
 {
-    //lua_settop(LuaState, 0);
-    //lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
+    lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
 
-    return NULL;//LuaCall(LuaState, args);
+    return LuaCall(LuaState, "", args);
 }
 
 static PyObject *LuaObject_iternext(LuaObject *obj)
@@ -436,6 +435,12 @@ PyObject *Lua_run(PyObject *args, int eval)
     free(buf);
 
     ret = lua_convert(LuaState, 1);
+
+    if (!ret && lua_getparam(LuaState, 1) !=0) {
+        ret = LuaObject_New(1);
+    } else {
+        ret = Py_None;
+    }
     return ret;
 }
 
@@ -467,7 +472,8 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
 
 static PyObject *Lua_require(PyObject *self, PyObject *args)
 {
-    if (lua_isnil(LuaState, lua_getglobal(LuaState, "dofile"))) {
+    lua_Object lobj = lua_getglobal(LuaState, "dofile");
+    if (lua_isnil(LuaState, lobj)) {
         PyErr_SetString(PyExc_RuntimeError, "require is not defined");
         return NULL;
     }
