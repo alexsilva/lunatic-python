@@ -101,7 +101,6 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
 
     if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError, "tuple expected");
-        //lua_settop(L, 0);
         return NULL;
     }
 
@@ -111,14 +110,12 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
         if (arg == NULL) {
             PyErr_Format(PyExc_TypeError,
                      "failed to get tuple item #%d", i);
-            //lua_settop(L, 0);
             return NULL;
         }
         rc = py_convert(L, arg);
         if (!rc) {
             PyErr_Format(PyExc_TypeError,
                      "failed to convert argument #%d", i);
-            //lua_settop(L, 0);
             return NULL;
         }
     }
@@ -135,7 +132,6 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
         if (!ret) {
             PyErr_SetString(PyExc_TypeError,
                         "failed to convert return");
-            //lua_settop(L, 0);
             Py_DECREF(ret);
             return NULL;
         }
@@ -144,7 +140,6 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
         if (!ret) {
             PyErr_SetString(PyExc_RuntimeError,
                     "failed to create return tuple");
-            //lua_settop(L, 0);
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
@@ -152,7 +147,6 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
             if (!arg) {
                 PyErr_Format(PyExc_TypeError,
                          "failed to convert return #%d", i);
-                //lua_settop(L, 0);
                 Py_DECREF(ret);
                 return NULL;
             }
@@ -162,8 +156,6 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
         Py_INCREF(Py_None);
         ret = Py_None;
     }
-    
-    //lua_settop(L, 0);
     return ret;
 }
 
@@ -441,8 +433,7 @@ PyObject *Lua_run(PyObject *args, int eval)
 
     free(buf);
 
-    ret = LuaConvert(LuaState, -1);
-    //lua_settop(LuaState, 0);
+    ret = lua_convert(LuaState, 1);
     return ret;
 }
 
@@ -465,7 +456,7 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
                 "lost globals reference");
         return NULL;
     }
-    ret = LuaConvert(LuaState, 1);
+    ret = lua_convert(LuaState, 1);
     if (!ret)
         PyErr_Format(PyExc_TypeError,
                  "failed to convert globals table");

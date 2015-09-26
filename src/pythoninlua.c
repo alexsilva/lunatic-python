@@ -124,7 +124,7 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
 static PyObject *_py_args(lua_State *, lua_Object, bool, bool);
 static PyObject *_py_kwargs(lua_State *, lua_Object);
 
-static PyObject *lua_as_py_object(lua_State *L, int n) {
+PyObject *lua_convert(lua_State *L, int n) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getparam(L, n);
 
@@ -286,7 +286,7 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool w
     if (stacked) {
         int i;
         for (i = 0; i != nargs; i++) {
-            PyObject *arg = lua_as_py_object(L, i + (wrapped ? 2 : 1));
+            PyObject *arg = lua_convert(L, i + (wrapped ? 2 : 1));
             if (!arg) {
                 Py_DECREF(args);
                 char *error = "failed to convert argument #%d";
@@ -302,7 +302,7 @@ static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool w
         int index = lua_next(L, ltable, 0);
 
         while (index != 0) {
-            value = lua_as_py_object(L, 2);
+            value = lua_convert(L, 2);
             Py_INCREF(value);
 
             PyTuple_SetItem(args, index - 2, value);
@@ -332,10 +332,10 @@ static PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
     int index = lua_next(L, ltable, 0);
 
     while (index != 0) {
-        key = lua_as_py_object(L, 1);
+        key = lua_convert(L, 1);
         Py_INCREF(key);
 
-        value = lua_as_py_object(L, 2);
+        value = lua_convert(L, 2);
         Py_INCREF(value);
 
         PyDict_SetItem(kwargs, key, value);
@@ -421,13 +421,13 @@ static void py_object_call(lua_State *L) {
 
 static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
     PyObject *value;
-    PyObject *key = lua_as_py_object(L, keyn);
+    PyObject *key = lua_convert(L, keyn);
     if (!key) luaL_argerror(L, 1, "failed to convert key");
 
     lua_Object lobj = lua_getparam(L, valuen);
 
     if (!lua_isnil(L, lobj)) {
-        value = lua_as_py_object(L, valuen);
+        value = lua_convert(L, valuen);
         if (!value) {
             Py_DECREF(key);
             luaL_argerror(L, 1, "failed to convert value");
@@ -480,7 +480,7 @@ static void py_object_newindex(lua_State *L) {
         luaL_argerror(L, 2, "string needed");
     }
 
-    value = lua_as_py_object(L, 3);
+    value = lua_convert(L, 3);
     if (!value) {
         luaL_argerror(L, 1, "failed to convert value");
     }
@@ -496,7 +496,7 @@ static void py_object_newindex(lua_State *L) {
 }
 
 static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
-    PyObject *key = lua_as_py_object(L, keyn);
+    PyObject *key = lua_convert(L, keyn);
     PyObject *item;
     int ret = 0;
 
