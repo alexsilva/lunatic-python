@@ -28,6 +28,9 @@
 #define POBJECT "POBJECT"
 #define ASINDX "ASINDX"
 
+int lua_gettop(lua_State *L);
+int py_convert(lua_State *L, PyObject *o);
+
 #if defined(WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
 #else //  GCC

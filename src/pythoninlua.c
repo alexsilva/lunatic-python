@@ -33,7 +33,7 @@
 
 
 // ----------------------------------------
-static int lua_gettop(lua_State *L) {
+int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
@@ -191,7 +191,7 @@ static int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
-static int py_convert(lua_State *, PyObject *);
+int py_convert(lua_State *, PyObject *);
 
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
@@ -227,7 +227,7 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     return get_pyobject_as_string(L, o);
 }
 
-static int py_convert(lua_State *L, PyObject *o) {
+int py_convert(lua_State *L, PyObject *o) {
     int ret = 0;
     if (o == Py_None || o == Py_False) {
         lua_pushnil(L);
