@@ -463,14 +463,12 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
     if (lua_isnil(LuaState, lobj)) {
         PyErr_SetString(PyExc_RuntimeError,
                 "lost globals reference");
-        //lua_pop(LuaState, 1);
         return NULL;
     }
     ret = LuaConvert(LuaState, 1);
     if (!ret)
         PyErr_Format(PyExc_TypeError,
                  "failed to convert globals table");
-    //lua_settop(LuaState, 0);
     return ret;
 }
 
