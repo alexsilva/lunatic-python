@@ -38,6 +38,10 @@ lua_State *LuaState = NULL;
 
 static PyObject *LuaObject_New(int n);
 
+static int lua_gettop(lua_State *L) {
+    return 0;
+}
+
 PyObject *LuaConvert(lua_State *L, int n) {
 
     PyObject *ret = NULL;
@@ -94,7 +98,7 @@ PyObject *LuaConvert(lua_State *L, int n) {
     return ret;
 }
 
-static PyObject *LuaCall(lua_State *L, PyObject *args) {
+static PyObject *LuaCall(lua_State *L, char *pName, PyObject *args) {
     PyObject *ret = NULL;
     PyObject *arg;
     int nargs, rc, i;
@@ -120,15 +124,14 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
         }
     }
 
-//    if (lua_pcall(L, nargs, LUA_MULTRET, 0) != 0) {
-//        PyErr_Format(PyExc_Exception,
-//                 "error: %s", lua_tostring(L, -1));
-//        return NULL;
-//    }
+    if (lua_call(LuaState, pName)) {
+        PyErr_Format(PyExc_Exception, "error: %s", pName);
+        return NULL;
+    }
 
     nargs = lua_gettop(L);
     if (nargs == 1) {
-        ret = LuaConvert(L, 1);
+        ret = lua_convert(L, 1);
         if (!ret) {
             PyErr_SetString(PyExc_TypeError,
                         "failed to convert return");
@@ -143,7 +146,7 @@ static PyObject *LuaCall(lua_State *L, PyObject *args) {
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
-            arg = LuaConvert(L, i+1);
+            arg = lua_convert(L, i+1);
             if (!arg) {
                 PyErr_Format(PyExc_TypeError,
                          "failed to convert return #%d", i);
@@ -302,7 +305,7 @@ static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
     //lua_settop(LuaState, 0);
     //lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
 
-    return LuaCall(LuaState, args);
+    return NULL;//LuaCall(LuaState, args);
 }
 
 static PyObject *LuaObject_iternext(LuaObject *obj)
@@ -347,8 +350,7 @@ static PyObject *LuaObject_subscript(PyObject *obj, PyObject *key)
     return LuaObject_getattr(obj, key);
 }
 
-static int LuaObject_ass_subscript(PyObject *obj,
-                   PyObject *key, PyObject *value)
+static int LuaObject_ass_subscript(PyObject *obj, PyObject *key, PyObject *value)
 {
     return LuaObject_setattr(obj, key, value);
 }
@@ -465,13 +467,11 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
 
 static PyObject *Lua_require(PyObject *self, PyObject *args)
 {
-    lua_Object require = lua_getglobal(LuaState, "dofile");
-
-    if (lua_isnil(LuaState, require)) {
+    if (lua_isnil(LuaState, lua_getglobal(LuaState, "dofile"))) {
         PyErr_SetString(PyExc_RuntimeError, "require is not defined");
         return NULL;
     }
-    return LuaCall(LuaState, args);
+    return LuaCall(LuaState, "dofile", args);
 }
 
 static PyMethodDef lua_methods[] = {

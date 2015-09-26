@@ -28,7 +28,6 @@
 #define POBJECT "POBJECT"
 #define ASINDX "ASINDX"
 
-int lua_gettop(lua_State *L);
 int py_convert(lua_State *L, PyObject *o);
 PyObject *lua_convert(lua_State *L, int n);
 
