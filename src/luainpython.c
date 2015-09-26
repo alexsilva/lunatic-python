@@ -479,8 +479,6 @@ static PyObject *Lua_require(PyObject *self, PyObject *args)
     lua_Object require = lua_getglobal(LuaState, "dofile");
 
     if (lua_isnil(LuaState, require)) {
-        // lua_pop(LuaState);
-
         PyErr_SetString(PyExc_RuntimeError, "require is not defined");
         return NULL;
     }
