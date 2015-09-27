@@ -51,7 +51,7 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
 }
 
 /* convert to args python: fn(*args) */
-PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
+PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
     int nargs;
     if (stacked) {
         nargs = lua_gettop_c(L) - (wrapped ? 1 : 0);
@@ -97,13 +97,13 @@ PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool wrapped)
 }
 
 void py_args(lua_State *L) {
-    PyObject *args = _py_args(L, 0, true, false);
+    PyObject *args = get_py_tuple(L, 0, true, false);
     Py_INCREF(args);
     lua_pushuserdata(L, args);
 }
 
 /* convert to kwargs python: fn(**kwargs) */
-PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
+PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     PyObject *kwargs = PyDict_New();
     if (!kwargs) {
         PyErr_Print();
@@ -139,7 +139,7 @@ void py_kwargs(lua_State *L) {
         lua_error(L, "first arg need be table ex: kwargs({a=10})");
     }
 
-    PyObject *kwargs = _py_kwargs(L, ltable);
+    PyObject *kwargs = get_py_dict(L, ltable);
     Py_INCREF(kwargs);
     lua_pushuserdata(L, kwargs);
 }
@@ -196,9 +196,9 @@ PyObject *lua_convert(lua_State *L, int n) {
             free(pobj);
         } else {
             if (is_indexed_array(L, lobj)) {
-                ret = _py_args(L, lobj, false, false);
+                ret = get_py_tuple(L, lobj, false, false);
             } else {
-                ret = _py_kwargs(L, lobj);
+                ret = get_py_dict(L, lobj);
             }
         }
     } else if (lua_isboolean(L, lobj)) {

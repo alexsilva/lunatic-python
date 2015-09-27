@@ -101,20 +101,20 @@ static void py_object_call(lua_State *L) {
             } else if (PyDict_Check(pyobj)) {
                 kwargs = pyobj;
             } else {
-                args = _py_args(L, 0, true, true);
+                args = get_py_tuple(L, 0, true, true);
             }
         } else {
-            args = _py_args(L, 0, true, true);
+            args = get_py_tuple(L, 0, true, true);
         }
     } else if (nargs == 2) {  // is args and kwargs ?
         if (lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) { // convert to python
             args = (PyObject *) lua_getuserdata(L, largs);
             kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
         } else {
-            args = _py_args(L, 0, true, true);
+            args = get_py_tuple(L, 0, true, true);
         }
     } else if (nargs > 0) {
-        args = _py_args(L, 0, true, true); // arbitrary args fn(1,2,'a')
+        args = get_py_tuple(L, 0, true, true); // arbitrary args fn(1,2,'a')
     }
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {

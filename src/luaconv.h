@@ -21,8 +21,8 @@ int lua_getboolean(lua_State *L, lua_Object obj);
 int lua_gettop_c(lua_State *L);
 int get_base_tag(lua_State *L);
 
-PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool wrapped);
-PyObject *_py_kwargs(lua_State *L, lua_Object ltable);
+PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapped);
+PyObject *get_py_dict(lua_State *L, lua_Object ltable);
 
 void py_kwargs(lua_State *L);
 void py_args(lua_State *L);
