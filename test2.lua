@@ -81,3 +81,19 @@ locals.TestFunc2(5, python.args(1,2,3,4))
 locals.TestFunc3(pyargs(1,2,3,4), pykwargs{a=1, b=2, c=3})
 locals.TestFunc4(pykwargs{a=1, b=2, c=3})
 locals.TestFunc5(pyargs(1,2,3,4))
+
+-- lua callback teste
+function cmp_callback(a, b)
+    return a > b
+end
+
+local res_expected = builtins.iter({-5, -1, 0, 1, 4, 7, 10, 100})
+local result = builtins.sorted({1, -1, 4, 10, 0, 100, 7, -5}, cmp_callback)
+local v = builtins.next(res_expected);
+
+while (v) do
+    if (not python.eval(tostring(v)..[[ in ]]..builtins.str(result))) then
+        error("value "..tostring(v).." not in "..builtins.str(result))
+    end
+    v = builtins.next(res_expected, python.False);
+end
