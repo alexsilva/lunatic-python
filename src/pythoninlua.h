@@ -25,7 +25,7 @@
 
 #include "lua.h"
 
-#if defined(WIN32) //  Microsoft
+#if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
 #else //  GCC
 #define LUA_API __attribute__((visibility("default")))
