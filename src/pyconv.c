@@ -88,6 +88,9 @@ int py_convert(lua_State *L, PyObject *o) {
     } else if (PyFloat_Check(o)) {
         lua_pushnumber(L, PyFloat_AsDouble(o));
         ret = 1;
+    } else if (LuaObject_Check(o)) {
+        lua_pushobject(L, lua_getref(L, ((LuaObject*)o)->ref));
+        ret = 1;
     } else {
         int asindx = 0;
         if (PyList_Check(o) || PyTuple_Check(o) || PyDict_Check(o))
