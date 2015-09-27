@@ -35,31 +35,6 @@
 #include "pyconv.h"
 #include "utils.h"
 
-static py_object *get_py_object(lua_State *L, int n) {
-    lua_Object ltable = lua_getparam(L, n);
-
-    if (!lua_istable(L, ltable))
-        lua_error(L, "wrap table not found!");
-
-    py_object *po = (py_object *) malloc(sizeof(py_object));
-
-    if (po == NULL)
-        return NULL;
-
-    // python object recover
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, POBJECT);
-
-    po->o = (PyObject *) lua_getuserdata(L, lua_rawgettable(L));
-
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, ASINDX);
-
-    po->asindx = (int) lua_getnumber(L, lua_rawgettable(L));
-
-    return po;
-}
-
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
@@ -469,6 +444,7 @@ LUA_API int luaopen_python(lua_State *L) {
     // base python object
     lua_Object ltable = lua_createtable(L);
     set_table_object(L, python, POBJECT, ltable);
+    set_table_userdata(L, ltable, "base", Py_True);
 
     // register all tag methods
     int ntag = lua_newtag(L);

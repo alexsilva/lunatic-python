@@ -35,8 +35,15 @@ int get_base_tag(lua_State *L) {
     return lua_tag(L, lua_gettable(L));
 }
 
+static int is_wrap_base(lua_State *L, lua_Object lobj) {
+    lua_pushobject(L, lobj);
+    lua_pushstring(L, "base");
+    lua_Object base = lua_rawgettable(L);
+    return lua_isboolean(L, base) && lua_getboolean(L, base);
+}
+
 static int is_wrapped_object(lua_State *L, lua_Object lobj) {
-    return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj);
+    return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
 }
 
 /*checks if a table contains only numbers*/
@@ -148,7 +155,7 @@ void py_kwargs(lua_State *L) {
     lua_pushuserdata(L, dict);
 }
 
-static py_object *get_py_object(lua_State *L, int n) {
+py_object *get_py_object(lua_State *L, int n) {
     lua_Object ltable = lua_getparam(L, n);
 
     if (!lua_istable(L, ltable))

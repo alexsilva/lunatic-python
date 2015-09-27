@@ -21,15 +21,17 @@ set(PYTHON_SOURCES
     src/pyconv.c
     src/pyconv.h
     src/lapi.c
-    src/lapi.h)
+    src/lapi.h
+    src/utils.h)
 
 set(LUA_SOURCES
     src/luainpython.h
     src/luainpython.c
     src/pyconv.h
-    src/pyconv.c src/utils.h)
+    src/pyconv.c
+    src/utils.h)
 
-add_library(python MODULE ${PYTHON_SOURCES} src/utils.h)
+add_library(python MODULE ${PYTHON_SOURCES})
 add_library(lualib MODULE ${PYTHON_SOURCES} ${LUA_SOURCES})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")

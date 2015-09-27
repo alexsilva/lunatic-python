@@ -44,6 +44,7 @@ int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
 
     set_table_userdata(L, ltable, POBJECT, pobj);
     set_table_number(L, ltable, ASINDX, asindx);
+    set_table_userdata(L, ltable, "base", Py_False);  // derived
 
     // register all tag methods
     int tag = get_base_tag(L);
