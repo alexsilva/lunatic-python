@@ -31,47 +31,9 @@
 #include "lapi.h"
 #endif
 
-
-// ----------------------------------------
-static int lua_gettop(lua_State *L) {
-    return L->Cstack.num;
-}
-
-static int lua_isboolean(lua_State *L, lua_Object obj) {
-    return lua_isuserdata(L, obj) && PyBool_Check((PyObject *) lua_getuserdata(L, obj));
-}
-
-static int lua_getboolean(lua_State *L, lua_Object obj) {
-    return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
-}
-
-/* set userdata */
-#define set_table_userdata(L, ltable, name, udata)\
-    lua_pushobject(L, ltable);\
-    lua_pushstring(L, name);\
-    lua_pushuserdata(L, udata);\
-    lua_settable(L);
-
-/* set number */
-#define set_table_number(L, ltable, name, number)\
-    lua_pushobject(L, ltable);\
-    lua_pushstring(L, name);\
-    lua_pushnumber(L, number);\
-    lua_settable(L);
-
-/* set function */
-#define set_table_fn(L, ltable, name, fn)\
-    lua_pushobject(L, ltable);\
-    lua_pushstring(L, name);\
-    lua_pushcfunction(L, fn);\
-    lua_settable(L);
-
-/* set function */
-#define set_table_object(L, ltable, name, obj) \
-    lua_pushobject(L, ltable);\
-    lua_pushstring(L, name);\
-    lua_pushobject(L, obj);\
-    lua_settable(L);
+#include "luaconv.h"
+#include "pyconv.h"
+#include "utils.h"
 
 static py_object *get_py_object(lua_State *L, int n) {
     lua_Object ltable = lua_getparam(L, n);
@@ -98,101 +60,6 @@ static py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
-/*Base table object*/
-static int get_base_tag(lua_State *L) {
-    lua_Object python = lua_getglobal(L, "python");
-    lua_pushobject(L, python);
-    lua_pushstring(L, POBJECT);
-    return lua_tag(L, lua_gettable(L));
-}
-
-/*checks if a table contains only numbers*/
-static int is_indexed_array(lua_State *L, lua_Object lobj) {
-    lua_beginblock(L);
-    int index = lua_next(L, lobj, 0);
-    lua_Object key;
-    while (index != 0) {
-        key = lua_getparam(L, 1);
-        if (!lua_isnumber(L, key))
-            return 0;
-        index = lua_next(L, lobj, index);
-    }
-    lua_endblock(L);
-    return 1;
-}
-
-static PyObject *_py_args(lua_State *, lua_Object, bool, bool);
-static PyObject *_py_kwargs(lua_State *, lua_Object);
-
-PyObject *lua_convert(lua_State *L, int n) {
-    PyObject *ret = NULL;
-    lua_Object lobj = lua_getparam(L, n);
-
-    if (lua_isnil(L, lobj)) {
-        Py_INCREF(Py_None);
-        ret = Py_None;
-
-    } else if (lua_isnumber(L, lobj)) {
-        double num = lua_getnumber(L, lobj);
-        if (rintf((float) num) == num) {  // is int?
-            ret = PyInt_FromLong((long) num);
-        } else {
-            ret = PyFloat_FromDouble(num);
-        }
-    } else if (lua_isstring(L, lobj)) {
-        const char *s = lua_getstring(L, lobj);
-        int len = lua_strlen(L, lobj);
-        ret = PyString_FromStringAndSize(s, len);
-        if (!ret) {
-            ret = PyUnicode_FromStringAndSize(s, len);
-        }
-    } else if (lua_istable(L, lobj)) {
-        if (get_base_tag(L) == lua_tag(L, lobj)) {
-            py_object *pobj = get_py_object(L, n);
-            ret = pobj->o;
-            free(pobj);
-        } else {
-            if (is_indexed_array(L, lobj)) {
-                ret = _py_args(L, lobj, false, false);
-            } else {
-                ret = _py_kwargs(L, lobj);
-            }
-        }
-    } else if (lua_isboolean(L, lobj)) {
-        if (lua_getboolean(L, lobj)) {
-            Py_INCREF(Py_True);
-            ret = Py_True;
-        } else {
-            Py_INCREF(Py_False);
-            ret = Py_False;
-        }
-    } else if (lua_isuserdata(L, lobj)) {
-        ret = (PyObject *) lua_getuserdata(L, lobj);
-    }
-    return ret;
-}
-
-static int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
-    Py_INCREF(pobj);
-    Py_INCREF(pobj);
-
-    lua_Object ltable = lua_createtable(L);
-
-    set_table_userdata(L, ltable, POBJECT, pobj);
-    set_table_number(L, ltable, ASINDX, asindx);
-
-    // register all tag methods
-    int tag = get_base_tag(L);
-    lua_pushobject(L, ltable);
-    lua_settag(L, tag);
-
-    // returning table
-    lua_pushobject(L, ltable);
-    return 1;
-}
-
-int py_convert(lua_State *, PyObject *);
-
 /* python object presentation */
 static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     char *repr = "...";
@@ -207,168 +74,13 @@ static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
     return repr;
 }
 
-/* python string bytes */
-static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
-    char *s = PyString_AsString(o);
-    if (!s) {
-        PyErr_Print();
-        lua_error(L, "converting python string");
-    }
-    return s;
-}
-
-/* python string unicode */
-static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
-    o = PyUnicode_AsUTF8String(o);
-    if (!o) {
-        PyErr_Print();
-        lua_error(L, "converting unicode string");
-    }
-    return get_pyobject_as_string(L, o);
-}
-
-int py_convert(lua_State *L, PyObject *o) {
-    int ret = 0;
-    if (o == Py_None || o == Py_False) {
-        lua_pushnil(L);
-        ret = 1;
-    } else if (o == Py_True) {
-        lua_pushnumber(L, 1);
-        ret = 1;
-#if PY_MAJOR_VERSION >= 3
-    } else if (PyUnicode_Check(o)) {
-        Py_ssize_t len;
-        char *s = PyUnicode_AsUTF8AndSize(o, &len);
-#else
-    } else if (PyString_Check(o)) {
-        lua_pushstring(L, get_pyobject_as_string(L, o));
-        ret = 1;
-    } else if (PyUnicode_Check(o)) {
-        char *s = get_pyobject_as_utf8string(L, o);
-#endif
-        lua_pushstring(L, s);
-        ret = 1;
-#if PY_MAJOR_VERSION < 3
-    } else if (PyInt_Check(o)) {
-        lua_pushnumber(L, PyInt_AsLong(o));
-        ret = 1;
-#endif
-    } else if (PyLong_Check(o)) {
-        lua_pushnumber(L, PyLong_AsLong(o));
-        ret = 1;
-    } else if (PyFloat_Check(o)) {
-        lua_pushnumber(L, PyFloat_AsDouble(o));
-        ret = 1;
-    } else {
-        int asindx = 0;
-        if (PyList_Check(o) || PyTuple_Check(o) || PyDict_Check(o))
-            asindx = 1;
-        ret = py_object_wrap_lua(L, o, asindx);
-    }
-    return ret;
-}
-
-/* convert to args python: fn(*args) */
-static PyObject * _py_args(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
-    int nargs;
-    if (stacked) {
-        nargs = lua_gettop(L) - (wrapped ? 1 : 0);
-    } else {
-        lua_pushobject(L, ltable);
-        lua_call(L, "getn");
-        nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
-    }
-    PyObject *args = PyTuple_New(nargs);
-    if (!args) {
-        PyErr_Print();
-        lua_error(L, "failed to create arguments tuple");
-    }
-    if (stacked) {
-        int i;
-        for (i = 0; i != nargs; i++) {
-            PyObject *arg = lua_convert(L, i + (wrapped ? 2 : 1));
-            if (!arg) {
-                Py_DECREF(args);
-                char *error = "failed to convert argument #%d";
-                char buff[strlen(error) + 10];
-                sprintf(buff, error, i + 1);
-                lua_error(L, &buff[0]);
-            }
-            PyTuple_SetItem(args, i, arg);
-        }
-    } else {
-        lua_beginblock(L);
-        PyObject *value;
-        int index = lua_next(L, ltable, 0);
-
-        while (index != 0) {
-            value = lua_convert(L, 2);
-            Py_INCREF(value);
-
-            PyTuple_SetItem(args, index - 2, value);
-
-            index = lua_next(L, ltable, index);
-        }
-        lua_endblock(L);
-    }
-    return args;
-}
-
-static void py_args(lua_State *L) {
-    PyObject *args = _py_args(L, 0, true, false);
-    Py_INCREF(args);
-    lua_pushuserdata(L, args);
-}
-
-/* convert to kwargs python: fn(**kwargs) */
-static PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
-    PyObject *kwargs = PyDict_New();
-    if (!kwargs) {
-        PyErr_Print();
-        lua_error(L, "failed to create key words arguments dict");
-    }
-    lua_beginblock(L);
-    PyObject *key, *value;
-    int index = lua_next(L, ltable, 0);
-
-    while (index != 0) {
-        key = lua_convert(L, 1);
-        Py_INCREF(key);
-
-        value = lua_convert(L, 2);
-        Py_INCREF(value);
-
-        PyDict_SetItem(kwargs, key, value);
-
-        index = lua_next(L, ltable, index);
-    }
-    lua_endblock(L);
-    return kwargs;
-}
-
-static void py_kwargs(lua_State *L) {
-    int nargs = lua_gettop(L);
-    if (nargs < 1 || nargs > 1) {
-        lua_error(L, "only 1 table is expected");
-    }
-
-    lua_Object ltable = lua_getparam(L, 1);
-    if (!lua_istable(L, ltable)) {
-        lua_error(L, "first arg need be table ex: kwargs({a=10})");
-    }
-
-    PyObject *kwargs = _py_kwargs(L, ltable);
-    Py_INCREF(kwargs);
-    lua_pushuserdata(L, kwargs);
-}
-
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     PyObject *args = PyTuple_New(0);
     PyObject *kwargs = NULL;
     PyObject *value;
 
-    int nargs = lua_gettop(L)-1;
+    int nargs = lua_gettop_c(L)-1;
     int i;
 
     if (!pobj) {
@@ -455,7 +167,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
 
 static void py_object_newindex_set(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (lua_gettop(L) < 2) {
+    if (lua_gettop_c(L) < 2) {
         lua_error(L, "invalid arguments");
     }
     _p_object_newindex_set(L, pobj, 2, 3);
@@ -638,7 +350,7 @@ static void py_asattr(lua_State *L) {
 
 static void py_globals(lua_State *L) {
     PyObject *globals;
-    if (lua_gettop(L) != 0) {
+    if (lua_gettop_c(L) != 0) {
         lua_error(L, "invalid arguments");
     }
     globals = PyEval_GetGlobals();
@@ -659,7 +371,7 @@ static void py_globals(lua_State *L) {
 static void py_locals(lua_State *L) {
     PyObject *locals;
 
-    if (lua_gettop(L) != 0) {
+    if (lua_gettop_c(L) != 0) {
         lua_error(L, "invalid arguments");
     }
     locals = PyEval_GetLocals();
@@ -673,7 +385,7 @@ static void py_locals(lua_State *L) {
 static void py_builtins(lua_State *L) {
     PyObject *builtins;
 
-    if (lua_gettop(L) != 0) {
+    if (lua_gettop_c(L) != 0) {
         lua_error(L, "invalid arguments");
     }
 

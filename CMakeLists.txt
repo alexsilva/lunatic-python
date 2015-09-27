@@ -16,22 +16,28 @@ endif (UNIX)
 set(PYTHON_SOURCES
     src/pythoninlua.h
     src/pythoninlua.c
+    src/luaconv.c
+    src/luaconv.h
+    src/pyconv.c
+    src/pyconv.h
     src/lapi.c
     src/lapi.h)
 
-add_library(python MODULE ${PYTHON_SOURCES})
+set(LUA_SOURCES
+    src/luainpython.h
+    src/luainpython.c
+    src/pyconv.h
+    src/pyconv.c src/utils.h)
 
-add_library(lua MODULE
-        ${PYTHON_SOURCES}
-        src/luainpython.h
-        src/luainpython.c)
+add_library(python MODULE ${PYTHON_SOURCES} src/utils.h)
+add_library(lualib MODULE ${PYTHON_SOURCES} ${LUA_SOURCES})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set_target_properties(lua PROPERTIES
+    set_target_properties(lualib PROPERTIES
             PREFIX ""
             SUFFIX ".pyd")
 else ()
-    set_target_properties(lua PROPERTIES
+    set_target_properties(lualib PROPERTIES
             PREFIX "")
 endif ()
 
@@ -40,7 +46,7 @@ set_target_properties(python PROPERTIES
         COMPILE_FLAGS "-m32"
         LINK_FLAGS    "-m32")
 
-set_target_properties(lua PROPERTIES
+set_target_properties(lualib PROPERTIES
         COMPILE_FLAGS "-m32"
         LINK_FLAGS    "-m32")
 # =====================
@@ -50,4 +56,4 @@ else()
     target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_LIBRARIES})
 endif (UNIX)
 
-target_link_libraries(lua ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
+target_link_libraries(lualib ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})

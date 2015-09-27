@@ -31,70 +31,14 @@
 
 #include "pythoninlua.h"
 #include "luainpython.h"
-#include "lapi.h"
+
+#include "pyconv.h"
+#include "luaconv.h"
 
 lua_State *LuaState = NULL;
 
-static PyObject *LuaObject_New(int n);
-
 static int lua_gettop(lua_State *L) {
     return 0;
-}
-
-PyObject *LuaConvert(lua_State *L, int n) {
-
-    PyObject *ret = NULL;
-
-    lua_Object lobj = lua_getparam(L, n);
-    TObject *ltype = lapi_address(L, lobj);
-
-    switch (ttype(ltype)) {
-
-        case LUA_T_NIL:
-            Py_INCREF(Py_None);
-            ret = Py_None;
-            break;
-
-        case LUA_T_STRING: {
-            const char *s = lua_getstring(L, lobj);
-            int len = lua_strlen(L, lobj);
-            ret = PyUnicode_FromStringAndSize(s, len);
-            break;
-        }
-
-        case LUA_T_NUMBER: {
-            double num = lua_getnumber(L, lobj);
-            if (rintf((float) num) == num) {
-                ret = PyFloat_FromDouble(num);
-            } else {
-                ret = PyLong_FromLong((long)num);
-            }
-            break;
-        }
-//        case LUA_TBOOLEAN:
-//            if (lua_toboolean(L, n)) {
-//                Py_INCREF(Py_True);
-//                ret = Py_True;
-//            } else {
-//                Py_INCREF(Py_False);
-//                ret = Py_False;
-//            }
-//            break;
-        case LUA_T_USERDATA: {
-            py_object *obj = NULL; // luaPy_to_pobject(L, n);
-            if (obj) {
-                Py_INCREF(obj->o);
-                ret = obj->o;
-                break;
-            }
-        }
-        /* Otherwise go on and handle as custom. */
-        default:
-            ret = LuaObject_New(n);
-            break;
-    }
-
-    return ret;
 }
 
 static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
@@ -162,17 +106,6 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
     return ret;
 }
 
-static PyObject *LuaObject_New(int n)
-{
-    LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
-    if (obj) {
-        lua_pushobject(LuaState, lua_getparam(LuaState, n));
-        obj->ref = lua_ref(LuaState, 1);
-        obj->refiter = 0;
-    }
-    return (PyObject*) obj;
-}
-
 static void LuaObject_dealloc(LuaObject *self)
 {
     lua_unref(LuaState, self->ref);
@@ -205,11 +138,10 @@ static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr)
     int rc = py_convert(LuaState, attr);
     if (rc) {
         lua_gettable(LuaState);
-        ret = LuaConvert(LuaState, -1);
+        ret = lua_convert(LuaState, -1);
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
-    //lua_settop(LuaState, 0);
     return ret;
 }
 
@@ -433,14 +365,7 @@ PyObject *Lua_run(PyObject *args, int eval)
     }
 
     free(buf);
-
     ret = lua_convert(LuaState, 1);
-
-    if (!ret && lua_getparam(LuaState, 1) !=0) {
-        ret = LuaObject_New(1);
-    } else {
-        ret = Py_None;
-    }
     return ret;
 }
 
@@ -508,7 +433,7 @@ PyMODINIT_FUNC PyInit_lua(void)
     if (m == NULL) return NULL;
 #else
     if (PyType_Ready(&LuaObject_Type) < 0) return;
-    m = Py_InitModule3("lua", lua_methods,
+    m = Py_InitModule3("lualib", lua_methods,
                        "Lunatic-Python Python-Lua bridge");
     if (m == NULL) return;
 #endif

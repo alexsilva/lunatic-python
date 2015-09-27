@@ -25,22 +25,11 @@
 
 #include "lua.h"
 
-#define POBJECT "POBJECT"
-#define ASINDX "ASINDX"
-
-int py_convert(lua_State *L, PyObject *o);
-PyObject *lua_convert(lua_State *L, int n);
-
 #if defined(WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
 #else //  GCC
 #define LUA_API __attribute__((visibility("default")))
 #endif
-
-typedef struct {
-    PyObject *o;
-    int asindx;
-} py_object;
 
 LUA_API int luaopen_python(lua_State *L);
 
