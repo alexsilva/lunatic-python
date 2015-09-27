@@ -13,7 +13,7 @@
 lua_State *LuaState;
 PyTypeObject LuaObject_Type;
 
-PyObject *LuaObject_New(int n);
+PyObject *LuaObject_New(lua_State *L, int n);
 
 typedef struct {
     PyObject_HEAD

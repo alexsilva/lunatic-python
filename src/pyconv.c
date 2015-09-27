@@ -6,11 +6,11 @@
 #include "luaconv.h"
 #include "utils.h"
 
-PyObject *LuaObject_New(int n) {
+PyObject *LuaObject_New(lua_State *L, int n) {
     LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
     if (obj) {
-        lua_pushobject(LuaState, lua_getparam(LuaState, n));
-        obj->ref = lua_ref(LuaState, 1);
+        lua_pushobject(L, lua_getparam(L, n));
+        obj->ref = lua_ref(L, 1);
         obj->refiter = 0;
     }
     return (PyObject*) obj;
