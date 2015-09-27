@@ -131,7 +131,7 @@ PyObject *_py_kwargs(lua_State *L, lua_Object ltable) {
 void py_kwargs(lua_State *L) {
     int nargs = lua_gettop_c(L);
     if (nargs < 1 || nargs > 1) {
-        lua_error(L, "only 1 table is expected");
+        lua_error(L, "expected only one table");
     }
 
     lua_Object ltable = lua_getparam(L, 1);
