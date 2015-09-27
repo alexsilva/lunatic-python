@@ -23,6 +23,9 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
+extern lua_State *LuaState;
+extern PyTypeObject LuaObject_Type;
+
 #if PY_MAJOR_VERSION < 3
 #define PyInit_lua initlualib
 #endif

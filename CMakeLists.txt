@@ -13,26 +13,15 @@ if (UNIX)
     link_directories(${PYTHON_LIBRARIES})
 endif (UNIX)
 
-set(PYTHON_SOURCES
-    src/pythoninlua.h
+set(SOURCES
+    src/luainpython.c
     src/pythoninlua.c
     src/luaconv.c
-    src/luaconv.h
     src/pyconv.c
-    src/pyconv.h
-    src/lapi.c
-    src/lapi.h
-    src/utils.h)
+    src/lapi.c)
 
-set(LUA_SOURCES
-    src/luainpython.h
-    src/luainpython.c
-    src/pyconv.h
-    src/pyconv.c
-    src/utils.h)
-
-add_library(python MODULE ${PYTHON_SOURCES})
-add_library(lualib MODULE ${PYTHON_SOURCES} ${LUA_SOURCES})
+add_library(python MODULE ${SOURCES})
+add_library(lualib MODULE ${SOURCES})
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_target_properties(lualib PROPERTIES
@@ -55,7 +44,7 @@ set_target_properties(lualib PROPERTIES
 if (UNIX)
     target_link_libraries(python python2.7 pthread util ${LUA_LIBRARIES})
 else()
-    target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_LIBRARIES})
+    target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
 endif (UNIX)
 
 target_link_libraries(lualib ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})

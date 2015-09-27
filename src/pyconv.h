@@ -7,11 +7,9 @@
 
 #include "Python.h"
 #include "lua.h"
+#include "luainpython.h"
 
 #define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)
-
-lua_State *LuaState;
-PyTypeObject LuaObject_Type;
 
 PyObject *LuaObject_New(lua_State *L, int n);
 

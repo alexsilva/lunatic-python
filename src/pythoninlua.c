@@ -421,6 +421,8 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
+    LuaState = L; // state of bridge lua in python
+
     lua_Object python = lua_createtable(L);
 
     lua_pushcfunction(L, py_args);
@@ -469,6 +471,11 @@ static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
 
     if (!Py_IsInitialized()) {
+        if (PyType_Ready(&LuaObject_Type) == 0) {
+            Py_INCREF(&LuaObject_Type);
+        } else {
+            lua_error(L, "failure initializing lua object type");
+        }
         PyObject *luam, *mainm, *maind;
 #if PY_MAJOR_VERSION >= 3
         wchar_t *argv[] = {L"<lua>", 0};
