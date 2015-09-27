@@ -98,7 +98,7 @@ PyObject *LuaConvert(lua_State *L, int n) {
     return ret;
 }
 
-static PyObject *LuaCall(lua_State *L, char *pName, PyObject *args) {
+static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
     PyObject *arg;
     int nargs, rc, i;
@@ -123,9 +123,8 @@ static PyObject *LuaCall(lua_State *L, char *pName, PyObject *args) {
             return NULL;
         }
     }
-
-    if (lua_call(LuaState, pName)) {
-        PyErr_Format(PyExc_Exception, "error: %s", pName);
+    if (lua_callfunction(LuaState, lobj)) {
+        PyErr_Format(PyExc_Exception, "error: %s", "lua");
         return NULL;
     }
 
@@ -304,7 +303,7 @@ static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
 {
     lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
 
-    return LuaCall(LuaState, "", args);
+    return LuaCall(LuaState, lobj, args);
 }
 
 static PyObject *LuaObject_iternext(LuaObject *obj)
@@ -477,7 +476,7 @@ static PyObject *Lua_require(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "require is not defined");
         return NULL;
     }
-    return LuaCall(LuaState, "dofile", args);
+    return LuaCall(LuaState, lobj, args);
 }
 
 static PyMethodDef lua_methods[] = {
