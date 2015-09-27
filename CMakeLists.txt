@@ -50,4 +50,4 @@ else()
     target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_LIBRARIES})
 endif (UNIX)
 
-target_link_libraries(lua ${PYTHON_LIBRARIES} ${LUA_LIBRARIES})
+target_link_libraries(lua ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})

@@ -26,9 +26,8 @@
 #define LUA_COMPAT_ALL
 
 #include <lua.h>
-// #include <luaconf.h>
-#include <lauxlib.h>
-#include <lualib.h>
+#include "lauxlib.h"
+#include "lualib.h"
 
 #include "pythoninlua.h"
 #include "luainpython.h"
@@ -518,9 +517,13 @@ PyMODINIT_FUNC PyInit_lua(void)
 
     if (!LuaState) {
         LuaState = lua_open();
-        // luaL_openlibs(LuaState);
+
+        // default libs
+        lua_iolibopen(LuaState);
+        lua_strlibopen(LuaState);
+        lua_mathlibopen(LuaState);
+
         luaopen_python(LuaState);
-        // lua_settop(LuaState, 0);
     }
 
 #if PY_MAJOR_VERSION >= 3
