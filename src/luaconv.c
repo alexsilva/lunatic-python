@@ -64,8 +64,8 @@ PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapp
         lua_call(L, "getn");
         nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
     }
-    PyObject *args = PyTuple_New(nargs);
-    if (!args) {
+    PyObject *tuple = PyTuple_New(nargs);
+    if (!tuple) {
         PyErr_Print();
         lua_error(L, "failed to create arguments tuple");
     }
@@ -74,13 +74,13 @@ PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapp
         for (i = 0; i != nargs; i++) {
             PyObject *arg = lua_convert(L, i + (wrapped ? 2 : 1));
             if (!arg) {
-                Py_DECREF(args);
+                Py_DECREF(tuple);
                 char *error = "failed to convert argument #%d";
                 char buff[strlen(error) + 10];
                 sprintf(buff, error, i + 1);
                 lua_error(L, &buff[0]);
             }
-            PyTuple_SetItem(args, i, arg);
+            PyTuple_SetItem(tuple, i, arg);
         }
     } else {
         lua_beginblock(L);
@@ -91,25 +91,25 @@ PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapp
             value = lua_convert(L, 2);
             Py_INCREF(value);
 
-            PyTuple_SetItem(args, index - 2, value);
+            PyTuple_SetItem(tuple, index - 2, value);
 
             index = lua_next(L, ltable, index);
         }
         lua_endblock(L);
     }
-    return args;
+    return tuple;
 }
 
 void py_args(lua_State *L) {
-    PyObject *args = get_py_tuple(L, 0, true, false);
-    Py_INCREF(args);
-    lua_pushuserdata(L, args);
+    PyObject *tuple = get_py_tuple(L, 0, true, false);
+    Py_INCREF(tuple);
+    lua_pushuserdata(L, tuple);
 }
 
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
-    PyObject *kwargs = PyDict_New();
-    if (!kwargs) {
+    PyObject *dict = PyDict_New();
+    if (!dict) {
         PyErr_Print();
         lua_error(L, "failed to create key words arguments dict");
     }
@@ -124,12 +124,12 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         value = lua_convert(L, 2);
         Py_INCREF(value);
 
-        PyDict_SetItem(kwargs, key, value);
+        PyDict_SetItem(dict, key, value);
 
         index = lua_next(L, ltable, index);
     }
     lua_endblock(L);
-    return kwargs;
+    return dict;
 }
 
 void py_kwargs(lua_State *L) {
@@ -143,9 +143,9 @@ void py_kwargs(lua_State *L) {
         lua_error(L, "first arg need be table ex: kwargs({a=10})");
     }
 
-    PyObject *kwargs = get_py_dict(L, ltable);
-    Py_INCREF(kwargs);
-    lua_pushuserdata(L, kwargs);
+    PyObject *dict = get_py_dict(L, ltable);
+    Py_INCREF(dict);
+    lua_pushuserdata(L, dict);
 }
 
 static py_object *get_py_object(lua_State *L, int n) {
