@@ -23,7 +23,7 @@ int lua_getboolean(lua_State *L, lua_Object obj) {
     return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
 }
 
-int lua_gettop_c(lua_State *L) {
+int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
@@ -58,7 +58,7 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
 PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
     int nargs;
     if (stacked) {
-        nargs = lua_gettop_c(L) - (wrapped ? 1 : 0);
+        nargs = lua_gettop(L) - (wrapped ? 1 : 0);
     } else {
         lua_pushobject(L, ltable);
         lua_call(L, "getn");
@@ -133,7 +133,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 }
 
 void py_kwargs(lua_State *L) {
-    int nargs = lua_gettop_c(L);
+    int nargs = lua_gettop(L);
     if (nargs < 1 || nargs > 1) {
         lua_error(L, "expected only one table");
     }

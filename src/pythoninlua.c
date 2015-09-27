@@ -80,7 +80,7 @@ static void py_object_call(lua_State *L) {
     PyObject *kwargs = NULL;
     PyObject *value;
 
-    int nargs = lua_gettop_c(L)-1;
+    int nargs = lua_gettop(L)-1;
     int i;
 
     if (!pobj) {
@@ -167,7 +167,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
 
 static void py_object_newindex_set(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (lua_gettop_c(L) < 2) {
+    if (lua_gettop(L) < 2) {
         lua_error(L, "invalid arguments");
     }
     _p_object_newindex_set(L, pobj, 2, 3);
@@ -350,7 +350,7 @@ static void py_asattr(lua_State *L) {
 
 static void py_globals(lua_State *L) {
     PyObject *globals;
-    if (lua_gettop_c(L) != 0) {
+    if (lua_gettop(L) != 0) {
         lua_error(L, "invalid arguments");
     }
     globals = PyEval_GetGlobals();
@@ -371,7 +371,7 @@ static void py_globals(lua_State *L) {
 static void py_locals(lua_State *L) {
     PyObject *locals;
 
-    if (lua_gettop_c(L) != 0) {
+    if (lua_gettop(L) != 0) {
         lua_error(L, "invalid arguments");
     }
     locals = PyEval_GetLocals();
@@ -385,7 +385,7 @@ static void py_locals(lua_State *L) {
 static void py_builtins(lua_State *L) {
     PyObject *builtins;
 
-    if (lua_gettop_c(L) != 0) {
+    if (lua_gettop(L) != 0) {
         lua_error(L, "invalid arguments");
     }
 

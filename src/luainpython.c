@@ -37,10 +37,6 @@
 
 lua_State *LuaState = NULL;
 
-static int lua_gettop(lua_State *L) {
-    return 0;
-}
-
 static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
     PyObject *arg;
