@@ -35,6 +35,10 @@ int get_base_tag(lua_State *L) {
     return lua_tag(L, lua_gettable(L));
 }
 
+static int is_wrapped_object(lua_State *L, lua_Object lobj) {
+    return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj);
+}
+
 /*checks if a table contains only numbers*/
 static int is_indexed_array(lua_State *L, lua_Object lobj) {
     lua_beginblock(L);
@@ -189,17 +193,15 @@ PyObject *lua_convert(lua_State *L, int n) {
         if (!ret) {
             ret = PyUnicode_FromStringAndSize(s, len);
         }
+    } else if (is_wrapped_object(L, lobj)) {
+        py_object *pobj = get_py_object(L, n);
+        ret = pobj->o;
+        free(pobj);
     } else if (lua_istable(L, lobj)) {
-        if (get_base_tag(L) == lua_tag(L, lobj)) {
-            py_object *pobj = get_py_object(L, n);
-            ret = pobj->o;
-            free(pobj);
+        if (is_indexed_array(L, lobj)) {
+            ret = get_py_tuple(L, lobj, false, false);
         } else {
-            if (is_indexed_array(L, lobj)) {
-                ret = get_py_tuple(L, lobj, false, false);
-            } else {
-                ret = get_py_dict(L, lobj);
-            }
+            ret = get_py_dict(L, lobj);
         }
     } else if (lua_isboolean(L, lobj)) {
         if (lua_getboolean(L, lobj)) {
