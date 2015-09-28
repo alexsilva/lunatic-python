@@ -35,20 +35,6 @@
 #include "pyconv.h"
 #include "utils.h"
 
-/* python object presentation */
-static char *get_pyobject_repr(lua_State *L, PyObject *pyobject) {
-    char *repr = "...";
-    char *name = "__name__"; // get real name!
-    if (PyObject_HasAttrString(pyobject, name)) {
-        pyobject = PyObject_GetAttrString(pyobject, name);
-    }
-    PyObject *str = PyObject_Str(pyobject);
-    if (str) {
-        repr = PyString_AsString(pyobject);
-    }
-    return repr;
-}
-
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     PyObject *args = PyTuple_New(0);
@@ -96,7 +82,7 @@ static void py_object_call(lua_State *L) {
         py_convert(L, value);
         Py_DECREF(value);
     } else {
-        char *name = get_pyobject_repr(L, pobj->o);
+        char *name = get_pyobject_str(pobj->o, "...");
         char *error = "call python function \"%s\"";
         char buff[calc_buff_size(2, error, name)];
         sprintf(buff, error, name);
@@ -196,7 +182,7 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
     } else {
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
-        char *skey = get_pyobject_repr(L, key);
+        char *skey = get_pyobject_str(key, "...");
         char buff[calc_buff_size(3, error, name, skey)];
         sprintf(buff, error, name, skey);
         lua_new_error(L, buff);
