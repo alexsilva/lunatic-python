@@ -14,6 +14,7 @@
 
 #include "luaconv.h"
 #include "pyconv.h"
+#include "utils.h"
 
 int lua_isboolean(lua_State *L, lua_Object obj) {
     return lua_isuserdata(L, obj) && PyBool_Check((PyObject *) lua_getuserdata(L, obj));
@@ -73,8 +74,7 @@ PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapp
     }
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) {
-        PyErr_Print();
-        lua_error(L, "failed to create arguments tuple");
+        lua_new_error(L, "failed to create arguments tuple");
     }
     if (stacked) {
         int i;
@@ -117,8 +117,7 @@ void py_args(lua_State *L) {
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     PyObject *dict = PyDict_New();
     if (!dict) {
-        PyErr_Print();
-        lua_error(L, "failed to create key words arguments dict");
+        lua_new_error(L, "failed to create key words arguments dict");
     }
     lua_beginblock(L);
     PyObject *key, *value;

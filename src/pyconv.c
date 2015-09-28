@@ -20,8 +20,7 @@ PyObject *LuaObject_New(lua_State *L, int n) {
 static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
     if (!s) {
-        PyErr_Print();
-        lua_error(L, "converting python string");
+        lua_new_error(L, "converting python string");
     }
     return s;
 }
@@ -30,8 +29,7 @@ static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
 static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     o = PyUnicode_AsUTF8String(o);
     if (!o) {
-        PyErr_Print();
-        lua_error(L, "converting unicode string");
+        lua_new_error(L, "converting unicode string");
     }
     return get_pyobject_as_string(L, o);
 }

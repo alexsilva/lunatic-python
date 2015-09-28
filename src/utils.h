@@ -33,4 +33,7 @@
     lua_pushobject(L, obj);\
     lua_settable(L);
 
+int calc_buff_size(int nargs, ...);
+void lua_new_error(lua_State *L, char *message);
+
 #endif //LUNATIC_UTILS_H

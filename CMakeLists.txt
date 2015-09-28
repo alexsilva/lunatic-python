@@ -18,7 +18,9 @@ set(SOURCES
     src/pythoninlua.c
     src/luaconv.c
     src/pyconv.c
-    src/lapi.c)
+    src/lapi.c
+    src/utils.h
+    src/utils.c)
 
 add_library(python MODULE ${SOURCES})
 add_library(lualib MODULE ${SOURCES})

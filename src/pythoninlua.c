@@ -96,12 +96,11 @@ static void py_object_call(lua_State *L) {
         py_convert(L, value);
         Py_DECREF(value);
     } else {
-        PyErr_Print();
         char *name = get_pyobject_repr(L, pobj->o);
-        char *error = "calling python function \"%s\"";
-        char buff[strlen(error) + strlen(name) + strlen(name) + 1];
+        char *error = "call python function \"%s\"";
+        char buff[calc_buff_size(2, error, name)];
         sprintf(buff, error, name);
-        lua_error(L, &buff[0]);
+        lua_new_error(L, buff);
     }
     free(pobj);
 }
@@ -122,18 +121,15 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
         if (obj->asindx) {
             if (PyObject_SetItem(obj->o, key, value) == -1) {
-                PyErr_Print();
-                lua_error(L, "failed to set item");
+                lua_new_error(L, "failed to set item");
             }
         } else if (PyObject_SetAttr(obj->o, key, value) == -1) {
-            PyErr_Print();
-            lua_error(L, "failed to set item");
+            lua_new_error(L, "failed to set item");
         }
         Py_DECREF(value);
     } else {
         if (PyObject_DelItem(obj->o, key) == -1) {
-            PyErr_Print();
-            lua_error(L, "failed to delete item");
+            lua_new_error(L, "failed to delete item");
         }
     }
     Py_DECREF(key);
@@ -174,8 +170,7 @@ static void py_object_newindex(lua_State *L) {
 
     if (PyObject_SetAttrString(pobj->o, (char *) attr, value) == -1) {
         Py_DECREF(value);
-        PyErr_Print();
-        lua_error(L, "failed to set value");
+        lua_new_error(L, "failed to set value");
     }
 
     Py_DECREF(value);
@@ -199,13 +194,12 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
         ret = py_convert(L, item);
         Py_DECREF(item);
     } else {
-        PyErr_Clear();
-        char *keystr = get_pyobject_repr(L, key);
         char *error = "%s \"%s\" not found";
-        char *name = pobj->asindx ? "index or key" : "attribute";
-        char buff[strlen(error) + strlen(name) + strlen(keystr) + 1];
-        sprintf(buff, error, name, keystr);
-        lua_error(L, &buff[0]);
+        char *name = pobj->asindx ? "index" : "attribute";
+        char *skey = get_pyobject_repr(L, key);
+        char buff[calc_buff_size(3, error, name, skey)];
+        sprintf(buff, error, name, skey);
+        lua_new_error(L, buff);
     }
     return ret;
 }
@@ -278,7 +272,7 @@ static int py_run(lua_State *L, int eval) {
     free(buffer);
 
     if (!o) {
-        PyErr_Print();
+        lua_new_error(L, "run custom code");
         return 0;
     }
 
@@ -337,8 +331,7 @@ static void py_globals(lua_State *L) {
         globals = PyModule_GetDict(module);
     }
     if (!globals) {
-        PyErr_Print();
-        lua_error(L, "can't get globals");
+        lua_new_error(L, "can't get globals");
     }
     py_object_wrap_lua(L, globals, 1);
 }
@@ -366,8 +359,7 @@ static void py_builtins(lua_State *L) {
 
     builtins = PyEval_GetBuiltins();
     if (!builtins) {
-        PyErr_Print();
-        lua_error(L, "failed to get builtins");
+        lua_new_error(L, "failed to get builtins");
     }
     py_object_wrap_lua(L, builtins, 1);
 }
@@ -381,11 +373,10 @@ static void py_import(lua_State *L) {
     module = PyImport_ImportModule((char *) name);
 
     if (!module) {
-        PyErr_Print();
         char *error = "failed importing \"%s\"";
-        char buff[strlen(error) + strlen(name) + 1];
+        char buff[calc_buff_size(2, error, name)];
         sprintf(buff, error, name);
-        lua_error(L, &buff[0]);
+        lua_new_error(L, buff);
     }
 
     py_object_wrap_lua(L, module, 0);
