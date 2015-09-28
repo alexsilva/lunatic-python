@@ -162,10 +162,9 @@ py_object *get_py_object(lua_State *L, int n) {
         lua_error(L, "wrap table not found!");
 
     py_object *po = (py_object *) malloc(sizeof(py_object));
-
-    if (po == NULL)
-        return NULL;
-
+    if (po == NULL) {
+        lua_error(L, "out of memory!");
+    }
     // python object recover
     lua_pushobject(L, ltable);
     lua_pushstring(L, POBJECT);
