@@ -30,6 +30,12 @@ void lua_new_error(lua_State *L, char *message) {
 
     if (pvalue != NULL) {
         py_error_msg = PyString_AsString(pvalue);
+        if (!py_error_msg){
+            PyObject *str = PyObject_Str(pvalue);
+            if (str) {
+                py_error_msg = PyString_AsString(str);
+            }
+        }
     }
     if (!py_error_msg) {
         lua_error(L, message);
