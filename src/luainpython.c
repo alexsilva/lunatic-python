@@ -262,13 +262,18 @@ static PyObject *LuaObject_iternext(LuaObject *obj)
     return NULL;
 }
 
-static int LuaObject_length(LuaObject *obj)
-{
+static int LuaObject_length(LuaObject *obj) {
     int len = 0;
-//    lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
-//    len = lua_objlen(LuaState, -1);
-//    lua_settop(LuaState, 0);
-//
+    lua_Object lobj = lua_getref(LuaState, obj->ref);
+    if (lua_isfunction(LuaState, lobj)) {
+        len = 1;  // 1 is True
+    } else if (lua_isstring(LuaState, lobj)) {
+        len = lua_strlen(LuaState, lobj);
+    } else if (lua_istable(LuaState, lobj)) {
+        lua_pushobject(LuaState, lobj);
+        lua_call(LuaState, "getn");
+        len = (int) lua_getnumber(LuaState, lua_getresult(LuaState, 1));
+    }
     return len;
 }
 
