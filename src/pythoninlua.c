@@ -54,26 +54,23 @@ static void py_object_call(lua_State *L) {
     lua_Object largs = lua_getparam(L, 2);
     lua_Object lkwargs = lua_getparam(L, 3);
 
-    if (nargs == 1) { // is args in py_object format ?!
-        if (lua_isuserdata(L, largs)) {
-            PyObject *pyobj = (PyObject *) lua_getuserdata(L, largs);
-            if (PyTuple_Check(pyobj)) {
-                args = pyobj;
-            } else if (PyDict_Check(pyobj)) {
-                kwargs = pyobj;
-            } else {
-                args = get_py_tuple(L, 0, true, true);
-            }
+    if (nargs == 1 && lua_isuserdata(L, largs)) {
+        PyObject *pyobj = (PyObject *) lua_getuserdata(L, largs);
+        if (PyTuple_Check(pyobj)) {
+            args = pyobj;
+        } else if (PyDict_Check(pyobj)) {
+            kwargs = pyobj;
         } else {
             args = get_py_tuple(L, 0, true, true);
         }
-    } else if (nargs == 2) {  // is args and kwargs ?
-        if (lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) { // convert to python
-            args = (PyObject *) lua_getuserdata(L, largs);
-            kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
-        } else {
-            args = get_py_tuple(L, 0, true, true);
-        }
+    } else if (nargs == 2 && lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) {
+        args = (PyObject *) lua_getuserdata(L, largs);   // is args and kwargs ?
+        kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
+
+        // check the order (), {}
+        if (PyTuple_Check(kwargs)) luaL_argerror(L, 1, "object tuple expected args(1,...)");
+        if (PyDict_Check(args)) luaL_argerror(L, 2, "object dict expected kwargs{a=1,...}");
+
     } else if (nargs > 0) {
         args = get_py_tuple(L, 0, true, true); // arbitrary args fn(1,2,'a')
     }
