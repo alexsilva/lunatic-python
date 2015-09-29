@@ -218,10 +218,8 @@ PyObject *lua_convert(lua_State *L, int n) {
         }
     } else if (lua_isuserdata(L, lobj)) {
         ret = (PyObject *) lua_getuserdata(L, lobj);
-    } else if(lobj != 0) {
+    } else if(lua_isfunction(L, lobj)) {
         ret = LuaObject_New(L, n);
-    } else {
-        ret = Py_None;
     }
     return ret;
 }

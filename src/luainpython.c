@@ -341,8 +341,7 @@ PyTypeObject LuaObject_Type = {
 };
 
 
-PyObject *Lua_run(PyObject *args, int eval)
-{
+PyObject *Lua_run(PyObject *args, int eval) {
     PyObject *ret;
     char *buf = NULL;
     char *s;
@@ -367,7 +366,7 @@ PyObject *Lua_run(PyObject *args, int eval)
 
     free(buf);
     ret = lua_convert(LuaState, 1);
-    return ret;
+    return !ret ? Py_None : ret;  // check if as return value
 }
 
 PyObject *Lua_execute(PyObject *self, PyObject *args)
