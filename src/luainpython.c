@@ -26,14 +26,16 @@
 #define LUA_COMPAT_ALL
 
 #include <lua.h>
-#include "lauxlib.h"
-#include "lualib.h"
+#include <lapi.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #include "pythoninlua.h"
 #include "luainpython.h"
 
 #include "pyconv.h"
 #include "luaconv.h"
+#include "lapi.h"
 
 lua_State *LuaState = NULL;
 
@@ -183,49 +185,36 @@ static int LuaObject_setattr(PyObject *obj, PyObject *attr, PyObject *value)
     return ret;
 }
 
-static PyObject *LuaObject_str(PyObject *obj)
-{
-//    PyObject *ret = NULL;
-//    const char *s;
-//    lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
-//    if (luaL_callmeta(LuaState, -1, "__tostring")) {
-//        s = lua_tostring(LuaState, -1);
-//        lua_pop(LuaState, 1);
-//        if (s) ret = PyUnicode_FromString(s);
-//    }
-//    if (!ret) {
-//        int type = lua_type(LuaState, -1);
-//        switch (type) {
-//            case LUA_TTABLE:
-//            case LUA_TFUNCTION:
-//                ret = PyUnicode_FromFormat("<Lua %s at %p>",
-//                    lua_typename(LuaState, type),
-//                    lua_topointer(LuaState, -1));
-//                break;
-//
-//            case LUA_TUSERDATA:
-//            case LUA_TLIGHTUSERDATA:
-//                ret = PyUnicode_FromFormat("<Lua %s at %p>",
-//                    lua_typename(LuaState, type),
-//                    lua_touserdata(LuaState, -1));
-//                break;
-//
-//            case LUA_TTHREAD:
-//                ret = PyUnicode_FromFormat("<Lua %s at %p>",
-//                    lua_typename(LuaState, type),
-//                    (void*)lua_tothread(LuaState, -1));
-//                break;
-//
-//            default:
-//                ret = PyUnicode_FromFormat("<Lua %s>",
-//                    lua_typename(LuaState, type));
-//                break;
-//
-//        }
-//    }
-//    lua_pop(LuaState, 1);
-    PyObject *ret = PyUnicode_FromFormat("<Lua ** at ***>");
-    return ret;
+static PyObject *LuaObject_str(PyObject *obj) {
+    lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
+    TObject *o = lapi_address(LuaState, lobj);
+    char buff[64];
+    switch (ttype(o)) { // Lua 3.2 source code builtin.c
+        case LUA_T_NUMBER:
+            return PyString_FromFormat("<Lua number %ld>", (long) lua_getnumber(LuaState, lobj));
+        case LUA_T_STRING:
+            return PyString_FromFormat("<Lua string size %ld>", lua_strlen(LuaState, lobj));
+        case LUA_T_ARRAY:
+            sprintf(buff, "<Lua table at %p>", (void *)o->value.a);
+            break;
+        case LUA_T_CLOSURE:
+            sprintf(buff, "<Lua function at %p>", (void *)o->value.cl);
+            break;
+        case LUA_T_PROTO:
+            sprintf(buff, "<Lua function at %p>", (void *)o->value.tf);
+            break;
+        case LUA_T_CPROTO:
+            sprintf(buff, "<Lua function at %p>", (void *)o->value.f);
+            break;
+        case LUA_T_USERDATA:
+            sprintf(buff, "<Lua userdata at %p>", o->value.ts->u.d.v);
+            break;
+        case LUA_T_NIL:
+            return PyString_FromString("nil");
+        default:
+            return PyString_FromString("invalid type");
+    }
+    return PyString_FromString(buff);
 }
 
 static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
