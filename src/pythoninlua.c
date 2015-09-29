@@ -43,7 +43,6 @@ static void py_object_call(lua_State *L) {
     PyObject *value;
 
     int nargs = lua_gettop(L)-1;
-    int i;
 
     if (!pobj) {
         luaL_argerror(L, 1, "not a python object");
@@ -51,7 +50,6 @@ static void py_object_call(lua_State *L) {
     if (!PyCallable_Check(pobj->o)) {
         lua_error(L, "object is not callable");
     }
-
     lua_Object largs = lua_getparam(L, 2);
     lua_Object lkwargs = lua_getparam(L, 3);
 
@@ -62,7 +60,7 @@ static void py_object_call(lua_State *L) {
         } else if (PyDict_Check(pyobj)) {
             kwargs = pyobj;
         } else {
-            args = get_py_tuple(L, 0, true, true);
+            args = get_py_tuple(L, 1);
         }
     } else if (nargs == 2 && lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) {
         args = (PyObject *) lua_getuserdata(L, largs);   // is args and kwargs ?
@@ -73,7 +71,7 @@ static void py_object_call(lua_State *L) {
         if (PyDict_Check(args)) luaL_argerror(L, 2, "object dict expected kwargs{a=1,...}");
 
     } else if (nargs > 0) {
-        args = get_py_tuple(L, 0, true, true); // arbitrary args fn(1,2,'a')
+        args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
     }
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {

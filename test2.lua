@@ -84,7 +84,11 @@ locals.TestFunc5(pyargs(1,2,3,4))
 
 -- lua callback teste
 function cmp_callback(a, b)
-    return a > b
+    if (a > b) then
+        return python.True
+    else
+        return python.False
+    end
 end
 
 local res_expected = builtins.iter({-5, -1, 0, 1, 4, 7, 10, 100})

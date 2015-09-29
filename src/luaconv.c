@@ -63,52 +63,58 @@ static int is_indexed_array(lua_State *L, lua_Object lobj) {
 }
 
 /* convert to args python: fn(*args) */
-PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapped) {
-    int nargs;
-    if (stacked) {
-        nargs = lua_gettop(L) - (wrapped ? 1 : 0);
-    } else {
-        lua_pushobject(L, ltable);
-        lua_call(L, "getn");
-        nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
-    }
+PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
+    lua_beginblock(L);
+    lua_pushobject(L, ltable);
+    lua_call(L, "getn");
+
+    int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
+
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) {
         lua_new_error(L, "failed to create arguments tuple");
     }
-    if (stacked) {
-        int i;
-        for (i = 0; i != nargs; i++) {
-            PyObject *arg = lua_convert(L, i + (wrapped ? 2 : 1));
-            if (!arg) {
-                Py_DECREF(tuple);
-                char *error = "failed to convert argument #%d";
-                char buff[strlen(error) + 10];
-                sprintf(buff, error, i + 1);
-                lua_error(L, &buff[0]);
-            }
-            PyTuple_SetItem(tuple, i, arg);
-        }
-    } else {
-        lua_beginblock(L);
-        PyObject *value;
-        int index = lua_next(L, ltable, 0);
+    PyObject *value;
+    int index = lua_next(L, ltable, 0);
 
-        while (index != 0) {
-            value = lua_convert(L, 2);
-            Py_INCREF(value);
+    while (index != 0) {
+        value = lua_convert(L, 2);
+        Py_INCREF(value);
 
-            PyTuple_SetItem(tuple, index - 2, value);
+        PyTuple_SetItem(tuple, index - 2, value);
 
-            index = lua_next(L, ltable, index);
-        }
-        lua_endblock(L);
+        index = lua_next(L, ltable, index);
     }
+    lua_endblock(L);
+    return tuple;
+}
+
+/* convert to args python: fn(*args) */
+PyObject *get_py_tuple(lua_State *L, int stackpos) {
+    lua_beginblock(L);
+    int nargs = lua_gettop(L) - stackpos;
+    PyObject *tuple = PyTuple_New(nargs);
+    if (!tuple) {
+        lua_new_error(L, "failed to create arguments tuple");
+    }
+    int i;
+    for (i = 0; i != nargs; i++) {
+        PyObject *arg = lua_convert(L, i + stackpos + 1);
+        if (!arg) {
+            Py_DECREF(tuple);
+            char *error = "failed to convert argument #%d";
+            char buff[strlen(error) + 10];
+            sprintf(buff, error, i + 1);
+            lua_error(L, &buff[0]);
+        }
+        PyTuple_SetItem(tuple, i, arg);
+    }
+    lua_endblock(L);
     return tuple;
 }
 
 void py_args(lua_State *L) {
-    PyObject *tuple = get_py_tuple(L, 0, true, false);
+    PyObject *tuple = get_py_tuple(L, 0);
     Py_INCREF(tuple);
     lua_pushuserdata(L, tuple);
 }
@@ -204,7 +210,7 @@ PyObject *lua_convert(lua_State *L, int n) {
         free(pobj);
     } else if (lua_istable(L, lobj)) {
         if (is_indexed_array(L, lobj)) {
-            ret = get_py_tuple(L, lobj, false, false);
+            ret = _get_py_tuple(L, lobj);
         } else {
             ret = get_py_dict(L, lobj);
         }
