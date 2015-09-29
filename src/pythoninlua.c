@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include "pythoninlua.h"
+
 #ifndef lua_next
 #include "lapi.h"
 #endif

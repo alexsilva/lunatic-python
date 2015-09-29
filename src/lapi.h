@@ -4,9 +4,9 @@
 
 #ifndef LUNATIC_LAPI_H
 #define LUNATIC_LAPI_H
-#include <lua.h>
 
-#define lapi_address(L, lo) ((lo)+L->stack.stack-1)
+#include <lua.h>
+#include "lshared.h"
 
 int lapi_next(lua_State *L, lua_Object o, int i);
 

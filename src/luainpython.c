@@ -30,7 +30,12 @@
 
 #include "pyconv.h"
 #include "luaconv.h"
+
+#ifndef lua_next
 #include "lapi.h"
+#else
+#include "lshared.h"
+#endif
 
 lua_State *LuaState = NULL;
 
