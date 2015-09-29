@@ -22,7 +22,9 @@ int lua_gettop(lua_State *L);
 py_object *get_py_object(lua_State *L, int n);
 int get_base_tag(lua_State *L);
 
-PyObject *get_py_tuple(lua_State *L, lua_Object ltable, bool stacked, bool wrapped);
+PyObject *get_py_tuple(lua_State *, int stackpos);
+PyObject *_get_py_tuple(lua_State *, lua_Object lobj);
+
 PyObject *get_py_dict(lua_State *L, lua_Object ltable);
 
 void py_kwargs(lua_State *L);
