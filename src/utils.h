@@ -26,7 +26,7 @@
     lua_pushcfunction(L, fn);\
     lua_settable(L);
 
-/* set function */
+/* set object */
 #define set_table_object(L, ltable, name, obj) \
     lua_pushobject(L, ltable);\
     lua_pushstring(L, name);\

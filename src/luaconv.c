@@ -43,7 +43,7 @@ static int is_wrap_base(lua_State *L, lua_Object lobj) {
     return lua_isboolean(L, base) && lua_getboolean(L, base);
 }
 
-static int is_wrapped_object(lua_State *L, lua_Object lobj) {
+int is_wrapped_object(lua_State *L, lua_Object lobj) {
     return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
 }
 

@@ -20,6 +20,7 @@ int lua_getboolean(lua_State *L, lua_Object obj);
 
 int lua_gettop(lua_State *L);
 py_object *get_py_object(lua_State *L, int n);
+int is_wrapped_object(lua_State *L, lua_Object lobj);
 int get_base_tag(lua_State *L);
 
 PyObject *get_py_tuple(lua_State *, int stackpos);

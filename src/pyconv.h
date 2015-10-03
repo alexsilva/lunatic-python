@@ -21,5 +21,6 @@ typedef struct {
 
 int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
 int py_convert(lua_State *L, PyObject *o);
+void lua_raw(lua_State *L);
 
 #endif //LUNATIC_PYCONV_H

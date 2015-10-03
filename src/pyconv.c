@@ -54,6 +54,59 @@ int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     return 1;
 }
 
+lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
+    lua_Object ltable = lua_createtable(L);
+    if (PyDict_Check(obj)) {
+        PyObject *key, *value;
+        Py_ssize_t pos = 0;
+        while (PyDict_Next(obj, &pos, &key, &value)) {
+            if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
+                _lua_object_raw(L, value, ltable, key);
+            } else {
+                lua_pushobject(L, ltable);
+                py_convert(L, key);
+                py_convert(L, value);
+                lua_settable(L);
+            }
+        }
+    } else if (PyList_Check(obj) || PyTuple_Check(obj)) {
+        Py_ssize_t size = PyList_Check(obj) ? PyList_Size(obj) : PyTuple_Size(obj);
+        Py_ssize_t index;
+        PyObject *value;
+        for (index = 0; index < size; index++) {
+            value = PyObject_GetItem(obj, PyInt_FromSsize_t(index));
+            if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
+                _lua_object_raw(L, value, ltable, PyInt_FromSsize_t(index + 1));
+            } else {
+                lua_pushobject(L, ltable);
+                py_convert(L, PyInt_FromSsize_t(index + 1));
+                py_convert(L, value);
+                lua_settable(L);
+            }
+        }
+    } else {
+        lua_error(L, "unsupported raw type");
+    }
+    if (lptable && lpkey) {
+        lua_pushobject(L, lptable);
+        py_convert(L, lpkey);
+        lua_pushobject(L, ltable);
+        lua_settable(L);
+    }
+    return ltable;
+}
+
+void lua_raw(lua_State *L) {
+    lua_Object lobj = lua_getparam(L, 1);
+    if (is_wrapped_object(L, lobj)) {
+        py_object *obj = get_py_object(L, 1);
+        lua_pushobject(L, _lua_object_raw(L, obj->o, 0, NULL));
+        free(obj);
+    } else {
+        lua_pushobject(L, lobj);
+    }
+}
+
 int py_convert(lua_State *L, PyObject *o) {
     int ret = 0;
     if (o == Py_None || o == Py_False) {

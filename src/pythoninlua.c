@@ -380,6 +380,7 @@ static struct luaL_reg py_lib[] = {
         {"system_init", python_system_init},
         {"args"       , py_args},
         {"kwargs"     , py_kwargs},
+        {"raw"        , lua_raw},
         {NULL, NULL}
 };
 
