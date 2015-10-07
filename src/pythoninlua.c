@@ -367,6 +367,12 @@ static void py_import(lua_State *L) {
 
 static void python_system_init(lua_State *L);
 
+/** Ends the Python interpreter, freeing resources*/
+static void python_system_exit(lua_State *L) {
+    if (Py_IsInitialized())
+        Py_Finalize();
+}
+
 static struct luaL_reg py_lib[] = {
         {"execute",     py_execute},
         {"eval",        py_eval},
@@ -378,6 +384,7 @@ static struct luaL_reg py_lib[] = {
         {"builtins",    py_builtins},
         {"import",      py_import},
         {"system_init", python_system_init},
+        {"system_exit", python_system_exit},
         {"args"       , py_args},
         {"kwargs"     , py_kwargs},
         {"raw"        , lua_raw},

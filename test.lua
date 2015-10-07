@@ -103,3 +103,6 @@ assert(json.loads(jsond)[2] == 'c', "json parsed list 2 index invalid value")
 
 assert(python.eval("1") == 1, "eval int no match")
 assert(python.eval("1.0001") == 1.0001, "eval float no match")
+
+-- Ends the Python interpreter, freeing resources to OS
+python.system_exit()
