@@ -199,6 +199,9 @@ static void py_object_gc(lua_State *L) {
         Py_CLEAR(pobj->o);
     }
     free(pobj);
+    // python cleanup
+    if (Py_IsInitialized())
+        Py_Finalize();
 }
 
 static void py_object_tostring(lua_State *L) {
