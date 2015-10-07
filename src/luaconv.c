@@ -17,7 +17,9 @@
 #include "utils.h"
 
 int lua_isboolean(lua_State *L, lua_Object obj) {
-    return lua_isuserdata(L, obj) && PyBool_Check((PyObject *) lua_getuserdata(L, obj));
+    if (lua_isuserdata(L, obj) && lua_getuserdata(L, obj))
+        return PyBool_Check((PyObject *) lua_getuserdata(L, obj));
+    return 0;
 }
 
 int lua_getboolean(lua_State *L, lua_Object obj) {
