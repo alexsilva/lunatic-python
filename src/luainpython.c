@@ -64,7 +64,7 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
             return NULL;
         }
     }
-    if (lua_callfunction(LuaState, lobj)) {
+    if (lua_callfunction(L, lobj)) {
         char *name;  // get function name
         lua_getobjname(L, lobj, &name);
         PyErr_Format(PyExc_Exception, "calling function \"%s\"", name);
