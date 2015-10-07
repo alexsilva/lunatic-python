@@ -402,7 +402,7 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    LuaState = L; // state of bridge lua in python
+    if (!LuaState) LuaState = L; // state of bridge lua in python
 
     lua_Object python = lua_createtable(L);
 
