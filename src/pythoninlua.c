@@ -420,14 +420,16 @@ LUA_API int luaopen_python(lua_State *L) {
         set_table_fn(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
-
     set_table_userdata(L, python, "True", Py_True);
+    Py_INCREF(Py_True);
     set_table_userdata(L, python, "False", Py_False);
+    Py_INCREF(Py_False);
 
     // base python object
     lua_Object ltable = lua_createtable(L);
     set_table_object(L, python, POBJECT, ltable);
     set_table_userdata(L, ltable, "base", Py_True);
+    Py_INCREF(Py_True);
 
     // register all tag methods
     int ntag = lua_newtag(L);
