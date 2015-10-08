@@ -40,7 +40,6 @@
 lua_State *LuaState = NULL;
 
 static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
-    lua_beginblock(L);
     PyObject *ret = NULL;
     PyObject *arg;
     int nargs, rc, i;
@@ -99,7 +98,6 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
         Py_INCREF(Py_None);
         ret = Py_None;
     }
-    lua_endblock(L);
     return ret;
 }
 
@@ -214,11 +212,12 @@ static PyObject *LuaObject_str(PyObject *obj) {
     return PyString_FromString(buff);
 }
 
-static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
-{
+static PyObject *LuaObject_call(PyObject *obj, PyObject *args) {
+    lua_beginblock(LuaState);
     lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
-
-    return LuaCall(LuaState, lobj, args);
+    PyObject *pyObject = LuaCall(LuaState, lobj, args);
+    lua_endblock(LuaState);
+    return pyObject;
 }
 
 static PyObject *LuaObject_iternext(LuaObject *obj) {
@@ -382,14 +381,16 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
     return ret;
 }
 
-static PyObject *Lua_require(PyObject *self, PyObject *args)
-{
+static PyObject *Lua_require(PyObject *self, PyObject *args) {
+    lua_beginblock(LuaState);
     lua_Object lobj = lua_getglobal(LuaState, "dofile");
     if (lua_isnil(LuaState, lobj)) {
         PyErr_SetString(PyExc_RuntimeError, "require is not defined");
         return NULL;
     }
-    return LuaCall(LuaState, lobj, args);
+    PyObject *pyObject = LuaCall(LuaState, lobj, args);
+    lua_endblock(LuaState);
+    return pyObject;
 }
 
 static PyMethodDef lua_methods[] = {
