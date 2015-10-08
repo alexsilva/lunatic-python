@@ -208,7 +208,7 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
         py_object *pobj = get_py_object(L, stackpos);
         ret = pobj->o;
         free(pobj);
-    } else if (lua_istable(L, lobj)) {
+    } else if (lua_istable(L, lobj) || lua_isfunction(L, lobj)) {
         if (stackpos) {
             ret = LuaObject_New(L, stackpos);
         } else {
@@ -230,8 +230,6 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
     } else if (lua_isuserdata(L, lobj)) {
         void *voidPtr = lua_getuserdata(L, lobj); // userdata NULL ?
         ret = voidPtr ? (PyObject *) voidPtr : Py_None;
-    } else if(lua_isfunction(L, lobj)) {
-        ret = LuaObject_New(L, stackpos);
     }
     return ret;
 }
