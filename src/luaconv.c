@@ -15,6 +15,7 @@
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
+#include "pythoninlua.h"
 
 int lua_isboolean(lua_State *L, lua_Object obj) {
     if (lua_isuserdata(L, obj) && lua_getuserdata(L, obj))
@@ -67,7 +68,6 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     lua_beginblock(L);
     lua_pushobject(L, ltable);
     lua_call(L, "getn");
-
     int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
 
     PyObject *tuple = PyTuple_New(nargs);
@@ -76,7 +76,6 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     }
     PyObject *value;
     int index = lua_next(L, ltable, 0);
-
     while (index != 0) {
         value = lua_convert(L, 2);
         Py_INCREF(value);
@@ -91,7 +90,6 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
 
 /* convert to args python: fn(*args) */
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
-    lua_beginblock(L);
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) {
@@ -99,7 +97,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     }
     int i;
     for (i = 0; i != nargs; i++) {
+        lua_beginblock(L);
         PyObject *arg = lua_convert(L, i + stackpos + 1);
+        lua_endblock(L);
         if (!arg) {
             Py_DECREF(tuple);
             char *error = "failed to convert argument #%d";
@@ -109,7 +109,6 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         }
         PyTuple_SetItem(tuple, i, arg);
     }
-    lua_endblock(L);
     return tuple;
 }
 
@@ -208,17 +207,25 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
         py_object *pobj = get_py_object(L, stackpos);
         ret = pobj->o;
         free(pobj);
-    } else if (lua_istable(L, lobj) || lua_isfunction(L, lobj)) {
-        if (stackpos) {
+    } else if (lua_isfunction(L, lobj)) {
+        if (stackpos && !lobj) {
             ret = LuaObject_New(L, stackpos);
         } else {
             ret = LuaObject_PyNew(L, lobj);
         }
-        //if (is_indexed_array(L, lobj)) {
-        //    ret = _get_py_tuple(L, lobj);
-        //} else {
-        //    ret = get_py_dict(L, lobj);
-        //}
+    } else if (lua_istable(L, lobj)) {
+        if (!PYTHON_EMBED_MODE) { // Lua inside Python
+            if (stackpos) {
+                ret = LuaObject_New(L, stackpos);
+            } else {
+                ret = LuaObject_PyNew(L, lobj);
+            }
+        //  Python inside Lua
+        } else if (is_indexed_array(L, lobj)) {
+            ret = _get_py_tuple(L, lobj);
+        } else {
+            ret = get_py_dict(L, lobj);
+        }
     } else if (lua_isboolean(L, lobj)) {
         if (lua_getboolean(L, lobj)) {
             Py_INCREF(Py_True);

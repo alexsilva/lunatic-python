@@ -7,7 +7,6 @@
 #include "utils.h"
 
 
-
 PyObject *LuaObject_PyNew(lua_State *L, lua_Object lobj) {
     LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
     if (obj) {

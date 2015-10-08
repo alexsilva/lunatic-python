@@ -23,7 +23,11 @@
 #ifndef PYTHONINLUA_H
 #define PYTHONINLUA_H
 
-#include "lua.h"
+#include <stdbool.h>
+#include <lua.h>
+
+// Variable to know in mode python was started.
+extern bool PYTHON_EMBED_MODE;
 
 #if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)

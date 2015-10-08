@@ -36,6 +36,10 @@
 #include "pyconv.h"
 #include "utils.h"
 
+// Variable to know in mode python was started (Inside Lua embedded).
+bool PYTHON_EMBED_MODE = false;
+
+
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     PyObject *args = PyTuple_New(0);
@@ -402,7 +406,8 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    if (!LuaState) LuaState = L; // state of bridge lua in python
+    LuaState = L;  // Lua global state
+    PYTHON_EMBED_MODE = false;  // If Python is inside Lua
 
     lua_Object python = lua_createtable(L);
 
@@ -452,8 +457,8 @@ LUA_API int luaopen_python(lua_State *L) {
 /* Initialize Python interpreter */
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
-
     if (!Py_IsInitialized()) {
+        PYTHON_EMBED_MODE = true; // If Python is inside Lua
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {
