@@ -31,6 +31,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable);
 void py_kwargs(lua_State *L);
 void py_args(lua_State *L);
 
-PyObject *lua_convert(lua_State *L, int n);
+PyObject *lua_convert(lua_State *L, int stackpos);
+PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj);
 
 #endif //LUNATIC_LUACONV_H

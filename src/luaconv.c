@@ -186,9 +186,9 @@ py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
-PyObject *lua_convert(lua_State *L, int n) {
+
+PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
     PyObject *ret = NULL;
-    lua_Object lobj = lua_getparam(L, n);
     if (lua_isnil(L, lobj)) {
         Py_INCREF(Py_None);
         ret = Py_None;
@@ -207,15 +207,20 @@ PyObject *lua_convert(lua_State *L, int n) {
             ret = PyUnicode_FromStringAndSize(s, len);
         }
     } else if (is_wrapped_object(L, lobj)) {
-        py_object *pobj = get_py_object(L, n);
+        py_object *pobj = get_py_object(L, stackpos);
         ret = pobj->o;
         free(pobj);
     } else if (lua_istable(L, lobj)) {
-        if (is_indexed_array(L, lobj)) {
-            ret = _get_py_tuple(L, lobj);
+        if (stackpos) {
+            ret = LuaObject_New(L, stackpos);
         } else {
-            ret = get_py_dict(L, lobj);
+            ret = LuaObject_PyNew(L, lobj);
         }
+        //if (is_indexed_array(L, lobj)) {
+        //    ret = _get_py_tuple(L, lobj);
+        //} else {
+        //    ret = get_py_dict(L, lobj);
+        //}
     } else if (lua_isboolean(L, lobj)) {
         if (lua_getboolean(L, lobj)) {
             Py_INCREF(Py_True);
@@ -228,7 +233,11 @@ PyObject *lua_convert(lua_State *L, int n) {
         void *voidPtr = lua_getuserdata(L, lobj); // userdata NULL ?
         ret = voidPtr ? (PyObject *) voidPtr : Py_None;
     } else if(lua_isfunction(L, lobj)) {
-        ret = LuaObject_New(L, n);
+        ret = LuaObject_New(L, stackpos);
     }
     return ret;
+}
+
+PyObject *lua_convert(lua_State *L, int stackpos) {
+    return lua_obj_convert(L, stackpos, lua_getparam(L, stackpos));
 }

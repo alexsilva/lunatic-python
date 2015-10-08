@@ -11,6 +11,7 @@
 
 #define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)
 
+PyObject *LuaObject_PyNew(lua_State *L, lua_Object lobj);
 PyObject *LuaObject_New(lua_State *L, int n);
 
 typedef struct {
