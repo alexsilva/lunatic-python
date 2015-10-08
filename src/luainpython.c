@@ -143,34 +143,30 @@ static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr)
     return ret;
 }
 
-static int LuaObject_setattr(PyObject *obj, PyObject *attr, PyObject *value)
-{
+static int LuaObject_setattr(PyObject *obj, PyObject *attr, PyObject *value) {
+    lua_beginblock(LuaState);
     int ret = -1;
     int rc;
-    // lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
-    if (lua_isnil(LuaState, -1)) {
-
+    lua_Object ltable = lua_getref(LuaState, ((LuaObject*)obj)->ref);
+    if (lua_isnil(LuaState, ltable)) {
         lua_pop(LuaState);
-
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return -1;
     }
-    if (!lua_istable(LuaState, -1)) {
-
+    if (!lua_istable(LuaState, ltable)) {
         lua_pop(LuaState);
-
         PyErr_SetString(PyExc_TypeError, "Lua object is not a table");
         return -1;
     }
+    lua_pushobject(LuaState, ltable); // push table
     rc = py_convert(LuaState, attr);
     if (rc) {
         if (NULL == value) {
             lua_pushnil(LuaState);
             rc = 1;
         } else {
-            rc = py_convert(LuaState, value);
+            rc = py_convert(LuaState, value); // push value ?
         }
-
         if (rc) {
             lua_settable(LuaState);
             ret = 0;
@@ -181,7 +177,7 @@ static int LuaObject_setattr(PyObject *obj, PyObject *attr, PyObject *value)
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert key/attr");
     }
-    // lua_settop(LuaState, 0);
+    lua_endblock(LuaState);
     return ret;
 }
 
