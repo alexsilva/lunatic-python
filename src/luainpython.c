@@ -114,17 +114,16 @@ static void LuaObject_dealloc(LuaObject *self)
 
 static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr)
 {
-    // lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
-    if (lua_isnil(LuaState, -1)) {
+    lua_Object ltable = lua_getref(LuaState, ((LuaObject*)obj)->ref);
+    if (lua_isnil(LuaState, ltable)) {
         lua_pop(LuaState);
-
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return NULL;
     }
     
-    if (!lua_isstring(LuaState, -1)
-        && !lua_istable(LuaState, -1)
-        && !lua_isuserdata(LuaState, -1))
+    if (!lua_isstring(LuaState, ltable)
+        && !lua_istable(LuaState, ltable)
+        && !lua_isuserdata(LuaState, ltable))
     {
         lua_pop(LuaState);
 
@@ -133,10 +132,11 @@ static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr)
     }
 
     PyObject *ret = NULL;
-    int rc = py_convert(LuaState, attr);
+    lua_pushobject(LuaState, ltable); // push table
+    int rc = py_convert(LuaState, attr); // push key
     if (rc) {
-        lua_gettable(LuaState);
-        ret = lua_convert(LuaState, -1);
+        lua_Object lobj = lua_gettable(LuaState);
+        ret = lua_obj_convert(LuaState, 0, lobj); // convert
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
@@ -331,7 +331,8 @@ PyTypeObject LuaObject_Type = {
 
 
 PyObject *Lua_run(PyObject *args, int eval) {
-    PyObject *ret;
+    lua_beginblock(LuaState);
+    PyObject *ret = NULL;
     char *buf = NULL;
     char *s;
     int len;
@@ -340,22 +341,30 @@ PyObject *Lua_run(PyObject *args, int eval) {
         return NULL;
 
     if (eval) {
-        buf = (char *) malloc(strlen("return ")+len+1);
-        strcpy(buf, "return ");
+        char *prefix = "return ";
+        buf = (char *) malloc(strlen(prefix) + len + 2);
+        strcpy(buf, prefix);
         strncat(buf, s, (size_t) len);
+        strncat(buf, ";", 1);
         s = buf;
-        len = strlen("return ")+len;
+        len = strlen(prefix) + len;
     }
-
     if (lua_dobuffer(LuaState, s, len, "<python>") != 0) {
         PyErr_Format(PyExc_RuntimeError,
                  "error loading code: %s", s);
         return NULL;
     }
-
-    free(buf);
-    ret = lua_convert(LuaState, 1);
-    return !ret ? Py_None : ret;  // check if as return value
+    if (eval) free(buf);
+    int nargs = lua_gettop(LuaState);
+    if (nargs > 0) ret = lua_convert(LuaState, 1);
+    if (!ret) {
+        Py_INCREF(Py_None);
+        ret = Py_None;
+    } else {
+        Py_INCREF(ret);
+    }
+    lua_endblock(LuaState);
+    return ret;
 }
 
 PyObject *Lua_execute(PyObject *self, PyObject *args)
