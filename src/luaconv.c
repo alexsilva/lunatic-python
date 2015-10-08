@@ -4,9 +4,6 @@
 #include <Python.h>
 
 #include <lua.h>
-#include <stdbool.h>
-#include "lauxlib.h"
-#include "lualib.h"
 
 #ifndef lua_next
 #include "lapi.h"
@@ -236,7 +233,12 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
         }
     } else if (lua_isuserdata(L, lobj)) {
         void *void_ptr = lua_getuserdata(L, lobj); // userdata NULL ?
-        ret = void_ptr ? (PyObject *) void_ptr : Py_None;
+        if (void_ptr) {
+            ret = (PyObject *) void_ptr;
+        }  else {
+            Py_INCREF(Py_None);
+            ret = Py_None;
+        }
     }
     return ret;
 }
