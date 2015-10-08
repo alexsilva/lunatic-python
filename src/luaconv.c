@@ -51,7 +51,6 @@ int is_wrapped_object(lua_State *L, lua_Object lobj) {
 
 /*checks if a table contains only numbers*/
 int is_indexed_array(lua_State *L, lua_Object lobj) {
-    lua_beginblock(L);
     int index = lua_next(L, lobj, 0);
     lua_Object key;
     while (index != 0) {
@@ -60,7 +59,6 @@ int is_indexed_array(lua_State *L, lua_Object lobj) {
             return 0;
         index = lua_next(L, lobj, index);
     }
-    lua_endblock(L);
     return 1;
 }
 
