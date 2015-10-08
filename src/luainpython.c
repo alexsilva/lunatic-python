@@ -220,31 +220,21 @@ static PyObject *LuaObject_call(PyObject *obj, PyObject *args)
     return LuaCall(LuaState, lobj, args);
 }
 
-static PyObject *LuaObject_iternext(LuaObject *obj)
-{
-//    PyObject *ret = NULL;
-//    lua_rawgeti(LuaState, LUA_REGISTRYINDEX, ((LuaObject*)obj)->ref);
-//
-//    if (obj->refiter == 0)
-//        lua_pushnil(LuaState);
-//    else
-//        lua_rawgeti(LuaState, LUA_REGISTRYINDEX, obj->refiter);
-//
-//    if (lua_next(LuaState, -2) != 0) {
-//        /* Remove value. */
-//        lua_pop(LuaState, 1);
-//        ret = LuaConvert(LuaState, -1);
-//        /* Save key for next iteration. */
-//        if (!obj->refiter)
-//            obj->refiter = luaL_ref(LuaState, LUA_REGISTRYINDEX);
-//        else
-//            lua_rawseti(LuaState, LUA_REGISTRYINDEX, obj->refiter);
-//    } else if (obj->refiter) {
-//        luaL_unref(LuaState, LUA_REGISTRYINDEX, obj->refiter);
-//        obj->refiter = 0;
-//    }
+static PyObject *LuaObject_iternext(LuaObject *obj) {
+    lua_beginblock(LuaState);
+    PyObject *ret = NULL;
 
-    return NULL;
+    lua_Object ltable = lua_getref(LuaState, obj->ref);
+    int indexed = is_indexed_array(LuaState, ltable); // tuple, list
+
+    /* Save key for next iteration. */
+    obj->refiter = lua_next(LuaState, ltable, obj->refiter);
+
+    if (obj->refiter > 0) {
+        ret = lua_convert(LuaState, (indexed ? 2 : 1));
+    }
+    lua_endblock(LuaState);
+    return ret;
 }
 
 static int LuaObject_length(LuaObject *obj) {
