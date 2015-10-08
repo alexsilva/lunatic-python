@@ -5,9 +5,13 @@
 -- Time: 16:22
 -- To change this template use File | Settings | File Templates.
 --
-handle, msg = loadlib(getenv("LIBRARY_PATH"))
-if (not handle or handle == -1) then error(msg) end
-callfromlib(handle, 'luaopen_python')
+local handle, msg
+
+if (not python) then  -- LUA -> PYTHON - LUA
+    handle, msg = loadlib(getenv("LIBRARY_PATH"))
+    if (not handle or handle == -1) then error(msg) end
+    callfromlib(handle, 'luaopen_python')
+end
 
 assert(python, "undefined python object")
 
@@ -105,4 +109,6 @@ assert(python.eval("1") == 1, "eval int no match")
 assert(python.eval("1.0001") == 1.0001, "eval float no match")
 
 -- Ends the Python interpreter, freeing resources to OS
-python.system_exit()
+if (not python.LUA_EMBED_MODE) then
+    python.system_exit()
+end
