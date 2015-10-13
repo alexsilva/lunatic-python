@@ -234,7 +234,11 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
     } else if (lua_isuserdata(L, lobj)) {
         void *void_ptr = lua_getuserdata(L, lobj); // userdata NULL ?
         if (void_ptr) {
-            ret = (PyObject *) void_ptr;
+            if (PYTHON_EMBED_MODE) {
+                ret = (PyObject *) void_ptr;
+            } else {
+                ret = LuaObject_PyNew(L, lobj);
+            }
         }  else {
             Py_INCREF(Py_None);
             ret = Py_None;
