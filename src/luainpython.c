@@ -22,7 +22,6 @@
 */
 #include <Python.h>
 #include <lua.h>
-#include <lauxlib.h>
 #include <lualib.h>
 
 #include "pythoninlua.h"
@@ -33,6 +32,8 @@
 
 #ifndef lua_next
 #include "lapi.h"
+#include "utils.h"
+
 #else
 #include "lshared.h"
 #endif
@@ -381,23 +382,32 @@ PyObject *Lua_globals(PyObject *self, PyObject *args)
     return ret;
 }
 
-static PyObject *Lua_require(PyObject *self, PyObject *args) {
+static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
     lua_beginblock(LuaState);
-    lua_Object lobj = lua_getglobal(LuaState, "dofile");
-    if (lua_isnil(LuaState, lobj)) {
-        PyErr_SetString(PyExc_RuntimeError, "require is not defined");
+    const char *command = NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &command))
+        return NULL;
+
+    int ret = lua_dofile(LuaState, (char *) command);
+    if (ret) {
+        char *error = "error loading file \"%s\"";
+        char buff[calc_buff_size(2, error, command)];
+        sprintf(buff, error, command);
+        PyErr_SetString(PyExc_RuntimeError, &buff[0]);
         return NULL;
     }
-    PyObject *pyObject = LuaCall(LuaState, lobj, args);
+    PyObject *o = PyInt_FromLong(ret);
+    Py_INCREF(o);
     lua_endblock(LuaState);
-    return pyObject;
+    return o;
 }
 
 static PyMethodDef lua_methods[] = {
     {"execute",    Lua_execute,    METH_VARARGS,        NULL},
     {"eval",       Lua_eval,       METH_VARARGS,        NULL},
     {"globals",    Lua_globals,    METH_NOARGS,         NULL},
-    {"require",    Lua_require,    METH_VARARGS,        NULL},
+    {"require",    Lua_dofile,     METH_VARARGS,        NULL},
     {NULL,         NULL}
 };
 
