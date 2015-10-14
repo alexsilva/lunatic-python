@@ -149,7 +149,9 @@ int py_convert(lua_State *L, PyObject *o) {
         ret = 1;
     } else {
         int asindx = 0;
-        if (PyList_Check(o) || PyTuple_Check(o) || PyDict_Check(o))
+        if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||
+            PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
+            PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
             asindx = 1;
         ret = py_object_wrap_lua(L, o, asindx);
     }
