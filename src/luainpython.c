@@ -391,10 +391,10 @@ static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
 
     int ret = lua_dofile(LuaState, (char *) command);
     if (ret) {
-        char *error = "error loading file \"%s\"";
+        char *error = "loading file \"%s\"";
         char buff[calc_buff_size(2, error, command)];
         sprintf(buff, error, command);
-        PyErr_SetString(PyExc_RuntimeError, &buff[0]);
+        PyErr_SetString(PyExc_ImportError, &buff[0]);
         return NULL;
     }
     PyObject *o = PyInt_FromLong(ret);
