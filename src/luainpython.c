@@ -22,7 +22,6 @@
 */
 #include <Python.h>
 #include <lua.h>
-#include <lualib.h>
 
 #include "pythoninlua.h"
 #include "luainpython.h"
@@ -39,7 +38,7 @@
 #endif
 
 #ifdef CGILUA_ENV
-#include "cgilua.h"
+#include "cgilua/cgilua.h"
 #endif
 
 lua_State *LuaState = NULL;
@@ -402,7 +401,30 @@ static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
     return o;
 }
 
+#ifdef CGILUA_ENV
+/*
+ * Initialization function CGILua environment.
+ */
+static PyObject *lua_start(PyObject *self, PyObject *args) {
+    const char *command = NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &command))
+        return NULL;
+
+    char *path[1] = {(char *) command};
+
+    luaopen_python(lua_main(1, path));
+
+    PyObject *ret = PyInt_FromLong(1);
+    Py_INCREF(ret);
+    return ret;
+}
+#endif
+
 static PyMethodDef lua_methods[] = {
+#ifdef CGILUA_ENV
+    {"start",      lua_start,      METH_VARARGS,        NULL},
+#endif
     {"execute",    Lua_execute,    METH_VARARGS,        NULL},
     {"eval",       Lua_eval,       METH_VARARGS,        NULL},
     {"globals",    Lua_globals,    METH_NOARGS,         NULL},
