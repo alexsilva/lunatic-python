@@ -23,6 +23,13 @@ set(SOURCES
     src/lshared.h
     src/lapi.c)
 
+if (CGILUA_ENV)
+    link_directories(src/cgilua src/loadlib)
+    set(SOURCES
+        src/cgilua/cgilua.c
+        src/loadlib/loadlib.c)
+endif(CGILUA_ENV)
+
 add_library(python MODULE ${SOURCES})
 add_library(lualib MODULE ${SOURCES})
 

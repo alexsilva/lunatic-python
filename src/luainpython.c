@@ -38,6 +38,10 @@
 #include "lshared.h"
 #endif
 
+#ifdef CGILUA_ENV
+#include "cgilua.h"
+#endif
+
 lua_State *LuaState = NULL;
 
 static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
@@ -432,6 +436,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
 
     Py_INCREF(&LuaObject_Type);
 
+#ifndef CGILUA_ENV
     if (!LuaState) {
         LuaState = lua_open();
 
@@ -442,6 +447,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
 
         luaopen_python(LuaState);
     }
+#endif
 
 #if PY_MAJOR_VERSION >= 3
     return m;
