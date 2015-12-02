@@ -425,10 +425,15 @@ static PyObject *lua_start(PyObject *self, PyObject *args) {
  * Stops all CGILua environment, freeing up resources.
  */
 static PyObject *lua_stop(PyObject *self, PyObject *args) {
+    PyObject *ret = PyInt_FromLong(1);
+    if (!LuaState) { // there was initiated.
+        ret = PyInt_FromLong(0);
+        Py_INCREF(ret);
+        return ret;
+    }
+    Py_INCREF(ret);
     lua_close(LuaState);
     LuaState = NULL;
-    PyObject *ret = PyInt_FromLong(1);
-    Py_INCREF(ret);
     return ret;
 }
 #endif
