@@ -24,9 +24,6 @@ set(SOURCES
     src/lapi.c)
 
 if (CGILUA_ENV)
-    link_directories(
-            src/cgilua
-            src/loadlib)
     set(SOURCES
         ${SOURCES}
         src/cgilua/cgilua.c
@@ -35,6 +32,10 @@ endif(CGILUA_ENV)
 
 add_library(python MODULE ${SOURCES})
 add_library(lualib MODULE ${SOURCES})
+
+if (CGILUA_ENV)
+    target_compile_definitions(lualib PRIVATE CGILUA_ENV=${CGILUA_ENV})
+endif(CGILUA_ENV)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set_target_properties(lualib PROPERTIES
