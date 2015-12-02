@@ -419,11 +419,22 @@ static PyObject *lua_start(PyObject *self, PyObject *args) {
     Py_INCREF(ret);
     return ret;
 }
+/*
+ * Stops all CGILua environment, freeing up resources.
+ */
+static PyObject *lua_stop(PyObject *self, PyObject *args) {
+    lua_close(LuaState);
+    LuaState = NULL;
+    PyObject *ret = PyInt_FromLong(1);
+    Py_INCREF(ret);
+    return ret;
+}
 #endif
 
 static PyMethodDef lua_methods[] = {
 #ifdef CGILUA_ENV
     {"start",      lua_start,      METH_VARARGS,        NULL},
+    {"stop",       lua_stop,       METH_VARARGS,        NULL},
 #endif
     {"execute",    Lua_execute,    METH_VARARGS,        NULL},
     {"eval",       Lua_eval,       METH_VARARGS,        NULL},
