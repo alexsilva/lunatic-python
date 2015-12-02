@@ -255,13 +255,11 @@ static int LuaObject_length(LuaObject *obj) {
     return len;
 }
 
-static PyObject *LuaObject_subscript(PyObject *obj, PyObject *key)
-{
+static PyObject *LuaObject_subscript(PyObject *obj, PyObject *key) {
     return LuaObject_getattr(obj, key);
 }
 
-static int LuaObject_ass_subscript(PyObject *obj, PyObject *key, PyObject *value)
-{
+static int LuaObject_ass_subscript(PyObject *obj, PyObject *key, PyObject *value) {
     return LuaObject_setattr(obj, key, value);
 }
 
@@ -356,18 +354,15 @@ PyObject *Lua_run(PyObject *args, int eval) {
     return ret;
 }
 
-PyObject *Lua_execute(PyObject *self, PyObject *args)
-{
+PyObject *Lua_execute(PyObject *self, PyObject *args) {
     return Lua_run(args, 0);
 }
 
-PyObject *Lua_eval(PyObject *self, PyObject *args)
-{
+PyObject *Lua_eval(PyObject *self, PyObject *args) {
     return Lua_run(args, 1);
 }
 
-PyObject *Lua_globals(PyObject *self, PyObject *args)
-{
+PyObject *Lua_globals(PyObject *self, PyObject *args) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getglobal(LuaState, "_G");
     if (lua_isnil(LuaState, lobj)) {
@@ -421,8 +416,7 @@ static struct PyModuleDef lua_module = {
 };
 #endif
 
-PyMODINIT_FUNC PyInit_lua(void)
-{
+PyMODINIT_FUNC PyInit_lua(void) {
     PyObject *m;
 
 #if PY_MAJOR_VERSION >= 3
