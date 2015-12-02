@@ -106,12 +106,14 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    lua_beginblock(LuaState);
-    lua_unref(LuaState, self->ref);
-    if (self->refiter)
-        lua_unref(LuaState, self->refiter);
+    if (LuaState) { // check if stop was not called
+        lua_beginblock(LuaState);
+        lua_unref(LuaState, self->ref);
+        if (self->refiter)
+            lua_unref(LuaState, self->refiter);
+        lua_endblock(LuaState);
+    }
     Py_TYPE(self)->tp_free((PyObject *)self);
-    lua_endblock(LuaState);
 }
 
 static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr) {
