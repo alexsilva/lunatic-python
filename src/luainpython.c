@@ -415,9 +415,10 @@ static PyObject *lua_start(PyObject *self, PyObject *args) {
 
     char *path[1] = {(char *) command};
 
-    luaopen_python(lua_main(1, path));
+    lua_State *lua_state = lua_main(1, path);
+    luaopen_python(lua_state);
 
-    PyObject *ret = PyInt_FromLong(1);
+    PyObject *ret = PyCapsule_New(lua_state, LUA_STATE_NAME, NULL);
     Py_INCREF(ret);
     return ret;
 }

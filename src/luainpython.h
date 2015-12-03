@@ -23,6 +23,9 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
+// The capsule object name to keep the state of Lua.
+#define LUA_STATE_NAME "GLuaState"
+
 extern lua_State *LuaState;
 extern PyTypeObject LuaObject_Type;
 
