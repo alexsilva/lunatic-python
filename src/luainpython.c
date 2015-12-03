@@ -39,6 +39,8 @@
 
 #ifdef CGILUA_ENV
 #include "cgilua/cgilua.h"
+#else
+#include <lualib.h>
 #endif
 
 lua_State *LuaState = NULL;
@@ -402,11 +404,12 @@ static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
     return o;
 }
 
-#ifdef CGILUA_ENV
+
 /*
  * Initialization function CGILua environment.
  */
-static PyObject *lua_start(PyObject *self, PyObject *args) {
+static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *kwargs) {
+#ifdef CGILUA_ENV
     const char *command = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &command))
@@ -414,37 +417,29 @@ static PyObject *lua_start(PyObject *self, PyObject *args) {
 
     char *path[1] = {(char *) command};
 
-    lua_State *lua_state = lua_main(1, path);
-    luaopen_python(lua_state);
+    self->L = lua_main(1, path);
+#else
+    self->L = lua_open();
 
-    LuaState = lua_state;
+    // default libs
+    lua_iolibopen(LuaState);
+    lua_strlibopen(LuaState);
+    lua_mathlibopen(LuaState);
+#endif
 
-    PyObject *ret = PyCapsule_New(lua_state, LUA_STATE_NAME, NULL);
-    Py_INCREF(ret);
-    return ret;
-}
+    luaopen_python(self->L);
+    return 0;
+};
+
 /*
  * Stops all CGILua environment, freeing up resources.
  */
-static PyObject *lua_stop(PyObject *self, PyObject *args) {
-    PyObject *ret = PyInt_FromLong(1);
-    if (!LuaState) { // there was initiated.
-        ret = PyInt_FromLong(0);
-        Py_INCREF(ret);
-        return ret;
-    }
-    Py_INCREF(ret);
-    lua_close(LuaState);
-    LuaState = NULL;
-    return ret;
+static void Interpreter_dealloc(InterpreterObject *self){
+    lua_close(self->L);
+    self->ob_type->tp_free((PyObject*)self);
 }
-#endif
 
-static PyMethodDef lua_methods[] = {
-#ifdef CGILUA_ENV
-    {"start",      lua_start,      METH_VARARGS,        NULL},
-    {"stop",       lua_stop,       METH_VARARGS,        NULL},
-#endif
+static PyMethodDef interpreter_methods[] = {
     {"execute",    Lua_execute,    METH_VARARGS,        NULL},
     {"eval",       Lua_eval,       METH_VARARGS,        NULL},
     {"globals",    Lua_globals,    METH_NOARGS,         NULL},
@@ -458,7 +453,7 @@ static PyTypeObject InterpreterObject_Type = {
     "lualib.Interpreter",      /*tp_name*/
     sizeof(InterpreterObject), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
-    0,                         /*tp_dealloc*/
+    (destructor) Interpreter_dealloc, /*tp_dealloc*/
     0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
@@ -474,7 +469,28 @@ static PyTypeObject InterpreterObject_Type = {
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,/*tp_flags*/
-    "Lua interpreter",          /* tp_doc */
+    "Lua interpreter",         /* tp_doc */
+    0,		                  /* tp_traverse */
+    0,		                  /* tp_clear */
+    0,		                  /* tp_richcompare */
+    0,		                  /* tp_weaklistoffset */
+    0,		                  /* tp_iter */
+    0,		                  /* tp_iternext */
+    interpreter_methods,      /* tp_methods */
+    0,                         /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)Interpreter_init,/* tp_init */
+    0,                         /* tp_alloc */
+    PyType_GenericNew,         /* tp_new */
+};
+
+static PyMethodDef lua_methods[] = {
+        {NULL, NULL}
 };
 
 #if PY_MAJOR_VERSION >= 3
@@ -510,7 +526,6 @@ PyMODINIT_FUNC PyInit_lua(void) {
     Py_INCREF(&LuaObject_Type);
     Py_INCREF(&InterpreterObject_Type);
     PyModule_AddObject(m, "Interpreter", (PyObject *)&InterpreterObject_Type);
-
 
 #ifndef CGILUA_ENV
     if (!LuaState) {
