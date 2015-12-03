@@ -507,14 +507,14 @@ PyMODINIT_FUNC PyInit_lua(void) {
     PyObject *m;
 
 #if PY_MAJOR_VERSION >= 3
-    if (PyType_Ready(&LuaObject_Type) < 0) return NULL;
+    if (PyType_Ready(&LuaObject_Type) < 0)
+        return NULL;
     m = PyModule_Create(&lua_module);
     if (m == NULL) return NULL;
 #else
     if (PyType_Ready(&LuaObject_Type) < 0)
         return;
 
-    InterpreterObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&InterpreterObject_Type) < 0)
         return;
 
@@ -526,19 +526,6 @@ PyMODINIT_FUNC PyInit_lua(void) {
     Py_INCREF(&LuaObject_Type);
     Py_INCREF(&InterpreterObject_Type);
     PyModule_AddObject(m, "Interpreter", (PyObject *)&InterpreterObject_Type);
-
-#ifndef CGILUA_ENV
-    if (!LuaState) {
-        LuaState = lua_open();
-
-        // default libs
-        lua_iolibopen(LuaState);
-        lua_strlibopen(LuaState);
-        lua_mathlibopen(LuaState);
-
-        luaopen_python(LuaState);
-    }
-#endif
 
 #if PY_MAJOR_VERSION >= 3
     return m;
