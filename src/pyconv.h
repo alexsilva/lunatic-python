@@ -16,6 +16,7 @@ PyObject *LuaObject_New(lua_State *L, int n);
 
 typedef struct {
     PyObject_HEAD
+    lua_State *L;
     int ref;
     int refiter;
 } LuaObject;

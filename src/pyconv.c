@@ -13,6 +13,7 @@ PyObject *LuaObject_PyNew(lua_State *L, lua_Object lobj) {
         lua_pushobject(L, lobj);
         obj->ref = lua_ref(L, 1);
         obj->refiter = 0;
+        obj->L = L; // The state of the Lua will be used implicitly.
     }
     return (PyObject*) obj;
 }

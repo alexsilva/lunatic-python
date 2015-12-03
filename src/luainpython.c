@@ -43,7 +43,7 @@
 
 lua_State *LuaState = NULL;
 
-static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
+static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
     PyObject *arg;
     int nargs, rc, i;
@@ -59,22 +59,22 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
                      "failed to get tuple item #%d", i);
             return NULL;
         }
-        rc = py_convert(L, arg);
+        rc = py_convert(self->L, arg);
         if (!rc) {
             PyErr_Format(PyExc_TypeError,
                      "failed to convert argument #%d", i);
             return NULL;
         }
     }
-    if (lua_callfunction(L, lobj)) {
+    if (lua_callfunction(self->L, lobj)) {
         char *name;  // get function name
-        lua_getobjname(L, lobj, &name);
+        lua_getobjname(self->L, lobj, &name);
         PyErr_Format(PyExc_Exception, "calling function \"%s\"", name);
         return NULL;
     }
-    nargs = lua_gettop(L);
+    nargs = lua_gettop(self->L);
     if (nargs == 1) {
-        ret = lua_convert(L, 1);
+        ret = lua_convert(self->L, 1);
         if (!ret) {
             PyErr_SetString(PyExc_TypeError,
                         "failed to convert return");
@@ -89,7 +89,7 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
-            arg = lua_convert(L, i+1);
+            arg = lua_convert(self->L, i+1);
             if (!arg) {
                 PyErr_Format(PyExc_TypeError,
                          "failed to convert return #%d", i);
@@ -106,94 +106,93 @@ static PyObject *LuaCall(lua_State *L, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    if (LuaState) { // check if stop was not called
-        lua_beginblock(LuaState);
-        lua_unref(LuaState, self->ref);
+    if (self->L) { // check if stop was not called
+        lua_beginblock(self->L);
+        lua_unref(self->L, self->ref);
         if (self->refiter)
-            lua_unref(LuaState, self->refiter);
-        lua_endblock(LuaState);
+            lua_unref(self->L, self->refiter);
+        lua_endblock(self->L);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyObject *LuaObject_getattr(PyObject *obj, PyObject *attr) {
-    lua_beginblock(LuaState);
-    lua_Object ltable = lua_getref(LuaState, ((LuaObject*)obj)->ref);
-    if (lua_isnil(LuaState, ltable)) {
-        lua_pop(LuaState);
+static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
+    lua_beginblock(self->L);
+    lua_Object ltable = lua_getref(self->L, self->ref);
+    if (lua_isnil(self->L, ltable)) {
+        lua_pop(self->L);
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return NULL;
     }
-    if (!lua_isstring(LuaState, ltable)
-        && !lua_istable(LuaState, ltable)
-        && !lua_isuserdata(LuaState, ltable))
+    if (!lua_isstring(self->L, ltable)
+        && !lua_istable(self->L, ltable)
+        && !lua_isuserdata(self->L, ltable))
     {
-        lua_pop(LuaState);
+        lua_pop(self->L);
 
         PyErr_SetString(PyExc_RuntimeError, "not an indexable value");
         return NULL;
     }
     PyObject *ret = NULL;
-    lua_pushobject(LuaState, ltable); // push table
-    int rc = py_convert(LuaState, attr); // push key
+    lua_pushobject(self->L, ltable); // push table
+    int rc = py_convert(self->L, attr); // push key
     if (rc) {
-        lua_Object lobj = lua_gettable(LuaState);
-        ret = lua_obj_convert(LuaState, 0, lobj); // convert
+        lua_Object lobj = lua_gettable(self->L);
+        ret = lua_obj_convert(self->L, 0, lobj); // convert
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
     return ret;
 }
 
-static int LuaObject_setattr(PyObject *obj, PyObject *attr, PyObject *value) {
-    lua_beginblock(LuaState);
+static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
+    lua_beginblock(self->L);
     int ret = -1;
     int rc;
-    lua_Object ltable = lua_getref(LuaState, ((LuaObject*)obj)->ref);
-    if (lua_isnil(LuaState, ltable)) {
-        lua_pop(LuaState);
+    lua_Object ltable = lua_getref(self->L, self->ref);
+    if (lua_isnil(self->L, ltable)) {
+        lua_pop(self->L);
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return -1;
     }
-    if (!lua_istable(LuaState, ltable)) {
-        lua_pop(LuaState);
+    if (!lua_istable(self->L, ltable)) {
+        lua_pop(self->L);
         PyErr_SetString(PyExc_TypeError, "Lua object is not a table");
         return -1;
     }
-    lua_pushobject(LuaState, ltable); // push table
-    rc = py_convert(LuaState, attr);
+    lua_pushobject(self->L, ltable); // push table
+    rc = py_convert(self->L, attr);
     if (rc) {
         if (NULL == value) {
-            lua_pushnil(LuaState);
+            lua_pushnil(self->L);
             rc = 1;
         } else {
-            rc = py_convert(LuaState, value); // push value ?
+            rc = py_convert(self->L, value); // push value ?
         }
         if (rc) {
-            lua_settable(LuaState);
+            lua_settable(self->L);
             ret = 0;
         } else {
-            PyErr_SetString(PyExc_ValueError,
-                    "can't convert value");
+            PyErr_SetString(PyExc_ValueError, "can't convert value");
         }
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert key/attr");
     }
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
     return ret;
 }
 
-static PyObject *LuaObject_str(PyObject *obj) {
-    lua_beginblock(LuaState);
-    lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
-    TObject *o = lapi_address(LuaState, lobj);
+static PyObject *LuaObject_str(LuaObject *self) {
+    lua_beginblock(self->L);
+    lua_Object lobj = lua_getref(self->L, self->ref);
+    TObject *o = lapi_address(self->L, lobj);
     char buff[64];
     switch (ttype(o)) { // Lua 3.2 source code builtin.c
         case LUA_T_NUMBER:
-            return PyString_FromFormat("<Lua number %ld>", (long) lua_getnumber(LuaState, lobj));
+            return PyString_FromFormat("<Lua number %ld>", (long) lua_getnumber(self->L, lobj));
         case LUA_T_STRING:
-            return PyString_FromFormat("<Lua string size %ld>", lua_strlen(LuaState, lobj));
+            return PyString_FromFormat("<Lua string size %ld>", lua_strlen(self->L, lobj));
         case LUA_T_ARRAY:
             sprintf(buff, "<Lua table at %p>", (void *)o->value.a);
             break;
@@ -214,58 +213,58 @@ static PyObject *LuaObject_str(PyObject *obj) {
         default:
             return PyString_FromString("invalid type");
     }
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
     return PyString_FromString(buff);
 }
 
-static PyObject *LuaObject_call(PyObject *obj, PyObject *args) {
-    lua_beginblock(LuaState);
-    lua_Object lobj = lua_getref(LuaState, ((LuaObject*)obj)->ref);
-    PyObject *pyObject = LuaCall(LuaState, lobj, args);
-    lua_endblock(LuaState);
-    return pyObject;
-}
-
-static PyObject *LuaObject_iternext(LuaObject *obj) {
-    lua_beginblock(LuaState);
-    PyObject *ret = NULL;
-
-    lua_Object ltable = lua_getref(LuaState, obj->ref);
-    int indexed = is_indexed_array(LuaState, ltable); // tuple, list
-
-    /* Save key for next iteration. */
-    obj->refiter = lua_next(LuaState, ltable, obj->refiter);
-
-    if (obj->refiter > 0) {
-        ret = lua_convert(LuaState, (indexed ? 2 : 1));
-    }
-    lua_endblock(LuaState);
+static PyObject *LuaObject_call(LuaObject *self, PyObject *args) {
+    lua_beginblock(self->L);
+    lua_Object lobj = lua_getref(self->L, self->ref);
+    PyObject *ret = LuaCall(self, lobj, args);
+    lua_endblock(self->L);
     return ret;
 }
 
-static int LuaObject_length(LuaObject *obj) {
-    lua_beginblock(LuaState);
-    int len = 0;
-    lua_Object lobj = lua_getref(LuaState, obj->ref);
-    if (lua_isfunction(LuaState, lobj)) {
-        len = 1;  // 1 is True
-    } else if (lua_isstring(LuaState, lobj)) {
-        len = lua_strlen(LuaState, lobj);
-    } else if (lua_istable(LuaState, lobj)) {
-        lua_pushobject(LuaState, lobj);
-        lua_call(LuaState, "getn");
-        len = (int) lua_getnumber(LuaState, lua_getresult(LuaState, 1));
+static PyObject *LuaObject_iternext(LuaObject *self) {
+    lua_beginblock(self->L);
+    PyObject *ret = NULL;
+
+    lua_Object ltable = lua_getref(self->L, self->ref);
+    int indexed = is_indexed_array(self->L, ltable); // tuple, list
+
+    /* Save key for next iteration. */
+    self->refiter = lua_next(self->L, ltable, self->refiter);
+
+    if (self->refiter > 0) {
+        ret = lua_convert(self->L, (indexed ? 2 : 1));
     }
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
+    return ret;
+}
+
+static int LuaObject_length(LuaObject *self) {
+    lua_beginblock(self->L);
+    int len = 0;
+    lua_Object lobj = lua_getref(self->L, self->ref);
+    if (lua_isfunction(self->L, lobj)) {
+        len = 1;  // 1 is True
+    } else if (lua_isstring(self->L, lobj)) {
+        len = lua_strlen(self->L, lobj);
+    } else if (lua_istable(self->L, lobj)) {
+        lua_pushobject(self->L, lobj);
+        lua_call(self->L, "getn");
+        len = (int) lua_getnumber(self->L, lua_getresult(self->L, 1));
+    }
+    lua_endblock(self->L);
     return len;
 }
 
-static PyObject *LuaObject_subscript(PyObject *obj, PyObject *key) {
-    return LuaObject_getattr(obj, key);
+static PyObject *LuaObject_subscript(LuaObject *self, PyObject *key) {
+    return LuaObject_getattr(self, key);
 }
 
-static int LuaObject_ass_subscript(PyObject *obj, PyObject *key, PyObject *value) {
-    return LuaObject_setattr(obj, key, value);
+static int LuaObject_ass_subscript(LuaObject *self, PyObject *key, PyObject *value) {
+    return LuaObject_setattr(self, key, value);
 }
 
 static PyMappingMethods LuaObject_as_mapping = {
@@ -280,7 +279,7 @@ static PyMappingMethods LuaObject_as_mapping = {
 
 PyTypeObject LuaObject_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "lua.custom",             /*tp_name*/
+    "lualib.LuaObject",             /*tp_name*/
     sizeof(LuaObject),        /*tp_basicsize*/
     0,                        /*tp_itemsize*/
     (destructor)LuaObject_dealloc, /*tp_dealloc*/
@@ -288,15 +287,15 @@ PyTypeObject LuaObject_Type = {
     0,                        /*tp_getattr*/
     0,                        /*tp_setattr*/
     0,                        /*tp_compare*/
-    LuaObject_str,            /*tp_repr*/
+    (reprfunc) LuaObject_str, /*tp_repr*/
     0,                        /*tp_as_number*/
     0,                        /*tp_as_sequence*/
     &LuaObject_as_mapping,    /*tp_as_mapping*/
     0,                        /*tp_hash*/
-    (ternaryfunc)LuaObject_call,     /*tp_call*/
-    LuaObject_str,            /*tp_str*/
-    LuaObject_getattr,       /*tp_getattro*/
-    LuaObject_setattr,        /*tp_setattro*/
+    (ternaryfunc) LuaObject_call, /*tp_call*/
+    (reprfunc) LuaObject_str,     /*tp_str*/
+    (getattrofunc) LuaObject_getattr, /*tp_getattro*/
+    (setattrofunc) LuaObject_setattr, /*tp_setattro*/
     0,                        /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
     "custom lua object",      /*tp_doc*/
@@ -418,6 +417,8 @@ static PyObject *lua_start(PyObject *self, PyObject *args) {
     lua_State *lua_state = lua_main(1, path);
     luaopen_python(lua_state);
 
+    LuaState = lua_state;
+
     PyObject *ret = PyCapsule_New(lua_state, LUA_STATE_NAME, NULL);
     Py_INCREF(ret);
     return ret;
@@ -476,6 +477,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
 #endif
 
     Py_INCREF(&LuaObject_Type);
+    //PyModule_AddObject(m, "LuaObject", (PyObject *)&LuaObject_Type);
 
 #ifndef CGILUA_ENV
     if (!LuaState) {
