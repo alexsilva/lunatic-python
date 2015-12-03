@@ -26,6 +26,11 @@
 // The capsule object name to keep the state of Lua.
 #define LUA_STATE_NAME "GLuaState"
 
+typedef struct {
+    PyObject_HEAD
+    lua_State *L;
+} InterpreterObject;
+
 extern lua_State *LuaState;
 extern PyTypeObject LuaObject_Type;
 

@@ -452,6 +452,31 @@ static PyMethodDef lua_methods[] = {
     {NULL,         NULL}
 };
 
+static PyTypeObject InterpreterObject_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "lualib.Interpreter",      /*tp_name*/
+    sizeof(InterpreterObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    0,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,/*tp_flags*/
+    "Lua interpreter",          /* tp_doc */
+};
+
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef lua_module = {
     PyModuleDef_HEAD_INIT,
@@ -470,14 +495,22 @@ PyMODINIT_FUNC PyInit_lua(void) {
     m = PyModule_Create(&lua_module);
     if (m == NULL) return NULL;
 #else
-    if (PyType_Ready(&LuaObject_Type) < 0) return;
+    if (PyType_Ready(&LuaObject_Type) < 0)
+        return;
+
+    InterpreterObject_Type.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&InterpreterObject_Type) < 0)
+        return;
+
     m = Py_InitModule3("lualib", lua_methods,
                        "Lunatic-Python Python-Lua bridge");
     if (m == NULL) return;
 #endif
 
     Py_INCREF(&LuaObject_Type);
-    //PyModule_AddObject(m, "LuaObject", (PyObject *)&LuaObject_Type);
+    Py_INCREF(&InterpreterObject_Type);
+    PyModule_AddObject(m, "Interpreter", (PyObject *)&InterpreterObject_Type);
+
 
 #ifndef CGILUA_ENV
     if (!LuaState) {
