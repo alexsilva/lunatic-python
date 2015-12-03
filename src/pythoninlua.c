@@ -406,7 +406,6 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    LuaState = L;  // Lua global state
     PYTHON_EMBED_MODE = false;  // If Python is inside Lua
 
     lua_Object python = lua_createtable(L);

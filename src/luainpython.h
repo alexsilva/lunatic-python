@@ -31,7 +31,6 @@ typedef struct {
     lua_State *L;
 } InterpreterObject;
 
-extern lua_State *LuaState;
 extern PyTypeObject LuaObject_Type;
 
 #if PY_MAJOR_VERSION < 3

@@ -43,7 +43,6 @@
 #include <lualib.h>
 #endif
 
-lua_State *LuaState = NULL;
 
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
@@ -323,8 +322,8 @@ PyTypeObject LuaObject_Type = {
 };
 
 
-PyObject *Lua_run(PyObject *args, int eval) {
-    lua_beginblock(LuaState);
+PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
+    lua_beginblock(self->L);
     PyObject *ret = NULL;
     char *buf = NULL;
     char *s;
@@ -342,55 +341,55 @@ PyObject *Lua_run(PyObject *args, int eval) {
         s = buf;
         len = strlen(prefix) + len;
     }
-    if (lua_dobuffer(LuaState, s, len, "<python>") != 0) {
+    if (lua_dobuffer(self->L, s, len, "<python>") != 0) {
         PyErr_Format(PyExc_RuntimeError,
                  "error loading code: %s", s);
         return NULL;
     }
     if (eval) free(buf);
-    int nargs = lua_gettop(LuaState);
-    if (nargs > 0) ret = lua_convert(LuaState, 1);
+    int nargs = lua_gettop(self->L);
+    if (nargs > 0) ret = lua_convert(self->L, 1);
     if (!ret) {
         Py_INCREF(Py_None);
         ret = Py_None;
     } else {
         Py_INCREF(ret);
     }
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
     return ret;
 }
 
-PyObject *Lua_execute(PyObject *self, PyObject *args) {
-    return Lua_run(args, 0);
+PyObject *Lua_execute(InterpreterObject *self, PyObject *args) {
+    return Lua_run(self, args, 0);
 }
 
-PyObject *Lua_eval(PyObject *self, PyObject *args) {
-    return Lua_run(args, 1);
+PyObject *Lua_eval(InterpreterObject *self, PyObject *args) {
+    return Lua_run(self, args, 1);
 }
 
-PyObject *Lua_globals(PyObject *self, PyObject *args) {
+PyObject *Lua_globals(InterpreterObject *self, PyObject *args) {
     PyObject *ret = NULL;
-    lua_Object lobj = lua_getglobal(LuaState, "_G");
-    if (lua_isnil(LuaState, lobj)) {
+    lua_Object lobj = lua_getglobal(self->L, "_G");
+    if (lua_isnil(self->L, lobj)) {
         PyErr_SetString(PyExc_RuntimeError,
                 "lost globals reference");
         return NULL;
     }
-    ret = lua_convert(LuaState, 1);
+    ret = lua_convert(self->L, 1);
     if (!ret)
         PyErr_Format(PyExc_TypeError,
                  "failed to convert globals table");
     return ret;
 }
 
-static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
-    lua_beginblock(LuaState);
+static PyObject *Lua_dofile(InterpreterObject *self, PyObject *args) {
+    lua_beginblock(self->L);
     const char *command = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &command))
         return NULL;
 
-    int ret = lua_dofile(LuaState, (char *) command);
+    int ret = lua_dofile(self->L, (char *) command);
     if (ret) {
         char *error = "loading file \"%s\"";
         char buff[calc_buff_size(2, error, command)];
@@ -400,7 +399,7 @@ static PyObject *Lua_dofile(PyObject *self, PyObject *args) {
     }
     PyObject *o = PyInt_FromLong(ret);
     Py_INCREF(o);
-    lua_endblock(LuaState);
+    lua_endblock(self->L);
     return o;
 }
 
@@ -440,10 +439,10 @@ static void Interpreter_dealloc(InterpreterObject *self){
 }
 
 static PyMethodDef interpreter_methods[] = {
-    {"execute",    Lua_execute,    METH_VARARGS,        NULL},
-    {"eval",       Lua_eval,       METH_VARARGS,        NULL},
-    {"globals",    Lua_globals,    METH_NOARGS,         NULL},
-    {"require",    Lua_dofile,     METH_VARARGS,        NULL},
+    {"execute", (PyCFunction) Lua_execute, METH_VARARGS, NULL},
+    {"eval",    (PyCFunction) Lua_eval,    METH_VARARGS, NULL},
+    {"globals", (PyCFunction) Lua_globals, METH_NOARGS,  NULL},
+    {"require", (PyCFunction) Lua_dofile,  METH_VARARGS, NULL},
     {NULL,         NULL}
 };
 
