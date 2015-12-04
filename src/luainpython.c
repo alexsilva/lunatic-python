@@ -486,6 +486,8 @@ static PyTypeObject InterpreterObject_Type = {
     (initproc)Interpreter_init,/* tp_init */
     PyType_GenericAlloc,       /* tp_alloc */
     PyType_GenericNew,         /* tp_new */
+    PyObject_Del,              /*tp_free*/
+    0,                         /*tp_is_gc*/
 };
 
 static PyMethodDef lua_methods[] = {
