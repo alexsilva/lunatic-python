@@ -421,9 +421,9 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     self->L = lua_open();
 
     // default libs
-    lua_iolibopen(LuaState);
-    lua_strlibopen(LuaState);
-    lua_mathlibopen(LuaState);
+    lua_iolibopen(self->L);
+    lua_strlibopen(self->L);
+    lua_mathlibopen(self->L);
 #endif
 
     luaopen_python(self->L);
