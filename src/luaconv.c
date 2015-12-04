@@ -14,6 +14,24 @@
 #include "utils.h"
 #include "pythoninlua.h"
 
+
+PyObject *LuaObject_PyNew(InterpreterObject *interpreterObject, lua_Object lobj) {
+    LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
+    if (obj) {
+        lua_pushobject(interpreterObject->L, lobj);
+        obj->ref = lua_ref(interpreterObject->L, 1);
+        obj->refiter = 0;
+        Py_INCREF(interpreterObject);
+        obj->interpreterObject = interpreterObject; // The state of the Lua will be used implicitly.
+        obj->L= interpreterObject->L;
+    }
+    return (PyObject*) obj;
+}
+
+PyObject *LuaObject_New(InterpreterObject *interpreterObject, int n) {
+    return LuaObject_PyNew(interpreterObject, lua_getparam(interpreterObject->L, n));
+}
+
 int lua_isboolean(lua_State *L, lua_Object obj) {
     if (lua_isuserdata(L, obj) && lua_getuserdata(L, obj))
         return PyBool_Check((PyObject *) lua_getuserdata(L, obj));
@@ -180,64 +198,64 @@ py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
-
-PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
+PyObject *lua_interpreter_object_convert(InterpreterObject *interpreterObject, int stackpos,
+                                         lua_Object lobj) {
     PyObject *ret = NULL;
-    if (lua_isnil(L, lobj)) {
+    if (lua_isnil(interpreterObject->L, lobj)) {
         Py_INCREF(Py_None);
         ret = Py_None;
-    } else if (lua_isnumber(L, lobj)) {
-        double num = lua_getnumber(L, lobj);
+    } else if (lua_isnumber(interpreterObject->L, lobj)) {
+        double num = lua_getnumber(interpreterObject->L, lobj);
         if (rintf((float) num) == num) {  // is int?
             ret = PyInt_FromLong((long) num);
         } else {
             ret = PyFloat_FromDouble(num);
         }
-    } else if (lua_isstring(L, lobj)) {
-        const char *s = lua_getstring(L, lobj);
-        int len = lua_strlen(L, lobj);
+    } else if (lua_isstring(interpreterObject->L, lobj)) {
+        const char *s = lua_getstring(interpreterObject->L, lobj);
+        int len = lua_strlen(interpreterObject->L, lobj);
         ret = PyString_FromStringAndSize(s, len);
         if (!ret) {
             ret = PyUnicode_FromStringAndSize(s, len);
         }
-    } else if (is_wrapped_object(L, lobj)) {
-        py_object *pobj = get_py_object(L, stackpos);
+    } else if (is_wrapped_object(interpreterObject->L, lobj)) {
+        py_object *pobj = get_py_object(interpreterObject->L, stackpos);
         ret = pobj->o;
         free(pobj);
-    } else if (lua_isfunction(L, lobj)) {
+    } else if (lua_isfunction(interpreterObject->L, lobj)) {
         if (stackpos && !lobj) {
-            ret = LuaObject_New(L, stackpos);
+            ret = LuaObject_New(interpreterObject, stackpos);
         } else {
-            ret = LuaObject_PyNew(L, lobj);
+            ret = LuaObject_PyNew(interpreterObject, lobj);
         }
-    } else if (lua_istable(L, lobj)) {
+    } else if (lua_istable(interpreterObject->L, lobj)) {
         if (!PYTHON_EMBED_MODE) { // Lua inside Python
             if (stackpos) {
-                ret = LuaObject_New(L, stackpos);
+                ret = LuaObject_New(interpreterObject, stackpos);
             } else {
-                ret = LuaObject_PyNew(L, lobj);
+                ret = LuaObject_PyNew(interpreterObject, lobj);
             }
         //  Python inside Lua
-        } else if (is_indexed_array(L, lobj)) {
-            ret = _get_py_tuple(L, lobj);
+        } else if (is_indexed_array(interpreterObject->L, lobj)) {
+            ret = _get_py_tuple(interpreterObject->L, lobj);
         } else {
-            ret = get_py_dict(L, lobj);
+            ret = get_py_dict(interpreterObject->L, lobj);
         }
-    } else if (lua_isboolean(L, lobj)) {
-        if (lua_getboolean(L, lobj)) {
+    } else if (lua_isboolean(interpreterObject->L, lobj)) {
+        if (lua_getboolean(interpreterObject->L, lobj)) {
             Py_INCREF(Py_True);
             ret = Py_True;
         } else {
             Py_INCREF(Py_False);
             ret = Py_False;
         }
-    } else if (lua_isuserdata(L, lobj)) {
-        void *void_ptr = lua_getuserdata(L, lobj); // userdata NULL ?
+    } else if (lua_isuserdata(interpreterObject->L, lobj)) {
+        void *void_ptr = lua_getuserdata(interpreterObject->L, lobj); // userdata NULL ?
         if (void_ptr) {
             if (PYTHON_EMBED_MODE) {
                 ret = (PyObject *) void_ptr;
             } else {
-                ret = LuaObject_PyNew(L, lobj);
+                ret = LuaObject_PyNew(interpreterObject, lobj);
             }
         }  else {
             Py_INCREF(Py_None);
@@ -247,6 +265,22 @@ PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj) {
     return ret;
 }
 
+PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
+    InterpreterObject *interpreterObject;
+    interpreterObject = malloc(sizeof(InterpreterObject));
+    interpreterObject->L = L;
+    interpreterObject->malloc = true;
+    interpreterObject->exit = false;
+    return lua_interpreter_object_convert(interpreterObject, stackpos, lobj);
+}
+
+
+PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreterObject,
+                                         int stackpos) {
+    return lua_interpreter_object_convert(interpreterObject, stackpos,
+                                          lua_getparam(interpreterObject->L, stackpos));
+}
+
 PyObject *lua_convert(lua_State *L, int stackpos) {
-    return lua_obj_convert(L, stackpos, lua_getparam(L, stackpos));
+    return lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
 }

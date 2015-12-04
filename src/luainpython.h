@@ -23,9 +23,13 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
+#include <stdbool.h>
+
 typedef struct {
     PyObject_HEAD
     lua_State *L;
+    bool malloc;
+    bool exit;
 } InterpreterObject;
 
 extern PyTypeObject LuaObject_Type;

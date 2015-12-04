@@ -75,11 +75,10 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     }
     nargs = lua_gettop(self->L);
     if (nargs == 1) {
-        ret = lua_convert(self->L, 1);
+        ret = lua_interpreter_stack_convert(self->interpreterObject, 1);
         if (!ret) {
             PyErr_SetString(PyExc_TypeError,
                         "failed to convert return");
-            Py_DECREF(ret);
             return NULL;
         }
     } else if (nargs > 1) {
@@ -90,7 +89,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
-            arg = lua_convert(self->L, i+1);
+            arg = lua_interpreter_stack_convert(self->interpreterObject, i + 1);
             if (!arg) {
                 PyErr_Format(PyExc_TypeError,
                          "failed to convert return #%d", i);
@@ -107,13 +106,15 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    if (self->L) { // check if stop was not called
+    if (!self->interpreterObject->exit) {
         lua_beginblock(self->L);
         lua_unref(self->L, self->ref);
         if (self->refiter)
             lua_unref(self->L, self->refiter);
         lua_endblock(self->L);
     }
+    if (self->interpreterObject->malloc)
+        free(self->interpreterObject);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -139,7 +140,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     int rc = py_convert(self->L, attr); // push key
     if (rc) {
         lua_Object lobj = lua_gettable(self->L);
-        ret = lua_obj_convert(self->L, 0, lobj); // convert
+        ret = lua_interpreter_object_convert(self->interpreterObject, 0, lobj); // convert
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
@@ -237,7 +238,7 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     self->refiter = lua_next(self->L, ltable, self->refiter);
 
     if (self->refiter > 0) {
-        ret = lua_convert(self->L, (indexed ? 2 : 1));
+        ret = lua_interpreter_stack_convert(self->interpreterObject, (indexed ? 2 : 1));
     }
     lua_endblock(self->L);
     return ret;
@@ -348,7 +349,9 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     }
     if (eval) free(buf);
     int nargs = lua_gettop(self->L);
-    if (nargs > 0) ret = lua_convert(self->L, 1);
+    if (nargs > 0) {
+        ret = lua_interpreter_stack_convert(self, 1);
+    }
     if (!ret) {
         Py_INCREF(Py_None);
         ret = Py_None;
@@ -375,7 +378,7 @@ PyObject *Interpreter_globals(InterpreterObject *self, PyObject *args) {
                 "lost globals reference");
         return NULL;
     }
-    ret = lua_convert(self->L, 1);
+    ret = lua_interpreter_stack_convert(self, 1);
     if (!ret)
         PyErr_Format(PyExc_TypeError,
                  "failed to convert globals table");
@@ -403,7 +406,6 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
     return o;
 }
 
-
 /*
  * Initialization function environment.
  */
@@ -425,7 +427,8 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
-
+    self->exit = false;
+    self->malloc = false;
     luaopen_python(self->L);
     return 0;
 };
@@ -434,6 +437,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
  * Stops all environment, freeing up resources.
  */
 static void Interpreter_dealloc(InterpreterObject *self){
+    self->exit = true;
     lua_close(self->L);
     self->ob_type->tp_free((PyObject*)self);
 }

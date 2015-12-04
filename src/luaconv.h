@@ -6,6 +6,7 @@
 #define LUNATIC_LUACONV_H
 
 #include "stdbool.h"
+#include "luainpython.h"
 
 #define POBJECT "POBJECT"
 #define ASINDX "ASINDX"
@@ -33,6 +34,9 @@ void py_kwargs(lua_State *L);
 void py_args(lua_State *L);
 
 PyObject *lua_convert(lua_State *L, int stackpos);
-PyObject *lua_obj_convert(lua_State *L, int stackpos, lua_Object lobj);
-
+PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj);
+PyObject *lua_interpreter_object_convert(InterpreterObject *interpreterObject,
+                                         int stackpos, lua_Object lobj);
+PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreterObject,
+                                        int stackpos);
 #endif //LUNATIC_LUACONV_H

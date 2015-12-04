@@ -6,22 +6,6 @@
 #include "luaconv.h"
 #include "utils.h"
 
-
-PyObject *LuaObject_PyNew(lua_State *L, lua_Object lobj) {
-    LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
-    if (obj) {
-        lua_pushobject(L, lobj);
-        obj->ref = lua_ref(L, 1);
-        obj->refiter = 0;
-        obj->L = L; // The state of the Lua will be used implicitly.
-    }
-    return (PyObject*) obj;
-}
-
-PyObject *LuaObject_New(lua_State *L, int n) {
-    return LuaObject_PyNew(L, lua_getparam(L, n));
-}
-
 /* python string bytes */
 static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
     char *s = PyString_AsString(o);
