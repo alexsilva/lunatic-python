@@ -405,7 +405,7 @@ static PyObject *Lua_dofile(InterpreterObject *self, PyObject *args) {
 
 
 /*
- * Initialization function CGILua environment.
+ * Initialization function environment.
  */
 static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *kwargs) {
 #ifdef CGILUA_ENV
@@ -431,7 +431,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
 };
 
 /*
- * Stops all CGILua environment, freeing up resources.
+ * Stops all environment, freeing up resources.
  */
 static void Interpreter_dealloc(InterpreterObject *self){
     lua_close(self->L);
