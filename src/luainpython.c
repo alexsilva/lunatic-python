@@ -359,15 +359,15 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     return ret;
 }
 
-PyObject *Lua_execute(InterpreterObject *self, PyObject *args) {
+PyObject *Interpreter_execute(InterpreterObject *self, PyObject *args) {
     return Lua_run(self, args, 0);
 }
 
-PyObject *Lua_eval(InterpreterObject *self, PyObject *args) {
+PyObject *Interpreter_eval(InterpreterObject *self, PyObject *args) {
     return Lua_run(self, args, 1);
 }
 
-PyObject *Lua_globals(InterpreterObject *self, PyObject *args) {
+PyObject *Interpreter_globals(InterpreterObject *self, PyObject *args) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getglobal(self->L, "_G");
     if (lua_isnil(self->L, lobj)) {
@@ -382,7 +382,7 @@ PyObject *Lua_globals(InterpreterObject *self, PyObject *args) {
     return ret;
 }
 
-static PyObject *Lua_dofile(InterpreterObject *self, PyObject *args) {
+static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
     lua_beginblock(self->L);
     const char *command = NULL;
 
@@ -439,10 +439,10 @@ static void Interpreter_dealloc(InterpreterObject *self){
 }
 
 static PyMethodDef interpreter_methods[] = {
-    {"execute", (PyCFunction) Lua_execute, METH_VARARGS, NULL},
-    {"eval",    (PyCFunction) Lua_eval,    METH_VARARGS, NULL},
-    {"globals", (PyCFunction) Lua_globals, METH_NOARGS,  NULL},
-    {"require", (PyCFunction) Lua_dofile,  METH_VARARGS, NULL},
+    {"execute", (PyCFunction) Interpreter_execute, METH_VARARGS, NULL},
+    {"eval",    (PyCFunction) Interpreter_eval,    METH_VARARGS, NULL},
+    {"globals", (PyCFunction) Interpreter_globals, METH_NOARGS,  NULL},
+    {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS, NULL},
     {NULL,         NULL}
 };
 
