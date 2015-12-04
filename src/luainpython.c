@@ -412,7 +412,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     const char *command = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &command))
-        return NULL;
+        return -1;
 
     char *path[1] = {(char *) command};
 
