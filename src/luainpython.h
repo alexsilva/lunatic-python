@@ -23,9 +23,6 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
-// The capsule object name to keep the state of Lua.
-#define LUA_STATE_NAME "GLuaState"
-
 typedef struct {
     PyObject_HEAD
     lua_State *L;
