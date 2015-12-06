@@ -446,7 +446,7 @@ static void Interpreter_dealloc(InterpreterObject *self){
     self->L = NULL; // lua_State(NULL)
 }
 
-static PyMethodDef interpreter_methods[] = {
+static PyMethodDef Interpreter_methods[] = {
     {"execute", (PyCFunction) Interpreter_execute, METH_VARARGS, NULL},
     {"eval",    (PyCFunction) Interpreter_eval,    METH_VARARGS, NULL},
     {"globals", (PyCFunction) Interpreter_globals, METH_NOARGS,  NULL},
@@ -483,7 +483,7 @@ static PyTypeObject InterpreterObject_Type = {
     0,		                  /* tp_weaklistoffset */
     0,		                  /* tp_iter */
     0,		                  /* tp_iternext */
-    interpreter_methods,      /* tp_methods */
+    Interpreter_methods,      /* tp_methods */
     0,                         /* tp_members */
     0,                         /* tp_getset */
     0,                         /* tp_base */
