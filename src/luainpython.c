@@ -114,7 +114,9 @@ static void LuaObject_dealloc(LuaObject *self) {
         lua_endblock(self->L);
     }
     if (self->interpreter->malloc) {
+        self->interpreter->L = NULL;
         free(self->interpreter);
+        self->L = NULL;
     } else {
         Py_DECREF(self->interpreter);
     }
