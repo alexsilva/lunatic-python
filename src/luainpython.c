@@ -75,7 +75,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     }
     nargs = lua_gettop(self->L);
     if (nargs == 1) {
-        ret = lua_interpreter_stack_convert(self->interpreterObject, 1);
+        ret = lua_interpreter_stack_convert(self->interpreter, 1);
         if (!ret) {
             PyErr_SetString(PyExc_TypeError,
                         "failed to convert return");
@@ -89,7 +89,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
-            arg = lua_interpreter_stack_convert(self->interpreterObject, i + 1);
+            arg = lua_interpreter_stack_convert(self->interpreter, i + 1);
             if (!arg) {
                 PyErr_Format(PyExc_TypeError,
                          "failed to convert return #%d", i);
@@ -106,15 +106,15 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    if (!self->interpreterObject->exit) {
+    if (!self->interpreter->exit) {
         lua_beginblock(self->L);
         lua_unref(self->L, self->ref);
         if (self->refiter)
             lua_unref(self->L, self->refiter);
         lua_endblock(self->L);
     }
-    if (self->interpreterObject->malloc)
-        free(self->interpreterObject);
+    if (self->interpreter->malloc)
+        free(self->interpreter);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -140,7 +140,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     int rc = py_convert(self->L, attr); // push key
     if (rc) {
         lua_Object lobj = lua_gettable(self->L);
-        ret = lua_interpreter_object_convert(self->interpreterObject, 0, lobj); // convert
+        ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
@@ -238,7 +238,7 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     self->refiter = lua_next(self->L, ltable, self->refiter);
 
     if (self->refiter > 0) {
-        ret = lua_interpreter_stack_convert(self->interpreterObject, (indexed ? 2 : 1));
+        ret = lua_interpreter_stack_convert(self->interpreter, (indexed ? 2 : 1));
     }
     lua_endblock(self->L);
     return ret;

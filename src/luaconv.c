@@ -15,21 +15,21 @@
 #include "pythoninlua.h"
 
 
-PyObject *LuaObject_PyNew(InterpreterObject *interpreterObject, lua_Object lobj) {
+PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
     LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
     if (obj) {
-        lua_pushobject(interpreterObject->L, lobj);
-        obj->ref = lua_ref(interpreterObject->L, 1);
+        lua_pushobject(interpreter->L, lobj);
+        obj->ref = lua_ref(interpreter->L, 1);
         obj->refiter = 0;
-        Py_INCREF(interpreterObject);
-        obj->interpreterObject = interpreterObject; // The state of the Lua will be used implicitly.
-        obj->L= interpreterObject->L;
+        Py_INCREF(interpreter);
+        obj->interpreter = interpreter; // The state of the Lua will be used implicitly.
+        obj->L= interpreter->L;
     }
     return (PyObject*) obj;
 }
 
-PyObject *LuaObject_New(InterpreterObject *interpreterObject, int n) {
-    return LuaObject_PyNew(interpreterObject, lua_getparam(interpreterObject->L, n));
+PyObject *LuaObject_New(InterpreterObject *interpreter, int n) {
+    return LuaObject_PyNew(interpreter, lua_getparam(interpreter->L, n));
 }
 
 int lua_isboolean(lua_State *L, lua_Object obj) {
@@ -198,64 +198,64 @@ py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
-PyObject *lua_interpreter_object_convert(InterpreterObject *interpreterObject, int stackpos,
+PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int stackpos,
                                          lua_Object lobj) {
     PyObject *ret = NULL;
-    if (lua_isnil(interpreterObject->L, lobj)) {
+    if (lua_isnil(interpreter->L, lobj)) {
         Py_INCREF(Py_None);
         ret = Py_None;
-    } else if (lua_isnumber(interpreterObject->L, lobj)) {
-        double num = lua_getnumber(interpreterObject->L, lobj);
+    } else if (lua_isnumber(interpreter->L, lobj)) {
+        double num = lua_getnumber(interpreter->L, lobj);
         if (rintf((float) num) == num) {  // is int?
             ret = PyInt_FromLong((long) num);
         } else {
             ret = PyFloat_FromDouble(num);
         }
-    } else if (lua_isstring(interpreterObject->L, lobj)) {
-        const char *s = lua_getstring(interpreterObject->L, lobj);
-        int len = lua_strlen(interpreterObject->L, lobj);
+    } else if (lua_isstring(interpreter->L, lobj)) {
+        const char *s = lua_getstring(interpreter->L, lobj);
+        int len = lua_strlen(interpreter->L, lobj);
         ret = PyString_FromStringAndSize(s, len);
         if (!ret) {
             ret = PyUnicode_FromStringAndSize(s, len);
         }
-    } else if (is_wrapped_object(interpreterObject->L, lobj)) {
-        py_object *pobj = get_py_object(interpreterObject->L, stackpos);
+    } else if (is_wrapped_object(interpreter->L, lobj)) {
+        py_object *pobj = get_py_object(interpreter->L, stackpos);
         ret = pobj->o;
         free(pobj);
-    } else if (lua_isfunction(interpreterObject->L, lobj)) {
+    } else if (lua_isfunction(interpreter->L, lobj)) {
         if (stackpos && !lobj) {
-            ret = LuaObject_New(interpreterObject, stackpos);
+            ret = LuaObject_New(interpreter, stackpos);
         } else {
-            ret = LuaObject_PyNew(interpreterObject, lobj);
+            ret = LuaObject_PyNew(interpreter, lobj);
         }
-    } else if (lua_istable(interpreterObject->L, lobj)) {
+    } else if (lua_istable(interpreter->L, lobj)) {
         if (!PYTHON_EMBED_MODE) { // Lua inside Python
             if (stackpos) {
-                ret = LuaObject_New(interpreterObject, stackpos);
+                ret = LuaObject_New(interpreter, stackpos);
             } else {
-                ret = LuaObject_PyNew(interpreterObject, lobj);
+                ret = LuaObject_PyNew(interpreter, lobj);
             }
         //  Python inside Lua
-        } else if (is_indexed_array(interpreterObject->L, lobj)) {
-            ret = _get_py_tuple(interpreterObject->L, lobj);
+        } else if (is_indexed_array(interpreter->L, lobj)) {
+            ret = _get_py_tuple(interpreter->L, lobj);
         } else {
-            ret = get_py_dict(interpreterObject->L, lobj);
+            ret = get_py_dict(interpreter->L, lobj);
         }
-    } else if (lua_isboolean(interpreterObject->L, lobj)) {
-        if (lua_getboolean(interpreterObject->L, lobj)) {
+    } else if (lua_isboolean(interpreter->L, lobj)) {
+        if (lua_getboolean(interpreter->L, lobj)) {
             Py_INCREF(Py_True);
             ret = Py_True;
         } else {
             Py_INCREF(Py_False);
             ret = Py_False;
         }
-    } else if (lua_isuserdata(interpreterObject->L, lobj)) {
-        void *void_ptr = lua_getuserdata(interpreterObject->L, lobj); // userdata NULL ?
+    } else if (lua_isuserdata(interpreter->L, lobj)) {
+        void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
         if (void_ptr) {
             if (PYTHON_EMBED_MODE) {
                 ret = (PyObject *) void_ptr;
             } else {
-                ret = LuaObject_PyNew(interpreterObject, lobj);
+                ret = LuaObject_PyNew(interpreter, lobj);
             }
         }  else {
             Py_INCREF(Py_None);
@@ -266,19 +266,19 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreterObject, i
 }
 
 PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
-    InterpreterObject *interpreterObject;
-    interpreterObject = malloc(sizeof(InterpreterObject));
-    interpreterObject->L = L;
-    interpreterObject->malloc = true;
-    interpreterObject->exit = false;
-    return lua_interpreter_object_convert(interpreterObject, stackpos, lobj);
+    InterpreterObject *interpreter;
+    interpreter = malloc(sizeof(InterpreterObject));
+    interpreter->L = L;
+    interpreter->malloc = true;
+    interpreter->exit = false;
+    return lua_interpreter_object_convert(interpreter, stackpos, lobj);
 }
 
 
-PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreterObject,
+PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter,
                                          int stackpos) {
-    return lua_interpreter_object_convert(interpreterObject, stackpos,
-                                          lua_getparam(interpreterObject->L, stackpos));
+    return lua_interpreter_object_convert(interpreter, stackpos,
+                                          lua_getparam(interpreter->L, stackpos));
 }
 
 PyObject *lua_convert(lua_State *L, int stackpos) {
