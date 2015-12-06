@@ -157,32 +157,27 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
 
 static void py_object_index(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (!pobj) luaL_argerror(L, 1, "not a python object");
     _p_object_index_get(L, pobj, 2);
     free(pobj);
 }
 
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (pobj) {
-        Py_CLEAR(pobj->o);
-    }
+    Py_CLEAR(pobj->o);
     free(pobj);
 }
 
 static void py_object_tostring(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (pobj) {
-        PyObject *repr = PyObject_Str(pobj->o);
-        if (!repr) {
-            char buf[256];
-            snprintf(buf, 256, "python object: %p", pobj->o);
-            lua_pushstring(L, buf);
-            PyErr_Clear();
-        } else {
-            py_convert(L, repr);
-            Py_DECREF(repr);
-        }
+    PyObject *repr = PyObject_Str(pobj->o);
+    if (!repr) {
+        char buf[256];
+        snprintf(buf, 256, "python object: %p", pobj->o);
+        lua_pushstring(L, buf);
+        PyErr_Clear();
+    } else {
+        py_convert(L, repr);
+        Py_DECREF(repr);
     }
     free(pobj);
 }
@@ -250,9 +245,6 @@ static void py_eval(lua_State *L) {
 
 static void py_asindx(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (!pobj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
     Py_DECREF(pobj->o);
     py_object_wrap_lua(L, pobj->o, 1);
     free(pobj);
@@ -260,9 +252,6 @@ static void py_asindx(lua_State *L) {
 
 static void py_asattr(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (!pobj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
     Py_DECREF(pobj->o);
     py_object_wrap_lua(L, pobj->o, 0);
     free(pobj);
