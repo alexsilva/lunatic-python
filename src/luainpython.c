@@ -443,6 +443,7 @@ static void Interpreter_dealloc(InterpreterObject *self){
     self->exit = true;
     lua_close(self->L);
     self->ob_type->tp_free((PyObject*)self);
+    self->L = NULL; // lua_State(NULL)
 }
 
 static PyMethodDef interpreter_methods[] = {
