@@ -113,8 +113,11 @@ static void LuaObject_dealloc(LuaObject *self) {
             lua_unref(self->L, self->refiter);
         lua_endblock(self->L);
     }
-    if (self->interpreter->malloc)
+    if (self->interpreter->malloc) {
         free(self->interpreter);
+    } else {
+        Py_DECREF(self->interpreter);
+    }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -440,6 +443,7 @@ static void Interpreter_dealloc(InterpreterObject *self){
     self->exit = true;
     lua_close(self->L);
     self->ob_type->tp_free((PyObject*)self);
+    printf("Interpreter_dealloc...\n");
 }
 
 static PyMethodDef interpreter_methods[] = {
