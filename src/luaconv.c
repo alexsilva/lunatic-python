@@ -93,10 +93,7 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     int index = lua_next(L, ltable, 0);
     while (index != 0) {
         value = lua_convert(L, 2);
-        Py_INCREF(value);
-
         PyTuple_SetItem(tuple, index - 2, value);
-
         index = lua_next(L, ltable, index);
     }
     lua_endblock(L);
@@ -129,7 +126,6 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
-    Py_INCREF(tuple);
     lua_pushuserdata(L, tuple);
 }
 
@@ -145,10 +141,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 
     while (index != 0) {
         key = lua_convert(L, 1);
-        Py_INCREF(key);
-
         value = lua_convert(L, 2);
-        Py_INCREF(value);
 
         PyDict_SetItem(dict, key, value);
 
@@ -163,14 +156,11 @@ void py_kwargs(lua_State *L) {
     if (nargs < 1 || nargs > 1) {
         lua_error(L, "expected only one table");
     }
-
     lua_Object ltable = lua_getparam(L, 1);
     if (!lua_istable(L, ltable)) {
         lua_error(L, "first arg need be table ex: kwargs({a=10})");
     }
-
     PyObject *dict = get_py_dict(L, ltable);
-    Py_INCREF(dict);
     lua_pushuserdata(L, dict);
 }
 
