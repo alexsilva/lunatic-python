@@ -48,9 +48,6 @@ static void py_object_call(lua_State *L) {
 
     int nargs = lua_gettop(L)-1;
 
-    if (!pobj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
     if (!PyCallable_Check(pobj->o)) {
         lua_error(L, "object is not callable");
     }
