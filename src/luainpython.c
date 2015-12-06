@@ -360,8 +360,6 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     if (!ret) {
         Py_INCREF(Py_None);
         ret = Py_None;
-    } else {
-        Py_INCREF(ret);
     }
     lua_endblock(self->L);
     return ret;
