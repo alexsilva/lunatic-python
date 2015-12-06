@@ -131,38 +131,6 @@ static void py_object_newindex_set(lua_State *L) {
     free(pobj);
 }
 
-static void py_object_newindex(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
-    const char *attr;
-    PyObject *value;
-
-    if (!pobj) {
-        luaL_argerror(L, 1, "not a python object");
-    }
-
-    if (pobj->asindx) {
-        _p_object_newindex_set(L, pobj, 2, 3);
-        return;
-    }
-    attr = luaL_check_string(L, 2);
-    if (!attr) {
-        luaL_argerror(L, 2, "string needed");
-    }
-
-    value = lua_convert(L, 3);
-    if (!value) {
-        luaL_argerror(L, 1, "failed to convert value");
-    }
-
-    if (PyObject_SetAttrString(pobj->o, (char *) attr, value) == -1) {
-        Py_DECREF(value);
-        lua_new_error(L, "failed to set value");
-    }
-
-    Py_DECREF(value);
-    free(pobj);
-}
-
 static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
     PyObject *key = lua_convert(L, keyn);
     PyObject *item;
