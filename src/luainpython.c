@@ -403,10 +403,8 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
         PyErr_SetString(PyExc_ImportError, &buff[0]);
         return NULL;
     }
-    PyObject *o = PyInt_FromLong(ret);
-    Py_INCREF(o);
     lua_endblock(self->L);
-    return o;
+    return PyInt_FromLong(ret);
 }
 
 /*
