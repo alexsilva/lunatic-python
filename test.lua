@@ -18,6 +18,8 @@ assert(python, "undefined python object")
 -- python home
 python.system_init("C:\\Python27");
 
+print(format("python is embedded in lua <%s>", tostring(python.is_embedded())))
+
 print("Python sys.path")
 local builtins = python.builtins()
 
