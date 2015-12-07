@@ -341,30 +341,30 @@ static void python_is_embedded(lua_State *L) {
 }
 
 static struct luaL_reg py_lib[] = {
-        {"execute",     py_execute},
-        {"eval",        py_eval},
-        {"asindex",     py_asindx},
-        {"asattr",      py_asattr},
-        {"str",         py_object_tostring},
-        {"locals",      py_locals},
-        {"globals",     py_globals},
-        {"builtins",    py_builtins},
-        {"import",      py_import},
-        {"system_init", python_system_init},
-        {"system_exit", python_system_exit},
-        {"args"       , py_args},
-        {"kwargs"     , py_kwargs},
-        {"is_embedded", python_is_embedded},
-        {"raw"        , lua_raw},
-        {NULL, NULL}
+    {"execute",     py_execute},
+    {"eval",        py_eval},
+    {"asindex",     py_asindx},
+    {"asattr",      py_asattr},
+    {"str",         py_object_tostring},
+    {"locals",      py_locals},
+    {"globals",     py_globals},
+    {"builtins",    py_builtins},
+    {"import",      py_import},
+    {"system_init", python_system_init},
+    {"system_exit", python_system_exit},
+    {"args"       , py_args},
+    {"kwargs"     , py_kwargs},
+    {"is_embedded", python_is_embedded},
+    {"raw"        , lua_raw},
+    {NULL, NULL}
 };
 
 static struct luaL_reg lua_tag_methods[] = {
-        {"function", py_object_call},
-        {"index",    py_object_index},
-        {"settable", py_object_newindex_set},
-        {"gc",       py_object_gc},
-        {NULL, NULL}
+    {"function", py_object_call},
+    {"index",    py_object_index},
+    {"settable", py_object_newindex_set},
+    {"gc",       py_object_gc},
+    {NULL, NULL}
 };
 
 
