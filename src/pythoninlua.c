@@ -331,6 +331,15 @@ static void python_system_exit(lua_State *L) {
         Py_Finalize();
 }
 
+/* Indicates if Python interpreter was embedded in the Lua */
+static void python_is_embedded(lua_State *L) {
+    if (PYTHON_EMBED_MODE) {
+        lua_pushnumber(L, 1);
+    } else {
+        lua_pushnil(L);
+    }
+}
+
 static struct luaL_reg py_lib[] = {
         {"execute",     py_execute},
         {"eval",        py_eval},
@@ -345,6 +354,7 @@ static struct luaL_reg py_lib[] = {
         {"system_exit", python_system_exit},
         {"args"       , py_args},
         {"kwargs"     , py_kwargs},
+        {"is_embedded", python_is_embedded},
         {"raw"        , lua_raw},
         {NULL, NULL}
 };
