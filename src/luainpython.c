@@ -417,7 +417,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     const char *command = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &command)) {
-        PyErr_SetString(PyExc_AttributeError, "enter the path to the directory \"cgilua.conf\"");
+        PyErr_SetString(PyExc_TypeError, "enter the path to the directory \"cgilua.conf\"");
         return -1;
     }
     char *path[1] = {(char *) command};
