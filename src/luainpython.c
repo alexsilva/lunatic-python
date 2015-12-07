@@ -448,10 +448,14 @@ static void Interpreter_dealloc(InterpreterObject *self){
 }
 
 static PyMethodDef Interpreter_methods[] = {
-    {"execute", (PyCFunction) Interpreter_execute, METH_VARARGS, NULL},
-    {"eval",    (PyCFunction) Interpreter_eval,    METH_VARARGS, NULL},
-    {"globals", (PyCFunction) Interpreter_globals, METH_NOARGS,  NULL},
-    {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS, NULL},
+    {"execute", (PyCFunction) Interpreter_execute, METH_VARARGS,
+            "execute arbitrary expressions of the interpreter."},
+    {"eval",    (PyCFunction) Interpreter_eval,    METH_VARARGS,
+            "evaluates the expression and return its value."},
+    {"globals", (PyCFunction) Interpreter_globals, METH_NOARGS,
+            "returns the list of global variables."},
+    {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
+            "loads and executes the script."},
     {NULL,         NULL}
 };
 
