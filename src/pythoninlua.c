@@ -431,23 +431,23 @@ static void python_system_init(lua_State *L) {
 #if PY_MAJOR_VERSION >= 3
         wchar_t *argv[] = {L"<lua>", 0};
 #else
-        char *argv[] = {"<lua>", 0};
+        char *argv[] = {"<lua_bootstrap>", 0};
 #endif
         Py_SetProgramName(argv[0]);
         Py_SetPythonHome(python_home);
         Py_Initialize();
         PySys_SetArgv(1, argv);
         /* Import 'lua' automatically. */
-        luam = PyImport_ImportModule("lua");
+        luam = PyImport_ImportModule("lua_bootstrap");
         if (!luam) {
-            lua_error(L, "Can't import lua module");
+            lua_error(L, "Can't import lua_bootstrap module");
         } else {
             mainm = PyImport_AddModule("__main__");
             if (!mainm) {
                 lua_error(L, "Can't get __main__ module");
             } else {
                 maind = PyModule_GetDict(mainm);
-                PyDict_SetItemString(maind, "lua", luam);
+                PyDict_SetItemString(maind, "lua_bootstrap", luam);
                 Py_DECREF(luam);
             }
         }
