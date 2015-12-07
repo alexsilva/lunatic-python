@@ -460,7 +460,7 @@ static PyMethodDef Interpreter_methods[] = {
 static PyTypeObject InterpreterObject_Type = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
-    "lualib.Interpreter",      /*tp_name*/
+    "lua.Interpreter",      /*tp_name*/
     sizeof(InterpreterObject), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor) Interpreter_dealloc, /*tp_dealloc*/
@@ -530,7 +530,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
     if (PyType_Ready(&InterpreterObject_Type) < 0)
         return;
 
-    m = Py_InitModule3("lualib", lua_methods,
+    m = Py_InitModule3("lua", lua_methods,
                        "Lunatic-Python Python-Lua bridge");
     if (m == NULL) return;
 #endif

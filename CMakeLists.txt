@@ -31,18 +31,18 @@ if (CGILUA_ENV)
 endif(CGILUA_ENV)
 
 add_library(python MODULE ${SOURCES})
-add_library(lualib MODULE ${SOURCES})
+add_library(lua MODULE ${SOURCES})
 
 if (CGILUA_ENV)
-    target_compile_definitions(lualib PRIVATE CGILUA_ENV=${CGILUA_ENV})
+    target_compile_definitions(lua PRIVATE CGILUA_ENV=${CGILUA_ENV})
 endif(CGILUA_ENV)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set_target_properties(lualib PROPERTIES
+    set_target_properties(lua PROPERTIES
             PREFIX ""
             SUFFIX ".pyd")
 else ()
-    set_target_properties(lualib PROPERTIES
+    set_target_properties(lua PROPERTIES
             PREFIX "")
 endif ()
 
@@ -51,7 +51,7 @@ set_target_properties(python PROPERTIES
         COMPILE_FLAGS "-m32"
         LINK_FLAGS    "-m32")
 
-set_target_properties(lualib PROPERTIES
+set_target_properties(lua PROPERTIES
         COMPILE_FLAGS "-m32"
         LINK_FLAGS    "-m32")
 # =====================
@@ -61,4 +61,4 @@ else()
     target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
 endif (UNIX)
 
-target_link_libraries(lualib ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
+target_link_libraries(lua ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})

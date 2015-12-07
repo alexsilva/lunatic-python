@@ -35,7 +35,7 @@ typedef struct {
 extern PyTypeObject LuaObject_Type;
 
 #if PY_MAJOR_VERSION < 3
-#define PyInit_lua initlualib
+#define PyInit_lua initlua
 #endif
 PyMODINIT_FUNC PyInit_lua(void);
 
