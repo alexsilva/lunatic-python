@@ -219,7 +219,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
             ret = LuaObject_PyNew(interpreter, lobj);
         }
     } else if (lua_istable(interpreter->L, lobj)) {
-        if (!PYTHON_EMBED_MODE) { // Lua inside Python
+        if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
             if (stackpos) {
                 ret = LuaObject_New(interpreter, stackpos);
             } else {
@@ -242,7 +242,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
     } else if (lua_isuserdata(interpreter->L, lobj)) {
         void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
         if (void_ptr) {
-            if (PYTHON_EMBED_MODE) {
+            if (PYTHON_EMBEDDED_MODE) {
                 ret = (PyObject *) void_ptr;
             } else {
                 ret = LuaObject_PyNew(interpreter, lobj);

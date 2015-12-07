@@ -37,7 +37,7 @@
 #include "utils.h"
 
 // Variable to know in mode python was started (Inside Lua embedded).
-bool PYTHON_EMBED_MODE = false;
+bool PYTHON_EMBEDDED_MODE = false;
 
 
 static void py_object_call(lua_State *L) {
@@ -333,7 +333,7 @@ static void python_system_exit(lua_State *L) {
 
 /* Indicates if Python interpreter was embedded in the Lua */
 static void python_is_embedded(lua_State *L) {
-    if (PYTHON_EMBED_MODE) {
+    if (PYTHON_EMBEDDED_MODE) {
         lua_pushnumber(L, 1);
     } else {
         lua_pushnil(L);
@@ -370,7 +370,7 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    PYTHON_EMBED_MODE = false;  // If Python is inside Lua
+    PYTHON_EMBEDDED_MODE = false;  // If Python is inside Lua
 
     lua_Object python = lua_createtable(L);
 
@@ -421,7 +421,7 @@ LUA_API int luaopen_python(lua_State *L) {
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
-        PYTHON_EMBED_MODE = true; // If Python is inside Lua
+        PYTHON_EMBEDDED_MODE = true; // If Python is inside Lua
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {
