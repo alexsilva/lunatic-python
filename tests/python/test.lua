@@ -111,6 +111,6 @@ assert(python.eval("1") == 1, "eval int no match")
 assert(python.eval("1.0001") == 1.0001, "eval float no match")
 
 -- Ends the Python interpreter, freeing resources to OS
-if (not python.LUA_EMBED_MODE) then
+if (python.is_embedded()) then
     python.system_exit()
 end
