@@ -8,9 +8,13 @@ print 'in lua: ', ' | '.join(dir(lua))
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
-interpreter = lua.Interpreter(os.environ['BASE_DIR'])
+class LuaInterpreter(lua.Interpreter):
+    def __enter__(self):
+        return self
+    def __exit__(self, *args, **kwargs):
+        self.close()
 
-def fn(index):
+def fn(interpreter, index):
     print(interpreter.eval("10"))
     print(interpreter.eval("\"a\""))
 
@@ -43,10 +47,11 @@ def fn(index):
     print data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index)
 
     # load test of python!
-    python = interpreter.eval("python")
     interpreter.require(os.path.join(PATH, "..", "python", "test.lua"))
 
-for index in range(100):
-    fn(index)  # loop check to lua stack
 
-interpreter.close()
+index = 0
+while True:
+    with LuaInterpreter(os.environ['BASE_DIR']) as interpreter:
+        fn(interpreter, index)  # loop check to lua stack
+        index += 1
