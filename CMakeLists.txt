@@ -9,6 +9,12 @@ include_directories(${LUA_INCLUDE_DIR})
 include_directories(${LUA_INCLUDE_EXTRA})
 include_directories(${PYTHON_INCLUDE_DIR})
 
+if (WIN32)
+    find_package(pthreads-w32 REQUIRED)
+    include_directories(${pthreads-w32_DIR})
+    link_directories(${pthreads-w32_DIR}/Release)
+endif(WIN32)
+
 if (UNIX)
     link_directories(${PYTHON_LIBRARIES})
 endif (UNIX)
@@ -55,10 +61,11 @@ set_target_properties(lua PROPERTIES
         COMPILE_FLAGS "-m32"
         LINK_FLAGS    "-m32")
 # =====================
+
 if (UNIX)
-    target_link_libraries(python python2.7 pthread util ${LUA_LIBRARIES})
+    target_link_libraries(python python2.7 pthread util pthreads ${LUA_LIBRARIES})
 else()
-    target_link_libraries(python ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
+    target_link_libraries(python pthreads ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
 endif (UNIX)
 
-target_link_libraries(lua ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})
+target_link_libraries(lua pthreads ${PYTHON_LIBRARIES} ${LUA_DLL} ${LUA_LIBRARY})

@@ -24,10 +24,12 @@
 #define LUAINPYTHON_H
 
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct {
     PyObject_HEAD
     lua_State *L;
+    pthread_mutex_t *lock;
     bool malloc;
     bool exit;
 } InterpreterObject;

@@ -106,6 +106,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
+    pthread_mutex_lock(self->interpreter->lock);
     if (!self->interpreter->exit) {
         lua_beginblock(self->L);
         lua_unref(self->L, self->ref);
@@ -113,6 +114,7 @@ static void LuaObject_dealloc(LuaObject *self) {
             lua_unref(self->L, self->refiter);
         lua_endblock(self->L);
     }
+    pthread_mutex_unlock(self->interpreter->lock);
     if (self->interpreter->malloc) {
         self->interpreter->L = NULL;
         free(self->interpreter);
@@ -429,6 +431,11 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
+    self->lock = malloc(sizeof(pthread_mutex_t));
+    if (!self->lock || pthread_mutex_init(self->lock, NULL) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "mutex init failed");
+        return -1;
+    }
     self->exit = false;
     self->malloc = false;
     luaopen_python(self->L);
@@ -438,11 +445,24 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
 /*
  * Stops all environment, freeing up resources.
  */
-static void Interpreter_dealloc(InterpreterObject *self){
-    self->exit = true;
-    lua_close(self->L);
+static PyObject * Interpreter_close(InterpreterObject *self) {
+    pthread_mutex_lock(self->lock);
+    if (!self->exit) {
+        self->exit = true;
+        lua_close(self->L);
+        self->L = NULL; // lua_State(NULL)
+    }
+    pthread_mutex_unlock(self->lock);
+    PyObject *ret = Py_None;
+    Py_INCREF(ret);
+    return ret;
+}
+
+static void Interpreter_dealloc(InterpreterObject *self) {
+    Interpreter_close(self);
+    pthread_mutex_destroy(self->lock); // mutex destroy
+    free(self->lock);  // free lock
     self->ob_type->tp_free((PyObject*)self);
-    self->L = NULL; // lua_State(NULL)
 }
 
 static PyMethodDef Interpreter_methods[] = {
@@ -454,6 +474,8 @@ static PyMethodDef Interpreter_methods[] = {
             "returns the list of global variables."},
     {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
             "loads and executes the script."},
+    {"close", (PyCFunction) Interpreter_close,     METH_VARARGS,
+            "clear then lua state"},
     {NULL,         NULL}
 };
 
