@@ -42,7 +42,7 @@ bool PYTHON_EMBEDDED_MODE = false;
 
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    PyObject *args = PyTuple_New(0);
+    PyObject *args = NULL;
     PyObject *kwargs = NULL;
     PyObject *value;
 
@@ -74,10 +74,18 @@ static void py_object_call(lua_State *L) {
     } else if (nargs > 0) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
     }
+    if (!args) args = PyTuple_New(0);  // Can not be NULL
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
+    if (!PYTHON_EMBEDDED_MODE) {  // Crash if inside Lua
+        Py_XDECREF(args);
+        Py_XDECREF(kwargs);
+    }
     if (value) {
-        if (py_convert(L, value) == CONVERTED)
+        if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
+        } else if (!PYTHON_EMBEDDED_MODE) {
+            Py_INCREF(value);
+        }
     } else {
         char *name = get_pyobject_str(pobj->o, "...");
         char *error = "call python function \"%s\"";
@@ -141,8 +149,11 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         item = PyObject_GetAttr(pobj->o, key);
     }
     if (item) {
-        if ((ret = py_convert(L, item)) == CONVERTED)
+        if ((ret = py_convert(L, item)) == CONVERTED) {
             Py_DECREF(item);
+        } else if (!PYTHON_EMBEDDED_MODE) {
+            Py_INCREF(item);
+        }
     } else {
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
@@ -163,12 +174,7 @@ static void py_object_index(lua_State *L) {
 
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (pobj->meta) {
-        if (!pobj->meta->unref) {
-            Py_XDECREF(pobj->o);
-        }
-        free(pobj->meta);
-    }
+    Py_XDECREF(pobj->o);
     free(pobj);
 }
 
@@ -224,6 +230,8 @@ static int py_run(lua_State *L, int eval) {
     }
     if ((ret = py_convert(L, o)) == CONVERTED) {
         Py_DECREF(o);
+    } else if (!PYTHON_EMBEDDED_MODE) {
+        Py_INCREF(o);
     }
 #if PY_MAJOR_VERSION < 3
     if (Py_FlushLine())
