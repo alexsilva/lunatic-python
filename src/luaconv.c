@@ -181,6 +181,11 @@ py_object *get_py_object(lua_State *L, int n) {
 
     po->asindx = (int) lua_getnumber(L, lua_rawgettable(L));
 
+    // python object recover
+    lua_pushobject(L, ltable);
+    lua_pushstring(L, POMETA);
+
+    po->meta = (py_object_meta *) lua_getuserdata(L, lua_rawgettable(L));
     return po;
 }
 

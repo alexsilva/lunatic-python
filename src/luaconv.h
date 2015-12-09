@@ -9,11 +9,17 @@
 #include "luainpython.h"
 
 #define POBJECT "POBJECT"
+#define POMETA "POMETA"
 #define ASINDX "ASINDX"
+
+typedef struct {
+    int unref;
+} py_object_meta;
 
 typedef struct {
     PyObject *o;
     int asindx;
+    py_object_meta *meta;
 } py_object;
 
 int lua_isboolean(lua_State *L, lua_Object obj);

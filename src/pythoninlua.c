@@ -163,7 +163,9 @@ static void py_object_index(lua_State *L) {
 
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    Py_XDECREF(pobj->o);
+    if (!pobj->meta->unref) {
+        Py_XDECREF(pobj->o);
+    }
     free(pobj);
 }
 
@@ -238,12 +240,14 @@ static void py_eval(lua_State *L) {
 static void py_asindx(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     py_object_wrap_lua(L, pobj->o, 1);
+    pobj->meta->unref = true;
     free(pobj);
 }
 
 static void py_asattr(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
     py_object_wrap_lua(L, pobj->o, 0);
+    pobj->meta->unref = true;
     free(pobj);
 }
 
