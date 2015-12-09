@@ -24,6 +24,7 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
         if (!interpreter->malloc) Py_INCREF(interpreter);
         obj->interpreter = interpreter; // The state of the Lua will be used implicitly.
         obj->L= interpreter->L;
+        interpreter->link = true;
     }
     return (PyObject*) obj;
 }
@@ -80,11 +81,9 @@ int is_indexed_array(lua_State *L, lua_Object lobj) {
 
 /* convert to args python: fn(*args) */
 PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
-    lua_beginblock(L);
     lua_pushobject(L, ltable);
     lua_call(L, "getn");
     int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
-
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) {
         lua_new_error(L, "failed to create arguments tuple");
@@ -96,7 +95,6 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
         PyTuple_SetItem(tuple, index - 2, value);
         index = lua_next(L, ltable, index);
     }
-    lua_endblock(L);
     return tuple;
 }
 
@@ -108,10 +106,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         lua_new_error(L, "failed to create arguments tuple");
     }
     int i;
+    PyObject *arg;
     for (i = 0; i != nargs; i++) {
-        lua_beginblock(L);
-        PyObject *arg = lua_convert(L, i + stackpos + 1);
-        lua_endblock(L);
+        arg = lua_convert(L, i + stackpos + 1);
         if (!arg) {
             Py_DECREF(tuple);
             char *error = "failed to convert argument #%d";
@@ -135,7 +132,6 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     if (!dict) {
         lua_new_error(L, "failed to create key words arguments dict");
     }
-    lua_beginblock(L);
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
 
@@ -147,7 +143,6 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 
         index = lua_next(L, ltable, index);
     }
-    lua_endblock(L);
     return dict;
 }
 
@@ -219,6 +214,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
             ret = LuaObject_PyNew(interpreter, lobj);
         }
     } else if (lua_istable(interpreter->L, lobj)) {
+        lua_beginblock(interpreter->L);
         if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
             if (stackpos) {
                 ret = LuaObject_New(interpreter, stackpos);
@@ -231,6 +227,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
         } else {
             ret = get_py_dict(interpreter->L, lobj);
         }
+        lua_endblock(interpreter->L);
     } else if (lua_isboolean(interpreter->L, lobj)) {
         if (lua_getboolean(interpreter->L, lobj)) {
             Py_INCREF(Py_True);
@@ -261,7 +258,12 @@ PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
     interpreter->L = L;
     interpreter->malloc = true;
     interpreter->exit = false;
-    return lua_interpreter_object_convert(interpreter, stackpos, lobj);
+    interpreter->link = false;
+    PyObject *ret = lua_interpreter_object_convert(interpreter, stackpos, lobj);
+    if (!interpreter->link) {
+        free(interpreter); // Link with custom types
+    }
+    return ret;
 }
 
 

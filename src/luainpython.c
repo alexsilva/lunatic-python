@@ -47,7 +47,7 @@
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
     PyObject *arg;
-    int nargs, rc, i;
+    int nargs, i;
     if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError, "tuple expected");
         return NULL;
@@ -60,8 +60,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
                      "failed to get tuple item #%d", i);
             return NULL;
         }
-        rc = py_convert(self->L, arg);
-        if (!rc) {
+        if (py_convert(self->L, arg) == UNTOUCHED) {
             PyErr_Format(PyExc_TypeError,
                      "failed to convert argument #%d", i);
             return NULL;
@@ -144,8 +143,8 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     }
     PyObject *ret = NULL;
     lua_pushobject(self->L, ltable); // push table
-    int rc = py_convert(self->L, attr); // push key
-    if (rc) {
+
+    if (py_convert(self->L, attr) != UNTOUCHED) { // push key
         lua_Object lobj = lua_gettable(self->L);
         ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
     } else {
@@ -157,8 +156,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
 
 static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
     lua_beginblock(self->L);
-    int ret = -1;
-    int rc;
+    int rc, ret = -1;
     lua_Object ltable = lua_getref(self->L, self->ref);
     if (lua_isnil(self->L, ltable)) {
         lua_pop(self->L);
@@ -173,15 +171,15 @@ static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
     lua_pushobject(self->L, ltable); // push table
     rc = py_convert(self->L, attr);
     if (rc) {
-        if (NULL == value) {
+        if (value == NULL) {
             lua_pushnil(self->L);
-            rc = 1;
+            rc = CONVERTED;
         } else {
             rc = py_convert(self->L, value); // push value ?
         }
         if (rc) {
             lua_settable(self->L);
-            ret = 0;
+            ret = UNTOUCHED;
         } else {
             PyErr_SetString(PyExc_ValueError, "can't convert value");
         }

@@ -19,8 +19,14 @@ typedef struct {
     int refiter;
 } LuaObject;
 
-int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
-int py_convert(lua_State *L, PyObject *o);
+typedef enum {
+    UNTOUCHED = 0,
+    CONVERTED = 1,
+    WRAP = 2
+} Conversion;
+
+Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
+Conversion py_convert(lua_State *L, PyObject *o);
 void lua_raw(lua_State *L);
 
 #endif //LUNATIC_PYCONV_H

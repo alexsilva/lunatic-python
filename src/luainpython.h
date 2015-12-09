@@ -32,6 +32,7 @@ typedef struct {
     pthread_mutex_t *lock;
     bool malloc;
     bool exit;
+    bool link;
 } InterpreterObject;
 
 extern PyTypeObject LuaObject_Type;

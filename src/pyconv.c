@@ -24,10 +24,7 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     return get_pyobject_as_string(L, o);
 }
 
-int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
-    Py_INCREF(pobj);
-    Py_INCREF(pobj);
-
+Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     lua_Object ltable = lua_createtable(L);
 
     set_table_userdata(L, ltable, POBJECT, pobj);
@@ -41,7 +38,7 @@ int py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
 
     // returning table
     lua_pushobject(L, ltable);
-    return 1;
+    return WRAP;
 }
 
 lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
@@ -97,41 +94,42 @@ void lua_raw(lua_State *L) {
     }
 }
 
-int py_convert(lua_State *L, PyObject *o) {
-    int ret = 0;
+Conversion py_convert(lua_State *L, PyObject *o) {
+    Conversion ret;
     if (o == Py_None || o == Py_False) {
         lua_pushnil(L);
-        ret = 1;
+        ret = CONVERTED;
     } else if (o == Py_True) {
         lua_pushnumber(L, 1);
-        ret = 1;
+        ret = CONVERTED;
 #if PY_MAJOR_VERSION >= 3
         } else if (PyUnicode_Check(o)) {
         Py_ssize_t len;
         char *s = PyUnicode_AsUTF8AndSize(o, &len);
+        ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
         lua_pushstring(L, get_pyobject_as_string(L, o));
-        ret = 1;
+        ret = CONVERTED;
     } else if (PyUnicode_Check(o)) {
         char *s = get_pyobject_as_utf8string(L, o);
 #endif
         lua_pushstring(L, s);
-        ret = 1;
+        ret = CONVERTED;
 #if PY_MAJOR_VERSION < 3
     } else if (PyInt_Check(o)) {
         lua_pushnumber(L, PyInt_AsLong(o));
-        ret = 1;
+        ret = CONVERTED;
 #endif
     } else if (PyLong_Check(o)) {
         lua_pushnumber(L, PyLong_AsLong(o));
-        ret = 1;
+        ret = CONVERTED;
     } else if (PyFloat_Check(o)) {
         lua_pushnumber(L, PyFloat_AsDouble(o));
-        ret = 1;
+        ret = CONVERTED;
     } else if (LuaObject_Check(o)) {
         lua_pushobject(L, lua_getref(L, ((LuaObject*)o)->ref));
-        ret = 1;
+        ret = CONVERTED;
     } else {
         int asindx = 0;
         if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||

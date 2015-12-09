@@ -76,8 +76,8 @@ static void py_object_call(lua_State *L) {
     }
     value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
     if (value) {
-        py_convert(L, value);
-        Py_DECREF(value);
+        if (py_convert(L, value) == CONVERTED)
+            Py_DECREF(value);
     } else {
         char *name = get_pyobject_str(pobj->o, "...");
         char *error = "call python function \"%s\"";
@@ -91,10 +91,10 @@ static void py_object_call(lua_State *L) {
 static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
     PyObject *value;
     PyObject *key = lua_convert(L, keyn);
-    if (!key) luaL_argerror(L, 1, "failed to convert key");
-
+    if (!key) {
+        luaL_argerror(L, 1, "failed to convert key");
+    }
     lua_Object lobj = lua_getparam(L, valuen);
-
     if (!lua_isnil(L, lobj)) {
         value = lua_convert(L, valuen);
         if (!value) {
@@ -128,22 +128,21 @@ static void py_object_newindex_set(lua_State *L) {
     free(pobj);
 }
 
-static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
+static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
     PyObject *key = lua_convert(L, keyn);
+    Conversion ret = UNTOUCHED;
     PyObject *item;
-    int ret = 0;
-
-    if (!key) luaL_argerror(L, 1, "failed to convert key");
-
+    if (!key) {
+        luaL_argerror(L, 1, "failed to convert key");
+    }
     if (pobj->asindx) {
         item = PyObject_GetItem(pobj->o, key);
     } else {
         item = PyObject_GetAttr(pobj->o, key);
     }
-    Py_DECREF(key);
     if (item) {
-        ret = py_convert(L, item);
-        Py_DECREF(item);
+        if ((ret = py_convert(L, item)) == CONVERTED)
+            Py_DECREF(item);
     } else {
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
@@ -152,18 +151,19 @@ static int _p_object_index_get(lua_State *L, py_object *pobj, int keyn) {
         sprintf(buff, error, name, skey);
         lua_new_error(L, buff);
     }
+    Py_DECREF(key);
     return ret;
 }
 
 static void py_object_index(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    _p_object_index_get(L, pobj, 2);
+    get_py_object_index(L, pobj, 2);
     free(pobj);
 }
 
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    Py_CLEAR(pobj->o);
+    Py_XDECREF(pobj->o);
     free(pobj);
 }
 
@@ -186,7 +186,7 @@ static int py_run(lua_State *L, int eval) {
     const char *s;
     char *buffer = NULL;
     PyObject *m, *d, *o;
-    int ret = 0;
+    Conversion ret;
     size_t len;
 
     s = luaL_check_string(L, 1);
@@ -204,34 +204,26 @@ static int py_run(lua_State *L, int eval) {
         buffer[len] = '\0';
         s = buffer;
     }
-
     m = PyImport_AddModule("__main__");
     if (!m) {
         free(buffer);
         lua_error(L, "Can't get __main__ module");
     }
     d = PyModule_GetDict(m);
-
     o = PyRun_StringFlags(s, eval ? Py_eval_input : Py_single_input,
                           d, d, NULL);
-
     free(buffer);
-
     if (!o) {
         lua_new_error(L, "run custom code");
         return 0;
     }
-
-    if (py_convert(L, o))
-        ret = 1;
-
-    Py_DECREF(o);
-
+    if ((ret = py_convert(L, o)) == CONVERTED) {
+        Py_DECREF(o);
+    }
 #if PY_MAJOR_VERSION < 3
     if (Py_FlushLine())
 #endif
-        PyErr_Clear();
-
+    PyErr_Clear();
     return ret;
 }
 
@@ -245,14 +237,12 @@ static void py_eval(lua_State *L) {
 
 static void py_asindx(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    Py_DECREF(pobj->o);
     py_object_wrap_lua(L, pobj->o, 1);
     free(pobj);
 }
 
 static void py_asattr(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    Py_DECREF(pobj->o);
     py_object_wrap_lua(L, pobj->o, 0);
     free(pobj);
 }
@@ -273,12 +263,12 @@ static void py_globals(lua_State *L) {
     if (!globals) {
         lua_new_error(L, "can't get globals");
     }
+    Py_INCREF(globals);
     py_object_wrap_lua(L, globals, 1);
 }
 
 static void py_locals(lua_State *L) {
     PyObject *locals;
-
     if (lua_gettop(L) != 0) {
         lua_error(L, "invalid arguments");
     }
@@ -287,40 +277,37 @@ static void py_locals(lua_State *L) {
         py_globals(L);
         return;
     }
+    Py_INCREF(locals);
     py_object_wrap_lua(L, locals, 1);
 }
 
 static void py_builtins(lua_State *L) {
     PyObject *builtins;
-
     if (lua_gettop(L) != 0) {
         lua_error(L, "invalid arguments");
     }
-
     builtins = PyEval_GetBuiltins();
     if (!builtins) {
         lua_new_error(L, "failed to get builtins");
     }
+    Py_INCREF(builtins);
     py_object_wrap_lua(L, builtins, 1);
 }
 
 static void py_import(lua_State *L) {
     const char *name = luaL_check_string(L, 1);
     PyObject *module;
-
-    if (!name) luaL_argerror(L, 1, "module name expected");
-
+    if (!name) {
+        luaL_argerror(L, 1, "module name expected");
+    }
     module = PyImport_ImportModule((char *) name);
-
     if (!module) {
         char *error = "failed importing \"%s\"";
         char buff[calc_buff_size(2, error, name)];
         sprintf(buff, error, name);
         lua_new_error(L, buff);
     }
-
     py_object_wrap_lua(L, module, 0);
-    Py_DECREF(module);
 }
 
 static void python_system_init(lua_State *L);
