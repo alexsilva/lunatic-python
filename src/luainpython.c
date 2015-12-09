@@ -286,7 +286,7 @@ static PyMappingMethods LuaObject_as_mapping = {
 
 PyTypeObject LuaObject_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "lualib.LuaObject",             /*tp_name*/
+    "lua.LuaObject",             /*tp_name*/
     sizeof(LuaObject),        /*tp_basicsize*/
     0,                        /*tp_itemsize*/
     (destructor)LuaObject_dealloc, /*tp_dealloc*/
