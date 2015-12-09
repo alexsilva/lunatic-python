@@ -5,15 +5,16 @@
 -- Time: 18:53
 -- To change this template use File | Settings | File Templates.
 --
+if (not python) then
+    local handle, msg = loadlib(getenv("LIBRARY_PATH"))
+    if (not handle or handle == -1) then error(msg) end
 
-local handle, msg = loadlib(getenv("LIBRARY_PATH"))
-if (not handle or handle == -1) then error(msg) end
+    callfromlib(handle, 'luaopen_python')
+    assert(python, "undefined python object")
 
-callfromlib(handle, 'luaopen_python')
-assert(python, "undefined python object")
-
--- python home
-python.system_init("C:\\Python27");
+    -- python home
+    python.system_init("C:\\Python27");
+end
 
 local builtins = python.builtins()
 local locals = python.locals()
@@ -100,4 +101,9 @@ while (v) do
         error("value "..tostring(v).." not in "..builtins.str(result))
     end
     v = builtins.next(res_expected, python.False);
+end
+
+-- Ends the Python interpreter, freeing resources to OS
+if (python.is_embedded()) then
+    python.system_exit()
 end

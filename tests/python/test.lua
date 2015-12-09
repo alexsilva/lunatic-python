@@ -11,19 +11,18 @@ if (not python) then  -- LUA -> PYTHON - LUA
     handle, msg = loadlib(getenv("LIBRARY_PATH"))
     if (not handle or handle == -1) then error(msg) end
     callfromlib(handle, 'luaopen_python')
+
+    assert(python, "undefined python object")
+
+    -- python home
+    python.system_init("C:\\Python27");
 end
-
-assert(python, "undefined python object")
-
--- python home
-python.system_init("C:\\Python27");
-
 print(format("python is embedded in lua <%s>", tostring(python.is_embedded())))
 
-print("Python sys.path")
 local builtins = python.builtins()
 
 local str = "maçã"
+
 assert(builtins.unicode(str, 'utf-8') == str)
 
 assert(builtins.bool(python.False) == nil, "False boolean check error")
@@ -31,6 +30,7 @@ assert(builtins.bool(python.True) == 1, "True boolean check error")
 
 local sys = python.import("sys")
 local index = builtins.len(sys.path)
+print("Python sys.path")
 while (index > 0) do
     print(index, sys.path[index - 1])
     index = index - 1
