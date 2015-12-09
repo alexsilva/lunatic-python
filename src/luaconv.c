@@ -13,6 +13,7 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "pythoninlua.h"
+#include "luainpython.h"
 
 
 PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
@@ -260,7 +261,7 @@ PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
     interpreter->exit = false;
     interpreter->link = false;
     PyObject *ret = lua_interpreter_object_convert(interpreter, stackpos, lobj);
-    if (!interpreter->link) {
+    if (!interpreter->link && interpreter->malloc) {
         free(interpreter); // Link with custom types
     }
     return ret;
