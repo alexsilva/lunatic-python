@@ -163,8 +163,11 @@ static void py_object_index(lua_State *L) {
 
 static void py_object_gc(lua_State *L) {
     py_object *pobj = get_py_object(L, 1);
-    if (pobj->meta && !pobj->meta->unref) {
-        Py_XDECREF(pobj->o);
+    if (pobj->meta) {
+        if (!pobj->meta->unref) {
+            Py_XDECREF(pobj->o);
+        }
+        free(pobj->meta);
     }
     free(pobj);
 }
