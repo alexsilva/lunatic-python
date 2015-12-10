@@ -10,10 +10,7 @@ include_directories(${LUA_INCLUDE_EXTRA})
 include_directories(${PYTHON_INCLUDE_DIR})
 
 link_directories(${LUA_LIBRARIES})
-
-if (UNIX)
-    link_directories(${PYTHON_LIBRARIES})
-endif (UNIX)
+link_directories(${PYTHON_LIBRARIES})
 
 set(SOURCES
     src/luainpython.c
@@ -32,7 +29,9 @@ if (CGILUA_ENV)
     find_package(cgilua REQUIRED)
     include_directories(${cgilua_DIR})
     add_definitions(-DCGILUA_ENV=ON)
-    target_link_libraries(lua ${cgilua_DIR}/Release/libcgilua.a)
+    set(CGILUA_LIBS ${cgilua_DIR}/Release/libcgilua.a)
+    target_link_libraries(lua ${CGILUA_LIBS})
+    target_link_libraries(python ${CGILUA_LIBS})
 endif(CGILUA_ENV)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -55,9 +54,11 @@ set_target_properties(lua PROPERTIES
 # =====================
 
 if (UNIX)
-    target_link_libraries(python python2.7 pthread util pthreads)
+    target_link_libraries(python python2.7 pthread util)
+    target_link_libraries(lua pthread ${PYTHON_LIBRARIES})
 else(UNIX)
-    target_link_libraries(python pthread lua32ng lualib32ng ${PYTHON_LIBRARIES})
+    target_link_libraries(python pthread python27 lua32ng lualib32ng)
+    target_link_libraries(lua pthread python27 lua32ng lualib32ng)
 endif (UNIX)
 
-target_link_libraries(lua pthread ${PYTHON_LIBRARIES} lua32ng lualib32ng)
+
