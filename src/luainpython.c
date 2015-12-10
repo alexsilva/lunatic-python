@@ -105,7 +105,8 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    pthread_mutex_lock(self->interpreter->lock);
+    if (self->interpreter->lock)
+        pthread_mutex_lock(self->interpreter->lock);
     if (!self->interpreter->exit) {
         lua_beginblock(self->L);
         lua_unref(self->L, self->ref);
@@ -113,7 +114,8 @@ static void LuaObject_dealloc(LuaObject *self) {
             lua_unref(self->L, self->refiter);
         lua_endblock(self->L);
     }
-    pthread_mutex_unlock(self->interpreter->lock);
+    if (self->interpreter->lock)
+        pthread_mutex_unlock(self->interpreter->lock);
     if (self->interpreter->malloc) {
         self->interpreter->L = NULL;
         free(self->interpreter);
