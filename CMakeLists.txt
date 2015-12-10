@@ -25,18 +25,14 @@ set(SOURCES
     src/lshared.h
     src/lapi.c)
 
-if (CGILUA_ENV)
-    set(SOURCES
-        ${SOURCES}
-        src/cgilua/cgilua.c
-        src/loadlib/loadlib.c)
-endif(CGILUA_ENV)
-
 add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})
 
 if (CGILUA_ENV)
-    target_compile_definitions(lua PRIVATE CGILUA_ENV=${CGILUA_ENV})
+    find_package(cgilua REQUIRED)
+    include_directories(${cgilua_DIR})
+    add_definitions(-DCGILUA_ENV=ON)
+    target_link_libraries(lua ${cgilua_DIR}/Release/libcgilua.a)
 endif(CGILUA_ENV)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")

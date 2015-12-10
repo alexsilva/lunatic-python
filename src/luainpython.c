@@ -38,7 +38,7 @@
 #endif
 
 #ifdef CGILUA_ENV
-#include "cgilua/cgilua.h"
+#include "cgilua.h"
 #else
 #include <lualib.h>
 #endif
