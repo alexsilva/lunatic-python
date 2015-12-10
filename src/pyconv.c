@@ -17,11 +17,13 @@ static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
 
 /* python string unicode */
 static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
-    o = PyUnicode_AsUTF8String(o);
-    if (!o) {
+    PyObject *obj = PyUnicode_AsUTF8String(o);
+    if (!obj) {
         lua_new_error(L, "converting unicode string");
     }
-    return get_pyobject_as_string(L, o);
+    char *str = get_pyobject_as_string(L, obj);
+    Py_DECREF(obj);
+    return str;
 }
 
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
