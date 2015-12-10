@@ -35,6 +35,23 @@ int calc_buff_size(int nargs, ...) {
     return size + 1;
 }
 
+void python_new_error(PyObject *exception, char *message) {
+    PyObject *ptype, *pvalue, *ptraceback;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    char *error = NULL;
+    if (pvalue != NULL) {
+        error = get_pyobject_str(pvalue, get_pyobject_str(ptype, NULL));
+    }
+    if (!error) {
+        PyErr_SetString(exception, message);
+        return;
+    }
+    char *format = "%s (%s)";
+    char buff[calc_buff_size(3, format, message, error)];
+    sprintf(buff, format, message, error);
+    PyErr_SetString(exception, &buff[0]);
+}
+
 void lua_new_error(lua_State *L, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);

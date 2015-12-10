@@ -350,8 +350,10 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         len = strlen(prefix) + len;
     }
     if (lua_dobuffer(self->L, s, len, "<python>") != 0) {
-        PyErr_Format(PyExc_RuntimeError,
-                 "error loading code: %s", s);
+        char *format = "eval code (%s)";
+        char buff[calc_buff_size(2, format, s)];
+        sprintf(buff, format, s);
+        python_new_error(PyExc_RuntimeError, &buff[0]);
         return NULL;
     }
     if (eval) free(buf);
