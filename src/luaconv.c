@@ -124,7 +124,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
-    lua_pushuserdata(L, tuple);
+    py_object_wrap_lua(L, tuple, 1);
 }
 
 /* convert to kwargs python: fn(**kwargs) */
@@ -157,12 +157,23 @@ void py_kwargs(lua_State *L) {
         lua_error(L, "first arg need be table ex: kwargs({a=10})");
     }
     PyObject *dict = get_py_dict(L, ltable);
-    lua_pushuserdata(L, dict);
+    py_object_wrap_lua(L, dict, 1);
 }
 
-py_object *get_py_object(lua_State *L, int n) {
-    lua_Object ltable = lua_getparam(L, n);
+/*get py object from wrap table (direct access) */
+PyObject *get_pobject(lua_State *L, lua_Object ltable) {
+    if (!lua_istable(L, ltable))
+        lua_error(L, "wrap table not found!");
 
+    // python object recover
+    lua_pushobject(L, ltable);
+    lua_pushstring(L, POBJECT);
+
+    return lua_getuserdata(L, lua_rawgettable(L));
+}
+
+/*get py object from wrap table */
+py_object *get_py_object(lua_State *L, lua_Object ltable) {
     if (!lua_istable(L, ltable))
         lua_error(L, "wrap table not found!");
 
@@ -189,6 +200,11 @@ py_object *get_py_object(lua_State *L, int n) {
     return po;
 }
 
+/* get py object in stack */
+py_object *get_py_object_stack(lua_State *L, int n) {
+    return get_py_object(L, lua_getparam(L, n));
+}
+
 PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int stackpos,
                                          lua_Object lobj) {
     PyObject *ret = NULL;
@@ -210,7 +226,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
             ret = PyUnicode_FromStringAndSize(s, len);
         }
     } else if (is_wrapped_object(interpreter->L, lobj)) {
-        py_object *pobj = get_py_object(interpreter->L, stackpos);
+        py_object *pobj = get_py_object_stack(interpreter->L, stackpos);
         ret = pobj->o;
         free(pobj);
     } else if (lua_isfunction(interpreter->L, lobj)) {
@@ -258,9 +274,12 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
     return ret;
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
     InterpreterObject *interpreter;
     interpreter = malloc(sizeof(InterpreterObject));
+    if (!interpreter) lua_error(L, "out of memory!");
     interpreter->L = L;
     interpreter->malloc = true;
     interpreter->exit = false;
@@ -271,6 +290,7 @@ PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
     }
     return ret;
 }
+#pragma clang diagnostic pop
 
 
 PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter,

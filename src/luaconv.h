@@ -26,7 +26,8 @@ int lua_isboolean(lua_State *L, lua_Object obj);
 int lua_getboolean(lua_State *L, lua_Object obj);
 
 int lua_gettop(lua_State *L);
-py_object *get_py_object(lua_State *L, int n);
+PyObject *get_pobject(lua_State *L, lua_Object ltable);
+py_object *get_py_object_stack(lua_State *L, int n);
 int is_wrapped_object(lua_State *L, lua_Object lobj);
 int is_indexed_array(lua_State *L, lua_Object lobj);
 int get_base_tag(lua_State *L);

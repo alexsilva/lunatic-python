@@ -41,21 +41,24 @@ bool PYTHON_EMBEDDED_MODE = false;
 
 
 static void py_object_call(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
+    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
     PyObject *args = NULL;
     PyObject *kwargs = NULL;
     PyObject *value;
 
     int nargs = lua_gettop(L)-1;
 
-    if (!PyCallable_Check(pobj->o)) {
+    if (!PyCallable_Check(obj)) {
         lua_error(L, "object is not callable");
     }
     lua_Object largs = lua_getparam(L, 2);
     lua_Object lkwargs = lua_getparam(L, 3);
 
-    if (nargs == 1 && lua_isuserdata(L, largs)) {
-        PyObject *pyobj = (PyObject *) lua_getuserdata(L, largs);
+    int is_wrapped_args = is_wrapped_object(L, largs);
+    int is_wrapped_kwargs = is_wrapped_object(L, lkwargs);
+
+    if (nargs == 1 && is_wrapped_args) {
+        PyObject *pyobj = get_pobject(L, largs);
         if (PyTuple_Check(pyobj)) {
             args = pyobj;
         } else if (PyDict_Check(pyobj)) {
@@ -63,10 +66,9 @@ static void py_object_call(lua_State *L) {
         } else {
             args = get_py_tuple(L, 1);
         }
-    } else if (nargs == 2 && lua_isuserdata(L, largs) && lua_isuserdata(L, lkwargs)) {
-        args = (PyObject *) lua_getuserdata(L, largs);   // is args and kwargs ?
-        kwargs = (PyObject *) lua_getuserdata(L, lkwargs);
-
+    } else if (nargs == 2 && is_wrapped_args && is_wrapped_kwargs) {
+        args   = get_pobject(L, largs);
+        kwargs = get_pobject(L, lkwargs); // is args and kwargs ?
         // check the order (), {}
         if (PyTuple_Check(kwargs)) luaL_argerror(L, 1, "object tuple expected args(1,...)");
         if (PyDict_Check(args)) luaL_argerror(L, 2, "object dict expected kwargs{a=1,...}");
@@ -75,11 +77,9 @@ static void py_object_call(lua_State *L) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
-    value = PyObject_Call(pobj->o, args, kwargs); // fn(*args, **kwargs)
-    if (!PYTHON_EMBEDDED_MODE) {  // Crash if inside Lua
-        Py_XDECREF(args);
-        Py_XDECREF(kwargs);
-    }
+    value = PyObject_Call(obj, args, kwargs); // fn(*args, **kwargs)
+    if (!is_wrapped_args) Py_XDECREF(args);
+    if (!is_wrapped_kwargs) Py_XDECREF(kwargs);
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
@@ -87,13 +87,12 @@ static void py_object_call(lua_State *L) {
             Py_INCREF(value);
         }
     } else {
-        char *name = get_pyobject_str(pobj->o, "...");
+        char *name = get_pyobject_str(obj, "...");
         char *error = "call python function \"%s\"";
         char buff[calc_buff_size(2, error, name)];
         sprintf(buff, error, name);
         lua_new_error(L, buff);
     }
-    free(pobj);
 }
 
 static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
@@ -128,7 +127,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int va
 }
 
 static void py_object_newindex_set(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
+    py_object *pobj = get_py_object_stack(L, 1);
     if (lua_gettop(L) < 2) {
         lua_error(L, "invalid arguments");
     }
@@ -167,35 +166,28 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
 }
 
 static void py_object_index(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
+    py_object *pobj = get_py_object_stack(L, 1);
     get_py_object_index(L, pobj, 2);
     free(pobj);
 }
 
 static void py_object_gc(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
-    if (pobj->meta) {
-        if (!pobj->meta->unref) {
-            Py_XDECREF(pobj->o);
-        }
-        free(pobj->meta);
-    }
-    free(pobj);
+    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
+    Py_XDECREF(obj);
 }
 
 static void py_object_tostring(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
-    PyObject *repr = PyObject_Str(pobj->o);
+    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
+    PyObject *repr = PyObject_Str(obj);
     if (!repr) {
         char buf[256];
-        snprintf(buf, 256, "python object: %p", pobj->o);
+        snprintf(buf, 256, "python object: %p", obj);
         lua_pushstring(L, buf);
         PyErr_Clear();
     } else {
         py_convert(L, repr);
         Py_DECREF(repr);
     }
-    free(pobj);
 }
 
 static int py_run(lua_State *L, int eval) {
@@ -254,17 +246,15 @@ static void py_eval(lua_State *L) {
 }
 
 static void py_asindx(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
-    py_object_wrap_lua(L, pobj->o, 1);
-    pobj->meta->unref = true;
-    free(pobj);
+    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
+    py_object_wrap_lua(L, obj, 1);
+    Py_INCREF(obj);
 }
 
 static void py_asattr(lua_State *L) {
-    py_object *pobj = get_py_object(L, 1);
-    py_object_wrap_lua(L, pobj->o, 0);
-    pobj->meta->unref = true;
-    free(pobj);
+    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
+    py_object_wrap_lua(L, obj, 0);
+    Py_INCREF(obj);
 }
 
 static void py_globals(lua_State *L) {

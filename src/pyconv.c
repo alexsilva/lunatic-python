@@ -27,13 +27,8 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
     lua_Object ltable = lua_createtable(L);
 
-    py_object_meta *meta = malloc(sizeof(py_object_meta));
-    if (!meta) lua_error(L, "out of memory");
-    meta->unref = false;
-
     set_table_userdata(L, ltable, POBJECT, pobj);
     set_table_number(L, ltable, ASINDX, asindx);
-    set_table_userdata(L, ltable, POMETA, meta);
     set_table_userdata(L, ltable, "base", Py_False);  // derived
 
     // register all tag methods
@@ -91,7 +86,7 @@ lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyOb
 void lua_raw(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_wrapped_object(L, lobj)) {
-        py_object *obj = get_py_object(L, 1);
+        py_object *obj = get_py_object_stack(L, 1);
         lua_pushobject(L, _lua_object_raw(L, obj->o, 0, NULL));
         free(obj);
     } else {
