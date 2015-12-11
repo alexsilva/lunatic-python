@@ -46,7 +46,7 @@ void python_new_error(PyObject *exception, char *message) {
         PyErr_SetString(exception, message);
         return;
     }
-    char *format = "%s (%s)";
+    char *format = "%s %s";
     char buff[calc_buff_size(3, format, message, error)];
     sprintf(buff, format, message, error);
     PyErr_SetString(exception, &buff[0]);
