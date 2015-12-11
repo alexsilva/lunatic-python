@@ -136,10 +136,7 @@ void py_args(lua_State *L) {
 
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
-    PyObject *dict = PyDict_New();
-    if (!dict) {
-        lua_new_error(L, "failed to create key words arguments dict");
-    }
+    PyObject *dict = NULL;
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
     lua_Object lkey, lvalue;
@@ -148,14 +145,19 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     while (index != 0) {
         stackpos = 1;
         lkey = lua_getparam(L, stackpos);
-        key = lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
-
+        key = lua_stack_convert(L, stackpos, lkey);
         stackpos = 2;
         lvalue = lua_getparam(L, stackpos);
-        value = lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
-
+        value = lua_stack_convert(L, stackpos, lvalue);
+        if (!dict) {
+            // Bug fix:
+            // Prevents the dictionary miss the reference at runtime.
+            // This happens when running Py_DECREF on the key or value generated.
+            // No Py_DECREF the memory is not freed and that creates memory leak.
+            dict = PyDict_New();
+            if (!dict) lua_new_error(L, "failed to create key words arguments dict");
+        }
         PyDict_SetItem(dict, key, value);
-
         if (!is_wrapped_object(L, lkey))
             Py_DECREF(key); // The key has no external references (will be deleted with the dict)
         if (!is_wrapped_object(L, lvalue))
