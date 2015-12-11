@@ -464,6 +464,7 @@ static void Interpreter_dealloc(InterpreterObject *self) {
     Interpreter_close(self);
     pthread_mutex_destroy(self->lock); // mutex destroy
     free(self->lock);  // free lock
+    self->lock = NULL;
     self->ob_type->tp_free((PyObject*)self);
 }
 
