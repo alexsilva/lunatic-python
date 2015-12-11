@@ -69,7 +69,11 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     if (lua_callfunction(self->L, lobj)) {
         char *name;  // get function name
         lua_getobjname(self->L, lobj, &name);
-        PyErr_Format(PyExc_Exception, "calling function \"%s\"", name);
+        name = name ? name : "unknown";
+        char *format = "calling function \"%s\"";
+        char buff[calc_buff_size(2, format, name)];
+        sprintf(buff, format, name);
+        python_new_error(PyExc_RuntimeError, &buff[0]);
         return NULL;
     }
     nargs = lua_gettop(self->L);
