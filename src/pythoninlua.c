@@ -64,7 +64,6 @@ static void py_object_call(lua_State *L) {
         } else if (PyDict_Check(pobj)) {
             kwargs = pobj;
         } else {
-            Py_INCREF(pobj);  // stolen ref
             args = get_py_tuple(L, 1);
             is_wrapped_args = false;
         }
