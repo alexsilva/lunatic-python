@@ -138,13 +138,24 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     }
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
+    lua_Object lkey, lvalue;
+    int stackpos;
 
     while (index != 0) {
-        key = lua_convert(L, 1);
-        value = lua_convert(L, 2);
+        stackpos = 1;
+        lkey = lua_getparam(L, stackpos);
+        key = lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
+
+        stackpos = 2;
+        lvalue = lua_getparam(L, stackpos);
+        value = lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
 
         PyDict_SetItem(dict, key, value);
 
+        if (!is_wrapped_object(L, lkey))
+            Py_DECREF(key); // The key has no external references (will be deleted with the dict)
+        if (!is_wrapped_object(L, lvalue))
+            Py_DECREF(value); // The value has no external references (will be deleted with the dict)
         index = lua_next(L, ltable, index);
     }
     return dict;
