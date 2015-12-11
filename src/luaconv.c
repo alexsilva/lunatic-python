@@ -155,7 +155,11 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             // This happens when running Py_DECREF on the key or value generated.
             // No Py_DECREF the memory is not freed and that creates memory leak.
             dict = PyDict_New();
-            if (!dict) lua_new_error(L, "failed to create key words arguments dict");
+            if (!dict) {
+                Py_XDECREF(key);
+                Py_XDECREF(value);
+                lua_new_error(L, "failed to create key words arguments dict");
+            }
         }
         PyDict_SetItem(dict, key, value);
         if (!is_wrapped_object(L, lkey))
