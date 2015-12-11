@@ -58,13 +58,14 @@ static void py_object_call(lua_State *L) {
     int is_wrapped_kwargs = is_wrapped_object(L, lkwargs);
 
     if (nargs == 1 && is_wrapped_args) {
-        PyObject *pyobj = get_pobject(L, largs);
-        if (PyTuple_Check(pyobj)) {
-            args = pyobj;
-        } else if (PyDict_Check(pyobj)) {
-            kwargs = pyobj;
+        PyObject *pobj = get_pobject(L, largs);
+        if (PyTuple_Check(pobj)) {
+            args = pobj;
+        } else if (PyDict_Check(pobj)) {
+            kwargs = pobj;
         } else {
             args = get_py_tuple(L, 1);
+            is_wrapped_args = false;
         }
     } else if (nargs == 2 && is_wrapped_args && is_wrapped_kwargs) {
         args   = get_pobject(L, largs);
@@ -75,6 +76,7 @@ static void py_object_call(lua_State *L) {
 
     } else if (nargs > 0) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
+        is_wrapped_args = false;
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
     value = PyObject_Call(obj, args, kwargs); // fn(*args, **kwargs)
@@ -83,8 +85,6 @@ static void py_object_call(lua_State *L) {
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
-        } else if (!PYTHON_EMBEDDED_MODE) {
-            Py_INCREF(value);
         }
     } else {
         char *name = get_pyobject_str(obj, "...");
@@ -150,8 +150,6 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
     if (item) {
         if ((ret = py_convert(L, item)) == CONVERTED) {
             Py_DECREF(item);
-        } else if (!PYTHON_EMBEDDED_MODE) {
-            Py_INCREF(item);
         }
     } else {
         char *error = "%s \"%s\" not found";
@@ -227,8 +225,6 @@ static int py_run(lua_State *L, int eval) {
     }
     if ((ret = py_convert(L, o)) == CONVERTED) {
         Py_DECREF(o);
-    } else if (!PYTHON_EMBEDDED_MODE) {
-        Py_INCREF(o);
     }
 #if PY_MAJOR_VERSION < 3
     if (Py_FlushLine())
