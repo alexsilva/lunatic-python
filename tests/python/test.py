@@ -47,7 +47,7 @@ def fn(interpreter, index):
     print data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index)
 
     # load test of python!
-    interpreter.require(os.path.join(PATH, "..", "python", "test.lua"))
+    interpreter.require(os.path.join(PATH, "..", "lua", "test.lua"))
 
 
 index = 0
