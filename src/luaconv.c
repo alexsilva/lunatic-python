@@ -111,8 +111,6 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     for (i = 0; i != nargs; i++) {
         pos = i + stackpos + 1;
         arg = lua_convert(L, pos);
-        if (is_wrapped_object(L, lua_getparam(L, pos)))
-            Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         if (!arg) {
             Py_DECREF(tuple);
             char *error = "failed to convert argument #%d";
@@ -120,6 +118,8 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
             sprintf(buff, error, i + 1);
             lua_error(L, &buff[0]);
         }
+        if (is_wrapped_object(L, lua_getparam(L, pos)))
+            Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         PyTuple_SetItem(tuple, i, arg);
     }
     return tuple;
