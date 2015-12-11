@@ -64,6 +64,7 @@ static void py_object_call(lua_State *L) {
         } else if (PyDict_Check(pobj)) {
             kwargs = pobj;
         } else {
+            Py_INCREF(pobj);  // stolen ref
             args = get_py_tuple(L, 1);
             is_wrapped_args = false;
         }
@@ -80,8 +81,10 @@ static void py_object_call(lua_State *L) {
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
     value = PyObject_Call(obj, args, kwargs); // fn(*args, **kwargs)
-    if (!is_wrapped_args) Py_XDECREF(args);
-    if (!is_wrapped_kwargs) Py_XDECREF(kwargs);
+    if (!is_wrapped_args)
+        Py_XDECREF(args);
+    if (!is_wrapped_kwargs)
+        Py_XDECREF(kwargs);
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
