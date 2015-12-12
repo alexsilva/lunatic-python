@@ -459,13 +459,12 @@ static PyObject * Interpreter_close(InterpreterObject *self) {
         self->L = NULL; // lua_State(NULL)
     }
     pthread_mutex_unlock(self->lock);
-    PyObject *ret = Py_None;
-    Py_INCREF(ret);
-    return ret;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static void Interpreter_dealloc(InterpreterObject *self) {
-    Interpreter_close(self);
+    Py_DECREF(Interpreter_close(self));
     pthread_mutex_destroy(self->lock); // mutex destroy
     free(self->lock);  // free lock
     self->lock = NULL;
