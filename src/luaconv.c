@@ -13,7 +13,6 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "pythoninlua.h"
-#include "luainpython.h"
 
 
 PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
@@ -22,9 +21,24 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
         lua_pushobject(interpreter->L, lobj);
         obj->ref = lua_ref(interpreter->L, 1);
         obj->refiter = 0;
-        if (!interpreter->malloc) Py_INCREF(interpreter);
-        obj->interpreter = interpreter; // The state of the Lua will be used implicitly.
-        interpreter->link = true;
+        if (interpreter->isPyType) {
+            Py_INCREF(interpreter);
+            // The state of the Lua will be used implicitly.
+            obj->interpreter = interpreter;
+        } else {
+            lua_State *L = interpreter->L;
+            obj->interpreter = malloc(sizeof(InterpreterObject));
+            if (!obj->interpreter) lua_error(L, "out of memory!");
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
+            obj->interpreter->L = L;
+            obj->interpreter->isPyType = false;  // fake type
+            obj->interpreter->allocated = true;
+            obj->interpreter->exit = false;
+            obj->interpreter->lock = NULL;
+#pragma clang diagnostic pop
+        }
+
     }
     return (PyObject*) obj;
 }
@@ -295,22 +309,11 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
     return ret;
 }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCDFAInspection"
 PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
-    InterpreterObject *interpreter;
-    interpreter = malloc(sizeof(InterpreterObject));
-    if (!interpreter) lua_error(L, "out of memory!");
-    interpreter->L = L;
-    interpreter->malloc = true;
-    interpreter->exit = false;
-    interpreter->link = false;
-    interpreter->lock = NULL;
-    PyObject *ret = lua_interpreter_object_convert(interpreter, stackpos, lobj);
-    if (!interpreter->link && interpreter->malloc) {
-        free(interpreter); // Link with custom types
-    }
-    return ret;
+    InterpreterObject interpreter;
+    interpreter.isPyType = false;
+    interpreter.L = L;
+    return lua_interpreter_object_convert(&interpreter, stackpos, lobj);
 }
 #pragma clang diagnostic pop
 

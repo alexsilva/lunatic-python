@@ -120,7 +120,7 @@ static void LuaObject_dealloc(LuaObject *self) {
     }
     if (self->interpreter->lock)
         pthread_mutex_unlock(&self->interpreter->lock);
-    if (self->interpreter->malloc) {
+    if (self->interpreter->allocated) {
         self->interpreter->L = NULL;
         free(self->interpreter);
     } else {
@@ -441,7 +441,8 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
         return -1;
     }
     self->exit = false;
-    self->malloc = false;
+    self->allocated = false;
+    self->isPyType = true;
     luaopen_python(self->L);
     return 0;
 };

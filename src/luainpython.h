@@ -30,9 +30,9 @@ typedef struct {
     PyObject_HEAD
     lua_State *L;
     pthread_mutex_t lock;
-    bool malloc;
+    bool allocated;
+    bool isPyType;
     bool exit;
-    bool link;
 } InterpreterObject;
 
 extern PyTypeObject LuaObject_Type;
