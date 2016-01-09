@@ -345,10 +345,9 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
 
     if (eval) {
         char *prefix = "return ";
-        buf = (char *) malloc(strlen(prefix) + len + 2);
+        buf = (char *) malloc(strlen(prefix) + len + 1);
         strcpy(buf, prefix);
         strncat(buf, s, (size_t) len);
-        strncat(buf, ";", 1);
         s = buf;
         len = strlen(prefix) + len;
     }
