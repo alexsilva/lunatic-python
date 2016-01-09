@@ -14,7 +14,6 @@
 typedef struct {
     PyObject_HEAD
     InterpreterObject *interpreter;
-    lua_State *L;
     int ref;
     int refiter;
 } LuaObject;

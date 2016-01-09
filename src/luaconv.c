@@ -24,7 +24,6 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
         obj->refiter = 0;
         if (!interpreter->malloc) Py_INCREF(interpreter);
         obj->interpreter = interpreter; // The state of the Lua will be used implicitly.
-        obj->L= interpreter->L;
         interpreter->link = true;
     }
     return (PyObject*) obj;
