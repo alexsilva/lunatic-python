@@ -110,7 +110,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 
 static void LuaObject_dealloc(LuaObject *self) {
     if (self->interpreter->lock)
-        pthread_mutex_lock(self->interpreter->lock);
+        pthread_mutex_lock(&self->interpreter->lock);
     if (!self->interpreter->exit) {
         lua_beginblock(self->interpreter->L);
         lua_unref(self->interpreter->L, self->ref);
@@ -119,7 +119,7 @@ static void LuaObject_dealloc(LuaObject *self) {
         lua_endblock(self->interpreter->L);
     }
     if (self->interpreter->lock)
-        pthread_mutex_unlock(self->interpreter->lock);
+        pthread_mutex_unlock(&self->interpreter->lock);
     if (self->interpreter->malloc) {
         self->interpreter->L = NULL;
         free(self->interpreter);
@@ -436,8 +436,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
-    self->lock = malloc(sizeof(pthread_mutex_t));
-    if (!self->lock || pthread_mutex_init(self->lock, NULL) != 0) {
+    if (pthread_mutex_init(&self->lock, NULL) != 0) {
         PyErr_SetString(PyExc_RuntimeError, "mutex init failed");
         return -1;
     }
@@ -451,22 +450,20 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
  * Stops all environment, freeing up resources.
  */
 static PyObject * Interpreter_close(InterpreterObject *self) {
-    pthread_mutex_lock(self->lock);
+    pthread_mutex_lock(&self->lock);
     if (!self->exit) {
         self->exit = true;
         lua_close(self->L);
         self->L = NULL; // lua_State(NULL)
     }
-    pthread_mutex_unlock(self->lock);
+    pthread_mutex_unlock(&self->lock);
     Py_INCREF(Py_None);
     return Py_None;
 }
 
 static void Interpreter_dealloc(InterpreterObject *self) {
     Py_DECREF(Interpreter_close(self));
-    pthread_mutex_destroy(self->lock); // mutex destroy
-    free(self->lock);  // free lock
-    self->lock = NULL;
+    pthread_mutex_destroy(&self->lock); // mutex destroy
     self->ob_type->tp_free((PyObject*)self);
 }
 

@@ -29,7 +29,7 @@
 typedef struct {
     PyObject_HEAD
     lua_State *L;
-    pthread_mutex_t *lock;
+    pthread_mutex_t lock;
     bool malloc;
     bool exit;
     bool link;
