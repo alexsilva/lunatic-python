@@ -47,16 +47,6 @@ PyObject *LuaObject_New(InterpreterObject *interpreter, int n) {
     return LuaObject_PyNew(interpreter, lua_getparam(interpreter->L, n));
 }
 
-int lua_isboolean(lua_State *L, lua_Object obj) {
-    if (lua_isuserdata(L, obj) && lua_getuserdata(L, obj))
-        return PyBool_Check((PyObject *) lua_getuserdata(L, obj));
-    return 0;
-}
-
-int lua_getboolean(lua_State *L, lua_Object obj) {
-    return PyObject_IsTrue((PyObject *) lua_getuserdata(L, obj));
-}
-
 int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
@@ -72,8 +62,7 @@ int get_base_tag(lua_State *L) {
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
     lua_pushobject(L, lobj);
     lua_pushstring(L, "base");
-    lua_Object base = lua_rawgettable(L);
-    return lua_isboolean(L, base) && lua_getboolean(L, base);
+    return (int) lua_getnumber(L, lua_rawgettable(L));
 }
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
@@ -285,14 +274,6 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
             ret = get_py_dict(interpreter->L, lobj);
         }
         lua_endblock(interpreter->L);
-    } else if (lua_isboolean(interpreter->L, lobj)) {
-        if (lua_getboolean(interpreter->L, lobj)) {
-            Py_INCREF(Py_True);
-            ret = Py_True;
-        } else {
-            Py_INCREF(Py_False);
-            ret = Py_False;
-        }
     } else if (lua_isuserdata(interpreter->L, lobj)) {
         void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
         if (void_ptr) {

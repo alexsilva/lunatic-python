@@ -22,9 +22,6 @@ typedef struct {
     py_object_meta *meta;
 } py_object;
 
-int lua_isboolean(lua_State *L, lua_Object obj);
-int lua_getboolean(lua_State *L, lua_Object obj);
-
 int lua_gettop(lua_State *L);
 PyObject *get_pobject(lua_State *L, lua_Object ltable);
 py_object *get_py_object_stack(lua_State *L, int n);

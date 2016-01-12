@@ -26,20 +26,24 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
     return str;
 }
 
-Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
+/**/
+lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx) {
     lua_Object ltable = lua_createtable(L);
 
     set_table_userdata(L, ltable, POBJECT, pobj);
     set_table_number(L, ltable, ASINDX, asindx);
-    set_table_userdata(L, ltable, "base", Py_False);  // derived
+    set_table_userdata(L, ltable, "base", 0);  // derived
 
     // register all tag methods
     int tag = get_base_tag(L);
     lua_pushobject(L, ltable);
     lua_settag(L, tag);
 
-    // returning table
-    lua_pushobject(L, ltable);
+    return ltable;
+}
+
+Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
+    lua_pushobject(L, py_object_wrapped(L, pobj, asindx)); // returning table
     return WRAP;
 }
 

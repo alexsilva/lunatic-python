@@ -24,6 +24,7 @@ typedef enum {
     WRAP = 2
 } Conversion;
 
+lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
 void lua_raw(lua_State *L);
