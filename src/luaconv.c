@@ -67,9 +67,7 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
 }
 
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
-    lua_pushobject(L, lobj);
-    lua_pushstring(L, "base");
-    return (int) lua_getnumber(L, lua_rawgettable(L));
+    return getnumber(L, "base", lobj);
 }
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
