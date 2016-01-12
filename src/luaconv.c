@@ -13,6 +13,7 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "pythoninlua.h"
+#include "constants.h"
 
 
 PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
@@ -59,6 +60,12 @@ int get_base_tag(lua_State *L) {
     return lua_tag(L, lua_gettable(L));
 }
 
+static int getnumber(lua_State *L, char *name, lua_Object ltable) {
+    lua_pushobject(L, ltable);
+    lua_pushstring(L, name);
+    return (int) lua_getnumber(L, lua_rawgettable(L));
+}
+
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
     lua_pushobject(L, lobj);
     lua_pushstring(L, "base");
@@ -67,6 +74,14 @@ static int is_wrap_base(lua_State *L, lua_Object lobj) {
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
     return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
+}
+
+int is_wrapped_args(lua_State *L, lua_Object lwtable) {
+    return is_wrapped_object(L, lwtable) && getnumber(L, PY_ARGS, lwtable);
+}
+
+int is_wrapped_kwargs(lua_State *L, lua_Object lwtable) {
+    return is_wrapped_object(L, lwtable) && getnumber(L, PY_KWARGS, lwtable);
 }
 
 /*checks if a table contains only numbers*/
@@ -105,9 +120,7 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) {
-        lua_new_error(L, "failed to create arguments tuple");
-    }
+    if (!tuple) lua_new_error(L, "failed to create arguments tuple");
     int index, pos;
     PyObject *arg;
     lua_Object larg;
@@ -133,7 +146,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
-    py_object_wrap_lua(L, tuple, 1);
+    lua_Object lwtable = py_object_wrapped(L, tuple, 1);
+    set_table_number(L, lwtable, PY_ARGS, 1);
+    lua_pushobject(L, lwtable); // returning table
 }
 
 /* convert to kwargs python: fn(**kwargs) */
@@ -180,10 +195,12 @@ void py_kwargs(lua_State *L) {
     }
     lua_Object ltable = lua_getparam(L, 1);
     if (!lua_istable(L, ltable)) {
-        lua_error(L, "first arg need be table ex: kwargs({a=10})");
+        lua_error(L, "first arg need be table ex: pykwargs{a=10}");
     }
     PyObject *dict = get_py_dict(L, ltable);
-    py_object_wrap_lua(L, dict, 1);
+    lua_Object lwtable = py_object_wrapped(L, dict, 1);
+    set_table_number(L, lwtable, PY_KWARGS, 1);
+    lua_pushobject(L, lwtable); // returning table
 }
 
 /*get py object from wrap table (direct access) */

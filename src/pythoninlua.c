@@ -42,32 +42,31 @@ bool PYTHON_EMBEDDED_MODE = false;
 
 static void py_object_call(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
+    if (!PyCallable_Check(obj)) {
+        lua_error(L, "object is not callable");
+    }
     PyObject *args = NULL;
     PyObject *kwargs = NULL;
     PyObject *value;
 
     int nargs = lua_gettop(L)-1;
 
-    if (!PyCallable_Check(obj)) {
-        lua_error(L, "object is not callable");
-    }
     lua_Object largs = lua_getparam(L, 2);
-    lua_Object lkwargs = lua_getparam(L, 3);
+    lua_Object lkwargs = lua_getparam(L, nargs > 1 ? 3 : 2);
 
-    int is_wrapped_args = is_wrapped_object(L, largs);
-    int is_wrapped_kwargs = is_wrapped_object(L, lkwargs);
+    int is_wrap_args = is_wrapped_args(L, largs);
+    int is_wrap_kwargs = is_wrapped_kwargs(L, lkwargs);
 
-    if (nargs == 1 && is_wrapped_args) {
+    if (nargs == 1 && (is_wrap_args || is_wrap_kwargs)) {
         PyObject *pobj = get_pobject(L, largs);
         if (PyTuple_Check(pobj)) {
             args = pobj;
         } else if (PyDict_Check(pobj)) {
             kwargs = pobj;
         } else {
-            args = get_py_tuple(L, 1);
-            is_wrapped_args = false;
+            lua_error(L, "invalid args|kwargs");
         }
-    } else if (nargs == 2 && is_wrapped_args && is_wrapped_kwargs) {
+    } else if (nargs == 2 && is_wrap_args && is_wrap_kwargs) {
         args   = get_pobject(L, largs);
         kwargs = get_pobject(L, lkwargs); // is args and kwargs ?
         // check the order (), {}
@@ -76,14 +75,12 @@ static void py_object_call(lua_State *L) {
 
     } else if (nargs > 0) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
-        is_wrapped_args = false;
+        is_wrap_args = false;
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
     value = PyObject_Call(obj, args, kwargs); // fn(*args, **kwargs)
-    if (!is_wrapped_args)
-        Py_XDECREF(args);
-    if (!is_wrapped_kwargs)
-        Py_XDECREF(kwargs);
+    if (!is_wrap_args) Py_XDECREF(args);
+    if (!is_wrap_kwargs) Py_XDECREF(kwargs);
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);

@@ -20,7 +20,8 @@ set(SOURCES
     src/utils.h
     src/utils.c
     src/lshared.h
-    src/lapi.c)
+    src/lapi.c
+    src/constants.h)
 
 add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})

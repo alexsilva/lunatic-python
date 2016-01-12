@@ -10,28 +10,28 @@
     lua_pushobject(L, ltable);\
     lua_pushstring(L, name);\
     lua_pushuserdata(L, udata);\
-    lua_settable(L);
+    lua_rawsettable(L);
 
 /* set number */
 #define set_table_number(L, ltable, name, number)\
     lua_pushobject(L, ltable);\
     lua_pushstring(L, name);\
     lua_pushnumber(L, number);\
-    lua_settable(L);
+    lua_rawsettable(L);
 
 /* set function */
 #define set_table_fn(L, ltable, name, fn)\
     lua_pushobject(L, ltable);\
     lua_pushstring(L, name);\
     lua_pushcfunction(L, fn);\
-    lua_settable(L);
+    lua_rawsettable(L);
 
 /* set object */
 #define set_table_object(L, ltable, name, obj) \
     lua_pushobject(L, ltable);\
     lua_pushstring(L, name);\
     lua_pushobject(L, obj);\
-    lua_settable(L);
+    lua_rawsettable(L);
 
 int calc_buff_size(int nargs, ...);
 void lua_new_error(lua_State *L, char *message);
