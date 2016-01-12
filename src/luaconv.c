@@ -265,9 +265,6 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
         const char *s = lua_getstring(interpreter->L, lobj);
         int len = lua_strlen(interpreter->L, lobj);
         ret = PyString_FromStringAndSize(s, len);
-        if (!ret) {
-            ret = PyUnicode_FromStringAndSize(s, len);
-        }
     } else if (is_wrapped_object(interpreter->L, lobj)) {
         ret = get_pobject(interpreter->L, lua_getparam(interpreter->L, stackpos));
     } else if (lua_isfunction(interpreter->L, lobj)) {
