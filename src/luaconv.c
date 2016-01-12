@@ -315,8 +315,6 @@ PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
     interpreter.L = L;
     return lua_interpreter_object_convert(&interpreter, stackpos, lobj);
 }
-#pragma clang diagnostic pop
-
 
 PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter,
                                          int stackpos) {
