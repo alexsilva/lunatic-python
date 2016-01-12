@@ -409,8 +409,6 @@ LUA_API int luaopen_python(lua_State *L) {
     Py_INCREF(pyObject);
     set_table_object(L, python, "False", py_object_wrapped(L, pyObject, 0));
 
-    // try startup system
-    // python_system_init(L);
     return 0;
 }
 
