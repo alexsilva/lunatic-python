@@ -5,6 +5,7 @@
 #include "pyconv.h"
 #include "luaconv.h"
 #include "utils.h"
+#include "constants.h"
 
 /* python string bytes */
 static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
@@ -30,9 +31,9 @@ static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
 lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx) {
     lua_Object ltable = lua_createtable(L);
 
-    set_table_userdata(L, ltable, POBJECT, pobj);
-    set_table_number(L, ltable, ASINDX, asindx);
-    set_table_userdata(L, ltable, "base", 0);  // derived
+    set_table_userdata(L, ltable, PY_OBJECT, pobj);
+    set_table_number(L, ltable, PY_OBJECT_AS_INDEX, asindx);
+    set_table_userdata(L, ltable, LUA_BASE_TAG, 0);  // derived
 
     // register all tag methods
     int tag = get_base_tag(L);

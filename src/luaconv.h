@@ -8,10 +8,6 @@
 #include "stdbool.h"
 #include "luainpython.h"
 
-#define POBJECT "POBJECT"
-#define POMETA "POMETA"
-#define ASINDX "ASINDX"
-
 typedef struct {
     int unref;
 } py_object_meta;

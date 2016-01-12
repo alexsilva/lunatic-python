@@ -35,6 +35,7 @@
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
+#include "constants.h"
 
 // Variable to know in mode python was started (Inside Lua embedded).
 bool PYTHON_EMBEDDED_MODE = false;
@@ -367,13 +368,13 @@ LUA_API int luaopen_python(lua_State *L) {
     lua_Object python = lua_createtable(L);
 
     lua_pushcfunction(L, py_args);
-    lua_setglobal(L, "pyargs");
+    lua_setglobal(L, PY_ARGS_FUNC);
 
     lua_pushcfunction(L, py_kwargs);
-    lua_setglobal(L, "pykwargs");
+    lua_setglobal(L, PY_KWARGS_FUNC);
 
     lua_pushobject(L, python);
-    lua_setglobal(L, "python");  // api python
+    lua_setglobal(L, PYTHON_API);  // api python
 
     int index = 0;
     while (py_lib[index].name) {
@@ -392,19 +393,19 @@ LUA_API int luaopen_python(lua_State *L) {
 
     // base python object
     lua_Object ltable = lua_createtable(L);
-    set_table_object(L, python, POBJECT, ltable);
-    set_table_number(L, python, "base", 1);
+    set_table_object(L, python, PY_OBJECT, ltable);
+    set_table_number(L, python, LUA_BASE_TAG, 1);
     // set tag
     lua_pushobject(L, ltable);
     lua_settag(L, ntag);
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);
-    set_table_object(L, python, "True", py_object_wrapped(L, pyObject, 0));
+    set_table_object(L, python, PY_TRUE, py_object_wrapped(L, pyObject, 0));
 
     pyObject = Py_False;
     Py_INCREF(pyObject);
-    set_table_object(L, python, "False", py_object_wrapped(L, pyObject, 0));
+    set_table_object(L, python, PY_FALSE, py_object_wrapped(L, pyObject, 0));
 
     return 0;
 }
