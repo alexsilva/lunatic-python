@@ -21,6 +21,7 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
     if (obj) {
         lua_pushobject(interpreter->L, lobj);
         obj->ref = lua_ref(interpreter->L, 1);
+        obj->indexed = lua_istable(interpreter->L, lobj) ? is_indexed_array(interpreter->L, lobj) : false;
         obj->refiter = 0;
         if (interpreter->isPyType) {
             Py_INCREF(interpreter);
@@ -82,17 +83,17 @@ int is_wrapped_kwargs(lua_State *L, lua_Object lwtable) {
     return is_wrapped_object(L, lwtable) && getnumber(L, PY_KWARGS, lwtable);
 }
 
-/*checks if a table contains only numbers*/
-int is_indexed_array(lua_State *L, lua_Object lobj) {
+/*checks if a table contains only numbers as keys*/
+bool is_indexed_array(lua_State *L, lua_Object lobj) {
     int index = lua_next(L, lobj, 0);
     lua_Object key;
     while (index != 0) {
         key = lua_getparam(L, 1);
         if (!lua_isnumber(L, key))
-            return 0;
+            return false;
         index = lua_next(L, lobj, index);
     }
-    return 1;
+    return true;
 }
 
 /* convert to args python: fn(*args) */

@@ -16,6 +16,7 @@ typedef struct {
     InterpreterObject *interpreter;
     int ref;
     int refiter;
+    bool indexed;
 } LuaObject;
 
 typedef enum {
