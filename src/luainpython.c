@@ -111,6 +111,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 static void LuaObject_dealloc(LuaObject *self) {
     lua_beginblock(self->interpreter->L);
     lua_unref(self->interpreter->L, self->ref);
+    lua_endblock(self->interpreter->L);
     if (self->interpreter->allocated) {
         self->interpreter->L = NULL;
         free(self->interpreter);
@@ -118,7 +119,6 @@ static void LuaObject_dealloc(LuaObject *self) {
         Py_DECREF(self->interpreter);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
-    lua_endblock(self->interpreter->L);
 }
 
 static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
