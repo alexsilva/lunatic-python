@@ -12,7 +12,7 @@ class LuaInterpreter(lua.Interpreter):
     def __enter__(self):
         return self
     def __exit__(self, *args, **kwargs):
-        self.close()
+        pass
 
 def fn(interpreter, index):
     print(interpreter.eval("10"))
