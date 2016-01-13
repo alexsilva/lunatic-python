@@ -109,15 +109,8 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    if (self->interpreter->lock)
-        pthread_mutex_lock(&self->interpreter->lock);
-    if (!self->interpreter->exit) {
-        lua_beginblock(self->interpreter->L);
-        lua_unref(self->interpreter->L, self->ref);
-        lua_endblock(self->interpreter->L);
-    }
-    if (self->interpreter->lock)
-        pthread_mutex_unlock(&self->interpreter->lock);
+    lua_beginblock(self->interpreter->L);
+    lua_unref(self->interpreter->L, self->ref);
     if (self->interpreter->allocated) {
         self->interpreter->L = NULL;
         free(self->interpreter);
@@ -125,6 +118,7 @@ static void LuaObject_dealloc(LuaObject *self) {
         Py_DECREF(self->interpreter);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
+    lua_endblock(self->interpreter->L);
 }
 
 static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
@@ -432,36 +426,16 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
-    if (pthread_mutex_init(&self->lock, NULL) != 0) {
-        PyErr_SetString(PyExc_RuntimeError, "mutex init failed");
-        return -1;
-    }
-    self->exit = false;
     self->allocated = false;
     self->isPyType = true;
     luaopen_python(self->L);
     return 0;
 };
 
-/*
- * Stops all environment, freeing up resources.
- */
-static PyObject * Interpreter_close(InterpreterObject *self) {
-    pthread_mutex_lock(&self->lock);
-    if (!self->exit) {
-        self->exit = true;
-        lua_close(self->L);
-        self->L = NULL; // lua_State(NULL)
-    }
-    pthread_mutex_unlock(&self->lock);
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
 static void Interpreter_dealloc(InterpreterObject *self) {
-    Py_DECREF(Interpreter_close(self));
-    pthread_mutex_destroy(&self->lock); // mutex destroy
-    self->ob_type->tp_free((PyObject*)self);
+    lua_close(self->L);
+    self->L = NULL; // lua_State(NULL)
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyMethodDef Interpreter_methods[] = {
@@ -473,8 +447,6 @@ static PyMethodDef Interpreter_methods[] = {
             "returns the list of global variables."},
     {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
             "loads and executes the script."},
-    {"close", (PyCFunction) Interpreter_close,     METH_VARARGS,
-            "clear then lua state"},
     {NULL,         NULL}
 };
 

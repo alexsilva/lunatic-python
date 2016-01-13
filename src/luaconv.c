@@ -36,8 +36,6 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
             obj->interpreter->L = L;
             obj->interpreter->isPyType = false;  // fake type
             obj->interpreter->allocated = true;
-            obj->interpreter->exit = false;
-            obj->interpreter->lock = NULL;
 #pragma clang diagnostic pop
         }
 
