@@ -265,7 +265,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
         int len = lua_strlen(interpreter->L, lobj);
         ret = PyString_FromStringAndSize(s, len);
     } else if (is_wrapped_object(interpreter->L, lobj)) {
-        ret = get_pobject(interpreter->L, lua_getparam(interpreter->L, stackpos));
+        ret = get_pobject(interpreter->L, lobj);
     } else if (lua_isfunction(interpreter->L, lobj)) {
         if (stackpos && !lobj) {
             ret = LuaObject_New(interpreter, stackpos);
