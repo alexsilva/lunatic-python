@@ -114,8 +114,6 @@ static void LuaObject_dealloc(LuaObject *self) {
     if (!self->interpreter->exit) {
         lua_beginblock(self->interpreter->L);
         lua_unref(self->interpreter->L, self->ref);
-        if (self->refiter)
-            lua_unref(self->interpreter->L, self->refiter);
         lua_endblock(self->interpreter->L);
     }
     if (self->interpreter->lock)
