@@ -234,7 +234,10 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     PyObject *ret = NULL;
 
     lua_Object ltable = lua_getref(self->interpreter->L, self->ref);
-
+    if (!lua_istable(self->interpreter->L, ltable)) {
+        PyErr_SetString(PyExc_TypeError, "Lua object is not iterable!");
+        return NULL;
+    }
     /* Save key for next iteration. */
     self->refiter = lua_next(self->interpreter->L, ltable, self->refiter);
 
