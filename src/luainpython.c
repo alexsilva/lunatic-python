@@ -433,8 +433,10 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
 };
 
 static void Interpreter_dealloc(InterpreterObject *self) {
-    lua_close(self->L);
-    self->L = NULL; // lua_State(NULL)
+    if (self->L) {
+        lua_close(self->L);
+        self->L = NULL; // lua_State(NULL)
+    }
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
