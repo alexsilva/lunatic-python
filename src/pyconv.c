@@ -33,7 +33,7 @@ lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx) {
 
     set_table_userdata(L, ltable, PY_OBJECT, pobj);
     set_table_number(L, ltable, PY_OBJECT_AS_INDEX, asindx);
-    set_table_userdata(L, ltable, LUA_BASE_TAG, 0);  // derived
+    set_table_number(L, ltable, LUA_BASE_TAG, 0);  // derived
 
     // register all tag methods
     int tag = get_base_tag(L);
