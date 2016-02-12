@@ -19,6 +19,11 @@ typedef struct {
     bool indexed;
 } LuaObject;
 
+typedef struct STRING {
+    char *buff;
+    int size;
+} String;
+
 typedef enum {
     UNTOUCHED = 0,
     CONVERTED = 1,

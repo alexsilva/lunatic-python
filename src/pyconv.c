@@ -7,24 +7,23 @@
 #include "utils.h"
 #include "constants.h"
 
+
 /* python string bytes */
-static char *get_pyobject_as_string(lua_State *L, PyObject *o) {
-    char *s = PyString_AsString(o);
-    if (!s) {
+static void get_pyobject_as_string(lua_State *L, PyObject *o, String *str) {
+    PyString_AsStringAndSize(o, &str->buff, &str->size);
+    if (!str->buff) {
         lua_new_error(L, "converting python string");
     }
-    return s;
 }
 
 /* python string unicode */
-static char *get_pyobject_as_utf8string(lua_State *L, PyObject *o) {
+static void get_pyobject_as_utf8string(lua_State *L, PyObject *o, String *str) {
     PyObject *obj = PyUnicode_AsUTF8String(o);
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }
-    char *str = get_pyobject_as_string(L, obj);
+    get_pyobject_as_string(L, obj, str);
     Py_DECREF(obj);
-    return str;
 }
 
 /**/
@@ -113,16 +112,20 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         } else if (PyUnicode_Check(o)) {
         Py_ssize_t len;
         char *s = PyUnicode_AsUTF8AndSize(o, &len);
+        lua_pushstring(L, s);
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        lua_pushstring(L, get_pyobject_as_string(L, o));
+        String str;
+        get_pyobject_as_string(L, o, &str);
+        lua_pushlstring(L, str.buff, str.size);
         ret = CONVERTED;
     } else if (PyUnicode_Check(o)) {
-        char *s = get_pyobject_as_utf8string(L, o);
-#endif
-        lua_pushstring(L, s);
+        String str;
+        get_pyobject_as_utf8string(L, o, &str);
+        lua_pushlstring(L, str.buff, str.size);
         ret = CONVERTED;
+#endif
 #if PY_MAJOR_VERSION < 3
     } else if (PyInt_Check(o)) {
         lua_pushnumber(L, PyInt_AsLong(o));
