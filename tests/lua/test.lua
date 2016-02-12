@@ -20,6 +20,7 @@ end
 print(format("python is embedded in lua <%s>", tostring(python.is_embedded())))
 
 local builtins = python.builtins()
+local os = python.import("os")
 
 local str = "maçã"
 
@@ -59,6 +60,20 @@ Lua is intended to be used as a powerful, lightweight, embeddable scripting lang
 Lua is implemented as a library, written in clean C, the common subset of Standard C and C++.
 ]]
 assert(builtins.len(string) == strlen(string))
+
+local struct = python.import("struct")
+local bstr = struct.pack('hhl', 1, 2, 3)
+
+local temfile = python.import("tempfile")
+local filepath = os.path.join(temfile.gettempdir(), "tempfiletext.bin")
+local file = builtins.open(filepath, "wb")
+file.write(bstr)
+file.close()
+
+local res = struct.unpack('hhl', builtins.open(filepath, "rb").read())
+assert(res[0] == 1, "binary string no match")
+assert(res[1] == 2, "binary string no match")
+assert(res[2] == 3, "binary string no match")
 
 python.execute('import json')
 local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300, "items": 100}')]])
