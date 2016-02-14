@@ -136,10 +136,12 @@ static void py_object_newindex_set(lua_State *L) {
 }
 
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
-    PyObject *key = lua_convert(L, keyn);
+    lua_Object lobj = lua_getparam(L, keyn);
+    PyObject *key = lua_stack_convert(L, keyn, lobj);
     Conversion ret = UNTOUCHED;
     PyObject *item;
     if (!key) {
+        free(pobj);
         luaL_argerror(L, 1, "failed to convert key");
     }
     if (pobj->asindx) {
@@ -152,6 +154,9 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
             Py_DECREF(item);
         }
     } else {
+        if (!is_wrapped_object(L, lobj))
+            Py_DECREF(key);
+        free(pobj);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
         char *skey = get_pyobject_str(key, "...");
@@ -159,8 +164,8 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         sprintf(buff, error, name, skey);
         lua_new_error(L, buff);
     }
-    if (!is_wrapped_object(L, lua_getparam(L, keyn)))
-        Py_XDECREF(key);
+    if (!is_wrapped_object(L, lobj))
+        Py_DECREF(key);
     return ret;
 }
 
