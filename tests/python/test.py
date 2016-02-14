@@ -23,8 +23,9 @@ class LuaInterpreter(lua.Interpreter):
         pass
 
 def fn(interpreter, index):
-    print(interpreter.eval("10"))
-    print(interpreter.eval("\"a\""))
+    assert interpreter.eval("10") == 10, "error in the int conversion"
+    assert interpreter.eval("1.0000001") == 1.0000001, "error in the float conversion"
+    assert interpreter.eval("\"a\"") == "a", "error evaluating a"
 
     interpreter.execute("""
     local os = python.import("os")
@@ -45,10 +46,10 @@ def fn(interpreter, index):
     """)
     data = interpreter.eval("{a=10, b={1,2,3}, c={'a', 'b', 'c'}, d={a=1,b=2}}")
 
-    print data['a'] == 10, data['a']
+    assert data['a'] == 10, "table index value error"
     data['a'] = 15
 
-    print data['a'] == 15, data['a']
+    assert data['a'] == 15, "table index value set error"
 
     for i in data['c']:
         print 'value c: ', i
