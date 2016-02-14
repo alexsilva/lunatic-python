@@ -87,7 +87,8 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
     lua_Object key;
     while (index != 0) {
         key = lua_getparam(L, 1);
-        if (!lua_isnumber(L, key) && strcmp(lua_getstring(L, key), "n") != 0)
+        if ((!lua_isnumber(L, key) && lua_isstring(L, key) &&
+             strcmp(lua_getstring(L, key), "n") != 0))
             return false;
         index = lua_next(L, ltable, index);
     }
