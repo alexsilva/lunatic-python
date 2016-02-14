@@ -129,12 +129,9 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return NULL;
     }
-    if (!lua_isstring(self->interpreter->L, ltable)
-        && !lua_istable(self->interpreter->L, ltable)
-        && !lua_isuserdata(self->interpreter->L, ltable))
-    {
+    if (!lua_istable(self->interpreter->L, ltable) &&
+        !lua_isuserdata(self->interpreter->L, ltable)) {
         lua_pop(self->interpreter->L);
-
         PyErr_SetString(PyExc_RuntimeError, "not an indexable value");
         return NULL;
     }
