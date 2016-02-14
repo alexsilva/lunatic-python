@@ -115,10 +115,13 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     while (index != 0) {
         larg = lua_getparam(L, stackpos);
         arg = lua_stack_convert(L, stackpos, larg);
-        if (PyTuple_SetItem(tuple, count, arg) != 0)
-            lua_new_error(L, "failed to set item");
         if (is_wrapped_object(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
+        if (PyTuple_SetItem(tuple, count, arg) != 0) {
+            Py_XDECREF(arg);
+            Py_DECREF(tuple);
+            lua_new_error(L, "failed to set item in tuple");
+        }
         index = lua_next(L, ltable, index);
         count++;
     }
@@ -146,8 +149,10 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         }
         if (is_wrapped_object(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
-        if (PyTuple_SetItem(tuple, index, arg) < 0) {
-            Py_DECREF(arg);
+        if (PyTuple_SetItem(tuple, index, arg) != 0) {
+            Py_XDECREF(arg);
+            Py_DECREF(tuple);
+            lua_new_error(L, "failed to set item in tuple");
         }
     }
     return tuple;
@@ -175,7 +180,12 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         stackpos = 2;
         lvalue = lua_getparam(L, stackpos);
         value = lua_stack_convert(L, stackpos, lvalue);
-        PyDict_SetItem(dict, key, value);
+        if (PyDict_SetItem(dict, key, value) != 0) {
+            Py_XDECREF(key);
+            Py_XDECREF(value);
+            Py_DECREF(dict);
+            lua_new_error(L, "failed to set item in dict");
+        }
         if (!is_wrapped_object(L, lkey))
             Py_DECREF(key); // The key has no external references (will be deleted with the dict)
         if (!is_wrapped_object(L, lvalue))
