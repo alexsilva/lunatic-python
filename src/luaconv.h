@@ -22,7 +22,7 @@ int lua_gettop(lua_State *L);
 PyObject *get_pobject(lua_State *L, lua_Object ltable);
 py_object *get_py_object_stack(lua_State *L, int n);
 int is_wrapped_object(lua_State *L, lua_Object lobj);
-bool is_indexed_array(lua_State *L, lua_Object lobj);
+bool is_indexed_array(lua_State *L, lua_Object ltable);
 int is_wrapped_args(lua_State *L, lua_Object lwtable);
 int is_wrapped_kwargs(lua_State *L, lua_Object lwtable);
 int get_base_tag(lua_State *L);

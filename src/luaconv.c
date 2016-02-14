@@ -82,14 +82,14 @@ int is_wrapped_kwargs(lua_State *L, lua_Object lwtable) {
 }
 
 /*checks if a table contains only numbers as keys*/
-bool is_indexed_array(lua_State *L, lua_Object lobj) {
-    int index = lua_next(L, lobj, 0);
+bool is_indexed_array(lua_State *L, lua_Object ltable) {
+    int index = lua_next(L, ltable, 0);
     lua_Object key;
     while (index != 0) {
         key = lua_getparam(L, 1);
-        if (!lua_isnumber(L, key))
+        if (!lua_isnumber(L, key) && strcmp(lua_getstring(L, key), "n") != 0)
             return false;
-        index = lua_next(L, lobj, index);
+        index = lua_next(L, ltable, index);
     }
     return true;
 }
@@ -100,15 +100,23 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     lua_call(L, "getn");
     int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) {
-        lua_new_error(L, "failed to create arguments tuple");
-    }
+    if (!tuple) lua_new_error(L, "failed to create arguments tuple");
+
+    // remove n attribute
+    lua_pushobject(L, ltable);
+    lua_pushstring(L, "n");
+    lua_pushnil(L);
+    lua_rawsettable(L);
+
     PyObject *value;
     int index = lua_next(L, ltable, 0);
+    int count = 0;
     while (index != 0) {
         value = lua_convert(L, 2);
-        PyTuple_SetItem(tuple, index - 2, value);
+        if (PyTuple_SetItem(tuple, count, value) != 0)
+            lua_new_error(L, "failed to set item");
         index = lua_next(L, ltable, index);
+        count++;
     }
     return tuple;
 }
