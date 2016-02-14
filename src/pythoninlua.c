@@ -159,8 +159,8 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         sprintf(buff, error, name, skey);
         lua_new_error(L, buff);
     }
-    if (is_wrapped_object(L, lua_getparam(L, keyn)))
-        Py_DECREF(key);
+    if (!is_wrapped_object(L, lua_getparam(L, keyn)))
+        Py_XDECREF(key);
     return ret;
 }
 
