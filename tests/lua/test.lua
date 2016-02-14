@@ -125,6 +125,19 @@ assert(json.loads(jsond)[2] == 'c', "json parsed list 2 index invalid value")
 assert(python.eval("1") == 1, "eval int no match")
 assert(python.eval("1.0001") == 1.0001, "eval float no match")
 
+python.execute([[
+def fn_args(arg):
+    assert len(arg) == 5, "no args!"
+]])
+python.eval("fn_args")({sys, string, re, list, pattern})
+
+python.execute([[
+def fn_kwargs(arg):
+    for name in ['sys', 'string', 'list', 're', 'pattern']:
+        assert arg[name], "arg: %s missing!" % (name,)
+]])
+python.eval("fn_kwargs")({sys=sys, string=string, re=re, list=list, pattern=pattern})
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
