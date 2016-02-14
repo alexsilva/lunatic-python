@@ -244,7 +244,13 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     self->refiter = lua_next(self->interpreter->L, ltable, self->refiter);
 
     if (self->refiter > 0) {
-        ret = lua_interpreter_stack_convert(self->interpreter, (self->indexed ? 2 : 1));  // value / key
+        int index_arg = self->indexed ? 2 : 1;
+        ret = lua_interpreter_stack_convert(self->interpreter, index_arg);  // value / key
+        if (is_wrapped_object(self->interpreter->L, lua_getparam(self->interpreter->L, index_arg))) {
+            // The object will be shared with the python which in turn will remove a reference.
+            // python does not know that the lua is managing the reference.
+            Py_INCREF(ret);
+        }
     }
     lua_endblock(self->interpreter->L);
     return ret;

@@ -8,8 +8,13 @@ print 'in lua: ', ' | '.join(dir(lua))
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
-def reversed_relation_call(builtins):
-    assert builtins, "empty builtins!"
+def reversed_relation_call(arg):
+    assert sys.path
+    assert os.getcwd()
+
+def reversed_relation_iter(arg):
+    assert sys in arg
+    assert os in arg
 
 class LuaInterpreter(lua.Interpreter):
     def __enter__(self):
@@ -22,8 +27,15 @@ def fn(interpreter, index):
     print(interpreter.eval("\"a\""))
 
     interpreter.execute("""
-    local builtins = python.builtins()
-    python.eval("reversed_relation_call")(builtins)
+    local os = python.import("os")
+    local sys = python.import("sys")
+    python.eval("reversed_relation_call")({sys, os})
+    """)
+
+    interpreter.execute("""
+    local os = python.import("os")
+    local sys = python.import("sys")
+    python.eval("reversed_relation_iter")({sys, os})
     """)
 
     interpreter.execute("""
