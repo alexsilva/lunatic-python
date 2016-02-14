@@ -108,13 +108,17 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     lua_pushnil(L);
     lua_rawsettable(L);
 
-    PyObject *value;
     int index = lua_next(L, ltable, 0);
-    int count = 0;
+    int count = 0, stackpos = 2;
+    lua_Object larg;
+    PyObject *arg;
     while (index != 0) {
-        value = lua_convert(L, 2);
-        if (PyTuple_SetItem(tuple, count, value) != 0)
+        larg = lua_getparam(L, stackpos);
+        arg = lua_stack_convert(L, stackpos, larg);
+        if (PyTuple_SetItem(tuple, count, arg) != 0)
             lua_new_error(L, "failed to set item");
+        if (is_wrapped_object(L, larg))
+            Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         index = lua_next(L, ltable, index);
         count++;
     }
