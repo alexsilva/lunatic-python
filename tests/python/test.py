@@ -8,6 +8,9 @@ print 'in lua: ', ' | '.join(dir(lua))
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
+def reversed_relation_call(builtins):
+    assert builtins, "empty builtins!"
+
 class LuaInterpreter(lua.Interpreter):
     def __enter__(self):
         return self
@@ -17,6 +20,11 @@ class LuaInterpreter(lua.Interpreter):
 def fn(interpreter, index):
     print(interpreter.eval("10"))
     print(interpreter.eval("\"a\""))
+
+    interpreter.execute("""
+    local builtins = python.builtins()
+    python.eval("reversed_relation_call")(builtins)
+    """)
 
     interpreter.execute("""
     function lua_speak(str, num)

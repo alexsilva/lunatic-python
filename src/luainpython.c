@@ -144,6 +144,11 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     if (py_convert(self->interpreter->L, attr) != UNTOUCHED) { // push key
         lua_Object lobj = lua_gettable(self->interpreter->L);
         ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
+        if (is_wrapped_object(self->interpreter->L, lobj)) {
+            // The object will be shared with the python which in turn will remove a reference.
+            // python does not know that the lua is managing the reference.
+            Py_INCREF(ret);
+        }
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
