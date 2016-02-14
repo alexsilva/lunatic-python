@@ -9,8 +9,8 @@ print 'in lua: ', ' | '.join(dir(lua))
 PATH = os.path.dirname(os.path.abspath(__file__))
 
 def reversed_relation_call(arg):
-    assert sys.path
-    assert os.getcwd()
+    assert arg.sys.path
+    assert arg.os.getcwd()
 
 def reversed_relation_iter(arg):
     assert sys in arg
@@ -29,7 +29,7 @@ def fn(interpreter, index):
     interpreter.execute("""
     local os = python.import("os")
     local sys = python.import("sys")
-    python.eval("reversed_relation_call")({sys, os})
+    python.eval("reversed_relation_call")({sys=sys, os=os})
     """)
 
     interpreter.execute("""
