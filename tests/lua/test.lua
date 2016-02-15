@@ -138,6 +138,13 @@ def fn_kwargs(arg):
 ]])
 python.eval("fn_kwargs")({sys=sys, string=string, re=re, list=list, pattern=pattern})
 
+-- special case
+local dict = builtins.dict()
+dict[os] = "os module"
+dict[sys] = "sys module"
+dict["str"] = "simple str"
+assert(dict[sys] and dict[os])
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()

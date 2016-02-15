@@ -95,34 +95,46 @@ static void py_object_call(lua_State *L) {
     }
 }
 
-static int _p_object_newindex_set(lua_State *L, py_object *obj, int keyn, int valuen) {
-    PyObject *value;
-    PyObject *key = lua_convert(L, keyn);
+static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int valuen) {
+    lua_Object lkey = lua_getparam(L, keyn);
+    PyObject *key = lua_stack_convert(L, keyn, lkey);
     if (!key) {
+        free(pobj);
         luaL_argerror(L, 1, "failed to convert key");
     }
-    lua_Object lobj = lua_getparam(L, valuen);
-    if (!lua_isnil(L, lobj)) {
-        value = lua_convert(L, valuen);
+    lua_Object lval = lua_getparam(L, valuen);
+    if (!lua_isnil(L, lval)) {
+        PyObject *value = lua_stack_convert(L, valuen, lval);
         if (!value) {
-            Py_DECREF(key);
+            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+            free(pobj);
             luaL_argerror(L, 1, "failed to convert value");
         }
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
-        if (obj->asindx) {
-            if (PyObject_SetItem(obj->o, key, value) == -1) {
+        if (pobj->asindx) {
+            if (PyObject_SetItem(pobj->o, key, value) == -1) {
+                if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+                if (!is_wrapped_object(L, lval)) Py_DECREF(value);
+                free(pobj);
                 lua_new_error(L, "failed to set item");
             }
-        } else if (PyObject_SetAttr(obj->o, key, value) == -1) {
+        } else if (PyObject_SetAttr(pobj->o, key, value) == -1) {
+            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+            if (!is_wrapped_object(L, lval)) Py_DECREF(value);
+            free(pobj);
             lua_new_error(L, "failed to set item");
         }
-        Py_DECREF(value);
+        if (!is_wrapped_object(L, lval))
+            Py_DECREF(value);
     } else {
-        if (PyObject_DelItem(obj->o, key) == -1) {
+        if (PyObject_DelItem(pobj->o, key) == -1) {
+            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+            free(pobj);
             lua_new_error(L, "failed to delete item");
         }
     }
-    Py_DECREF(key);
+    if (!is_wrapped_object(L, lkey))
+        Py_DECREF(key);
     return 0;
 }
 
