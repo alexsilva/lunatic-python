@@ -276,18 +276,18 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
     } else if (is_wrapped_object(interpreter->L, lobj)) {
         ret = get_pobject(interpreter->L, lobj);
     } else if (lua_isfunction(interpreter->L, lobj)) {
-        if (stackpos && !lobj) {
-            ret = LuaObject_New(interpreter, stackpos);
-        } else {
+        if (lobj) {
             ret = LuaObject_PyNew(interpreter, lobj);
+        } else {
+            ret = LuaObject_New(interpreter, stackpos);
         }
     } else if (lua_istable(interpreter->L, lobj)) {
         lua_beginblock(interpreter->L);
         if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
-            if (stackpos) {
-                ret = LuaObject_New(interpreter, stackpos);
-            } else {
+            if (lobj) {
                 ret = LuaObject_PyNew(interpreter, lobj);
+            } else {
+                ret = LuaObject_New(interpreter, stackpos);
             }
         //  Python inside Lua
         } else if (is_indexed_array(interpreter->L, lobj)) {
