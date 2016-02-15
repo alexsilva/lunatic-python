@@ -40,6 +40,8 @@
 // Variable to know in mode python was started (Inside Lua embedded).
 bool PYTHON_EMBEDDED_MODE = false;
 
+#define PY_EXT_VERSION "1.0.0"
+
 
 static void py_object_call(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
@@ -334,6 +336,11 @@ static void py_import(lua_State *L) {
     py_object_wrap_lua(L, module, 0);
 }
 
+/* return version of the python extension */
+static void py_get_version(lua_State *L) {
+    lua_pushstring(L, PY_EXT_VERSION);
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -367,6 +374,7 @@ static struct luaL_reg py_lib[] = {
     {"kwargs"     , py_kwargs},
     {"is_embedded", python_is_embedded},
     {"raw"        , lua_raw},
+    {"get_version", py_get_version},
     {NULL, NULL}
 };
 

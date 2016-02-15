@@ -17,7 +17,7 @@ if (not python) then  -- LUA -> PYTHON - LUA
     -- python home
     python.system_init("C:\\Python27");
 end
-print(format("python is embedded in lua <%s>", tostring(python.is_embedded())))
+print(format("python ext <%s> is embedded in lua <%s>", python.get_version(), tostring(python.is_embedded())))
 
 local builtins = python.builtins()
 local os = python.import("os")

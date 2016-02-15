@@ -4,6 +4,8 @@ import sys
 sys.path.append(os.getcwd())
 
 import lua
+
+print "lib version: ", lua.get_version()
 print 'in lua: ', ' | '.join(dir(lua))
 
 PATH = os.path.dirname(os.path.abspath(__file__))

@@ -43,6 +43,8 @@
 #include <lualib.h>
 #endif
 
+#define LUA_EXT_VERSION "1.0.0"
+
 
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     PyObject *ret = NULL;
@@ -464,6 +466,12 @@ static PyMethodDef Interpreter_methods[] = {
     {NULL,         NULL}
 };
 
+
+static PyObject *lua_get_version(InterpreterObject *self, PyObject *args) {
+    return PyString_FromString(LUA_EXT_VERSION);
+
+}
+
 static PyTypeObject InterpreterObject_Type = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -509,7 +517,9 @@ static PyTypeObject InterpreterObject_Type = {
 };
 
 static PyMethodDef lua_methods[] = {
-        {NULL, NULL}
+    {"get_version", (PyCFunction) lua_get_version, METH_VARARGS,
+            "return version of the lua extension"},
+    {NULL, NULL}
 };
 
 #if PY_MAJOR_VERSION >= 3
