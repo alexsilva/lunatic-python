@@ -6,7 +6,6 @@
 #include "luaconv.h"
 #include "utils.h"
 #include "constants.h"
-#include "pythoninlua.h"
 
 
 /* python string bytes */
@@ -19,7 +18,13 @@ static void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 
 /* python string unicode */
 static void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    PyObject *obj = PyUnicode_AsEncodedString(o, PYTHON_STRING_ENCODING, PYTHON_STRING_ENCODING_MODE);
+    lua_Object lobj = lua_getglobal(L, "_PYTHON_STRING_ENCODING");
+    char *encoding = lua_isstring(L, lobj) ? lua_getstring(L, lobj) : "utf8";
+
+    lobj = lua_getglobal(L, "_PYTHON_STRING_ENCODING_ERRORS");
+    char *errors = lua_isstring(L, lobj) ? lua_getstring(L, lobj) : "strict";
+
+    PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errors);
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }

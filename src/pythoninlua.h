@@ -28,8 +28,6 @@
 
 // Variable to know in mode python was started.
 extern bool  PYTHON_EMBEDDED_MODE;
-extern char* PYTHON_STRING_ENCODING;
-extern char* PYTHON_STRING_ENCODING_MODE;
 
 #if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
