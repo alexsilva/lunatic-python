@@ -6,10 +6,11 @@
 #include "luaconv.h"
 #include "utils.h"
 #include "constants.h"
+#include "pythoninlua.h"
 
 
 /* python string bytes */
-static void get_pyobject_as_string(lua_State *L, PyObject *o, String *str) {
+static void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
     PyString_AsStringAndSize(o, &str->buff, &str->size);
     if (!str->buff) {
         lua_new_error(L, "converting python string");
@@ -17,12 +18,12 @@ static void get_pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 }
 
 /* python string unicode */
-static void get_pyobject_as_utf8string(lua_State *L, PyObject *o, String *str) {
-    PyObject *obj = PyUnicode_AsUTF8String(o);
+static void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
+    PyObject *obj = PyUnicode_AsEncodedString(o, PYTHON_STRING_ENCODING, "strict");
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }
-    get_pyobject_as_string(L, obj, str);
+    pyobject_as_string(L, obj, str);
     Py_DECREF(obj);
 }
 
@@ -117,12 +118,12 @@ Conversion py_convert(lua_State *L, PyObject *o) {
 #else
     } else if (PyString_Check(o)) {
         String str;
-        get_pyobject_as_string(L, o, &str);
+        pyobject_as_string(L, o, &str);
         lua_pushlstring(L, str.buff, str.size);
         ret = CONVERTED;
     } else if (PyUnicode_Check(o)) {
         String str;
-        get_pyobject_as_utf8string(L, o, &str);
+        pyobject_as_encoded_string(L, o, &str);
         lua_pushlstring(L, str.buff, str.size);
         ret = CONVERTED;
 #endif

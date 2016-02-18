@@ -40,6 +40,10 @@
 // Variable to know in mode python was started (Inside Lua embedded).
 bool PYTHON_EMBEDDED_MODE = false;
 
+// Encoding used in the string conversion.
+char* PYTHON_STRING_ENCODING = "UTF-8";
+
+// Extension version python
 #define PY_EXT_VERSION "1.0.0"
 
 
@@ -341,6 +345,11 @@ static void py_get_version(lua_State *L) {
     lua_pushstring(L, PY_EXT_VERSION);
 }
 
+/* function that allows changing the default encoding */
+static void py_set_string_encoding(lua_State *L) {
+    PYTHON_STRING_ENCODING = luaL_check_string(L, 1);
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -375,6 +384,7 @@ static struct luaL_reg py_lib[] = {
     {"is_embedded", python_is_embedded},
     {"raw"        , lua_raw},
     {"get_version", py_get_version},
+    {"set_string_encoding", py_set_string_encoding},
     {NULL, NULL}
 };
 
