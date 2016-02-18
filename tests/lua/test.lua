@@ -145,6 +145,9 @@ dict[sys] = "sys module"
 dict["str"] = "simple str"
 assert(dict[sys] and dict[os])
 
+local string = python.import("string")
+assert(string.split("1", ",")[0] == "1")
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
