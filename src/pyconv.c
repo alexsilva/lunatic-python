@@ -19,7 +19,7 @@ static void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 
 /* python string unicode */
 static void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    PyObject *obj = PyUnicode_AsEncodedString(o, PYTHON_STRING_ENCODING, "strict");
+    PyObject *obj = PyUnicode_AsEncodedString(o, PYTHON_STRING_ENCODING, PYTHON_STRING_ENCODING_MODE);
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }

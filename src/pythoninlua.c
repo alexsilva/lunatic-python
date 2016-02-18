@@ -43,6 +43,9 @@ bool PYTHON_EMBEDDED_MODE = false;
 // Encoding used in the string conversion.
 char* PYTHON_STRING_ENCODING = "UTF-8";
 
+// Defines the unicode string conversion mode (ignore, replace, strict)
+char* PYTHON_STRING_ENCODING_MODE = "strict";
+
 // Extension version python
 #define PY_EXT_VERSION "1.0.0"
 
@@ -348,6 +351,22 @@ static void py_get_version(lua_State *L) {
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
     PYTHON_STRING_ENCODING = luaL_check_string(L, 1);
+    lua_Object lobj = lua_getparam(L, 2);
+    if (lua_isstring(L, lobj)) {
+        char *errors[] = {"strict", "replace", "ignore"};
+        char *mode = lua_getstring(L, lobj);
+        bool found = false;
+        for (int index=0; index < 3; index++) {
+            if (strcmp(errors[index], mode) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            lua_new_error(L, "encoding mode for invalid strings. choices are: "
+                             "\"strict\", \"replace\", \"ignore\"");
+        PYTHON_STRING_ENCODING_MODE = lua_getstring(L, lobj);
+    }
 }
 
 static void python_system_init(lua_State *L);
