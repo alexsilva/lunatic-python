@@ -256,58 +256,80 @@ py_object *get_py_object_stack(lua_State *L, int n) {
     return get_py_object(L, lua_getparam(L, n));
 }
 
+static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
+    double num = lua_getnumber(interpreter->L, lobj);
+    if (rintf((float) num) == num) {  // is int?
+        *ret = PyInt_FromLong((long) num);
+    } else {
+        *ret = PyFloat_FromDouble(num);
+    }
+}
+
+static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
+    const char *s = lua_getstring(interpreter->L, lobj);
+    int len = lua_strlen(interpreter->L, lobj);
+    *ret = PyString_FromStringAndSize(s, len);
+}
+
+static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
+    if (is_wrapped_object(interpreter->L, lobj)) {
+        *ret = get_pobject(interpreter->L, lobj);
+    } else {
+        lua_beginblock(interpreter->L);
+        if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
+            *ret = LuaObject_PyNew(interpreter, lobj);
+        } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
+            *ret = _get_py_tuple(interpreter->L, lobj);
+        } else {
+            *ret = get_py_dict(interpreter->L, lobj);
+        }
+        lua_endblock(interpreter->L);
+    }
+}
+
+static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
+    void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
+    if (void_ptr) {
+        if (PYTHON_EMBEDDED_MODE) {
+            *ret = (PyObject *) void_ptr;
+        } else {
+            *ret = LuaObject_PyNew(interpreter, lobj);
+        }
+    }  else {
+        Py_INCREF(Py_None);
+        *ret = Py_None;
+    }
+}
+
 PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int stackpos,
                                          lua_Object lobj) {
     PyObject *ret = NULL;
-    if (lua_isnil(interpreter->L, lobj)) {
-        Py_INCREF(Py_None);
-        ret = Py_None;
-    } else if (lua_isnumber(interpreter->L, lobj)) {
-        double num = lua_getnumber(interpreter->L, lobj);
-        if (rintf((float) num) == num) {  // is int?
-            ret = PyInt_FromLong((long) num);
-        } else {
-            ret = PyFloat_FromDouble(num);
-        }
-    } else if (lua_isstring(interpreter->L, lobj)) {
-        const char *s = lua_getstring(interpreter->L, lobj);
-        int len = lua_strlen(interpreter->L, lobj);
-        ret = PyString_FromStringAndSize(s, len);
-    } else if (is_wrapped_object(interpreter->L, lobj)) {
-        ret = get_pobject(interpreter->L, lobj);
-    } else if (lua_isfunction(interpreter->L, lobj)) {
-        if (lobj) {
+    if (lobj == LUA_NOOBJECT) lobj = lua_getparam(interpreter->L, stackpos);
+    TObject *o = lapi_address(interpreter->L, lobj);
+    switch (ttype(o)) { // Lua 3.2 source code builtin.c
+        case LUA_T_NUMBER:
+            lnumber_convert(interpreter, lobj, &ret);
+            break;
+        case LUA_T_STRING:
+            lstring_convert(interpreter, lobj, &ret);
+            break;
+        case LUA_T_ARRAY:  // lus_istable
+            ltable_convert(interpreter, lobj, &ret);
+            break;
+        case LUA_T_CLOSURE: // lua_isfunction
+        case LUA_T_PROTO:
+        case LUA_T_CPROTO:
             ret = LuaObject_PyNew(interpreter, lobj);
-        } else {
-            ret = LuaObject_New(interpreter, stackpos);
-        }
-    } else if (lua_istable(interpreter->L, lobj)) {
-        lua_beginblock(interpreter->L);
-        if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
-            if (lobj) {
-                ret = LuaObject_PyNew(interpreter, lobj);
-            } else {
-                ret = LuaObject_New(interpreter, stackpos);
-            }
-        //  Python inside Lua
-        } else if (is_indexed_array(interpreter->L, lobj)) {
-            ret = _get_py_tuple(interpreter->L, lobj);
-        } else {
-            ret = get_py_dict(interpreter->L, lobj);
-        }
-        lua_endblock(interpreter->L);
-    } else if (lua_isuserdata(interpreter->L, lobj)) {
-        void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
-        if (void_ptr) {
-            if (PYTHON_EMBEDDED_MODE) {
-                ret = (PyObject *) void_ptr;
-            } else {
-                ret = LuaObject_PyNew(interpreter, lobj);
-            }
-        }  else {
+            break;
+        case LUA_T_USERDATA:
+            luserdata_convert(interpreter, lobj, &ret);
+            break;
+        case LUA_T_NIL:
             Py_INCREF(Py_None);
             ret = Py_None;
-        }
+            break;
+        default:
+            lua_error(interpreter->L, "unknown type!");
     }
     return ret;
 }
