@@ -213,7 +213,7 @@ void py_kwargs(lua_State *L) {
 
 /*get py object from wrap table (direct access) */
 PyObject *get_pobject(lua_State *L, lua_Object ltable) {
-    if (!lua_istable(L, ltable))
+    if (!is_wrapped_object(L, ltable))
         lua_error(L, "wrap table not found!");
 
     // python object recover
@@ -225,7 +225,7 @@ PyObject *get_pobject(lua_State *L, lua_Object ltable) {
 
 /*get py object from wrap table */
 py_object *get_py_object(lua_State *L, lua_Object ltable) {
-    if (!lua_istable(L, ltable))
+    if (!is_wrapped_object(L, ltable))
         lua_error(L, "wrap table not found!");
 
     py_object *po = (py_object *) malloc(sizeof(py_object));
