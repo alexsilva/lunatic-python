@@ -26,6 +26,13 @@ local str = "maçã"
 
 assert(builtins.unicode(str, 'utf-8') == str)
 
+local types = python.import("types")
+
+assert(builtins.isinstance(python.None, types.NoneType), "None type check error")
+assert(builtins.isinstance(python.False, types.BooleanType), "False type check error")
+assert(builtins.isinstance(python.True, types.BooleanType), "True type check error")
+
+assert(builtins.bool(python.None) == nil, "None object check error")
 assert(builtins.bool(python.False) == nil, "False boolean check error")
 assert(builtins.bool(python.True) == 1, "True boolean check error")
 
