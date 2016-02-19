@@ -18,6 +18,7 @@
 
 #define PY_FALSE "False"
 #define PY_TRUE "True"
+#define PY_NONE "None"
 
 #define LUA_BASE_TAG "base"
 #define PYTHON_OBJECT_BYREF "PYTHON_OBJECT_BYREF"

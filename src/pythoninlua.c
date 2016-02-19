@@ -478,6 +478,9 @@ LUA_API int luaopen_python(lua_State *L) {
     Py_INCREF(pyObject);
     set_table_object(L, python, PY_FALSE, py_object_wrapped(L, pyObject, 0));
 
+    pyObject = Py_None;
+    Py_INCREF(pyObject);
+    set_table_object(L, python, PY_NONE, py_object_wrapped(L, pyObject, 0));
     return 0;
 }
 
