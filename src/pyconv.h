@@ -35,4 +35,7 @@ Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
 void lua_raw(lua_State *L);
 
+void pyobject_as_string(lua_State *L, PyObject *o, String *str);
+void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str);
+
 #endif //LUNATIC_PYCONV_H

@@ -197,15 +197,19 @@ static void py_object_gc(lua_State *L) {
 
 static void py_object_tostring(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    PyObject *repr = PyObject_Str(obj);
-    if (!repr) {
-        char buf[256];
-        snprintf(buf, 256, "python object: %p", obj);
-        lua_pushstring(L, buf);
-        PyErr_Clear();
+    if (PyString_Check(obj) || PyUnicode_Check(obj)) {
+        py_convert(L, obj);
     } else {
-        py_convert(L, repr);
-        Py_DECREF(repr);
+        PyObject *repr = PyObject_Str(obj);
+        if (!repr) {
+            char buf[256];
+            snprintf(buf, 256, "python object: %p", obj);
+            lua_pushstring(L, buf);
+            PyErr_Clear();
+        } else {
+            py_convert(L, repr);
+            Py_DECREF(repr);
+        }
     }
 }
 
@@ -342,10 +346,24 @@ static void py_get_version(lua_State *L) {
     lua_pushstring(L, PY_EXT_VERSION);
 }
 
+/* Turn off the conversion of object */
+static void py_byref(lua_State *L) {
+    lua_pushnumber(L, 1);
+    lua_setglobal(L, PYTHON_OBJECT_BYREF);
+    py_object_index(L);
+}
+
+/* Turn off the conversion of object */
+static void py_byrefc(lua_State *L) {
+    lua_pushnumber(L, 1);
+    lua_setglobal(L, PYTHON_OBJECT_BYREF);
+    py_object_call(L);
+}
+
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
     lua_pushstring(L, luaL_check_string(L, 1));
-    lua_setglobal(L, "_PYTHON_STRING_ENCODING");
+    lua_setglobal(L, PYTHON_STRING_ENCODING);
     lua_Object lobj = lua_getparam(L, 2);
     if (lua_isstring(L, lobj)) {
         char *errors[] = {"strict", "replace", "ignore"};
@@ -360,8 +378,8 @@ static void py_set_string_encoding(lua_State *L) {
         if (!found)
             lua_new_error(L, "encoding mode for invalid strings. choices are: "
                              "\"strict\", \"replace\", \"ignore\"");
-        lua_pushstring(L, luaL_check_string(L, 1));
-        lua_setglobal(L, "_PYTHON_STRING_ENCODING_ERRORS");
+        lua_pushstring(L, luaL_check_string(L, 2));
+        lua_setglobal(L, PYTHON_STRING_ENCODING_ERRORS);
     }
 }
 
@@ -387,19 +405,21 @@ static struct luaL_reg py_lib[] = {
     {"eval",        py_eval},
     {"asindex",     py_asindx},
     {"asattr",      py_asattr},
-    {"str",         py_object_tostring},
-    {"locals",      py_locals},
-    {"globals",     py_globals},
-    {"builtins",    py_builtins},
-    {"import",      py_import},
-    {"system_init", python_system_init},
-    {"system_exit", python_system_exit},
-    {"args"       , py_args},
-    {"kwargs"     , py_kwargs},
-    {"is_embedded", python_is_embedded},
-    {"raw"        , lua_raw},
-    {"get_version", py_get_version},
+    {"str",                 py_object_tostring},
+    {"locals",              py_locals},
+    {"globals",             py_globals},
+    {"builtins",            py_builtins},
+    {"import",              py_import},
+    {"system_init",         python_system_init},
+    {"system_exit",         python_system_exit},
+    {"args"       ,         py_args},
+    {"kwargs"     ,         py_kwargs},
+    {"is_embedded",         python_is_embedded},
+    {"raw"        ,         lua_raw},
+    {"get_version",         py_get_version},
     {"set_string_encoding", py_set_string_encoding},
+    {"byref",               py_byref},
+    {"byrefc",              py_byrefc},
     {NULL, NULL}
 };
 

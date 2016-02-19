@@ -9,7 +9,7 @@
 
 
 /* python string bytes */
-static void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
+void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
     PyString_AsStringAndSize(o, &str->buff, &str->size);
     if (!str->buff) {
         lua_new_error(L, "converting python string");
@@ -17,11 +17,11 @@ static void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 }
 
 /* python string unicode */
-static void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    lua_Object lobj = lua_getglobal(L, "_PYTHON_STRING_ENCODING");
+void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
+    lua_Object lobj = lua_getglobal(L, PYTHON_STRING_ENCODING);
     char *encoding = lua_isstring(L, lobj) ? lua_getstring(L, lobj) : "utf8";
 
-    lobj = lua_getglobal(L, "_PYTHON_STRING_ENCODING_ERRORS");
+    lobj = lua_getglobal(L, PYTHON_STRING_ENCODING_ERRORS);
     char *errors = lua_isstring(L, lobj) ? lua_getstring(L, lobj) : "strict";
 
     PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errors);
@@ -106,6 +106,24 @@ void lua_raw(lua_State *L) {
     }
 }
 
+static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
+    int asindx = 0;
+    if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||
+        PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
+        PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
+        asindx = 1;
+    return py_object_wrap_lua(L, o, asindx);
+}
+
+static int by_reference(lua_State *L) {
+    int byref = (int) lua_getnumber(L, lua_getglobal(L, PYTHON_OBJECT_BYREF));
+    if (byref) {
+        lua_pushnumber(L, 0);
+        lua_setglobal(L, PYTHON_OBJECT_BYREF); // delete
+    }
+    return byref;
+}
+
 Conversion py_convert(lua_State *L, PyObject *o) {
     Conversion ret;
     if (o == Py_None || o == Py_False) {
@@ -122,15 +140,23 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        String str;
-        pyobject_as_string(L, o, &str);
-        lua_pushlstring(L, str.buff, str.size);
-        ret = CONVERTED;
+        if (by_reference(L)) {
+            ret = py_object_wrapper(L, o);
+        } else {
+            String str;
+            pyobject_as_string(L, o, &str);
+            lua_pushlstring(L, str.buff, str.size);
+            ret = CONVERTED;
+        }
     } else if (PyUnicode_Check(o)) {
-        String str;
-        pyobject_as_encoded_string(L, o, &str);
-        lua_pushlstring(L, str.buff, str.size);
-        ret = CONVERTED;
+        if (by_reference(L)) {
+            ret = py_object_wrapper(L, o);
+        } else {
+            String str;
+            pyobject_as_encoded_string(L, o, &str);
+            lua_pushlstring(L, str.buff, str.size);
+            ret = CONVERTED;
+        }
 #endif
 #if PY_MAJOR_VERSION < 3
     } else if (PyInt_Check(o)) {
