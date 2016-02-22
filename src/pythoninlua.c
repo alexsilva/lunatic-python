@@ -350,12 +350,14 @@ static void py_get_version(lua_State *L) {
 static void py_byref(lua_State *L) {
     set_object_by_reference(L, 1);
     py_object_index(L);
+    set_object_by_reference(L, 0);
 }
 
 /* Turn off the conversion of object */
 static void py_byrefc(lua_State *L) {
     set_object_by_reference(L, 1);
     py_object_call(L);
+    set_object_by_reference(L, 0);
 }
 
 /* allows the setting error control string in unicode string conversion */

@@ -145,15 +145,8 @@ static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
     return py_object_wrap_lua(L, o, asindx);
 }
 
-static int isby_reference(lua_State *L) {
-    int byref = get_isby_reference(L);
-    if (byref) set_object_by_reference(L, 0); // disable
-    return byref;
-}
-
 Conversion py_convert(lua_State *L, PyObject *o) {
     Conversion ret;
-    int is_reference = isby_reference(L);
     if (o == Py_None || o == Py_False) {
         lua_pushnil(L);
         ret = CONVERTED;
@@ -168,7 +161,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        if (is_reference) {
+        if (get_isby_reference(L)) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
@@ -177,7 +170,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = CONVERTED;
         }
     } else if (PyUnicode_Check(o)) {
-        if (is_reference) {
+        if (get_isby_reference(L)) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
