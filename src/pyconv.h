@@ -33,7 +33,8 @@ typedef enum {
 typedef struct STRING_UNICODE {
     char *encoding;
     char *errors;
-    bool strdup;
+    bool errors_dealloc;
+    bool encoding_dealloc;
 } StringUnicode;
 
 extern StringUnicode *stringUnicode;

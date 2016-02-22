@@ -378,23 +378,23 @@ static void _set_string_encoding_errors(lua_State *L, int stackpos) {
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
+        if (stringUnicode->errors_dealloc)
+            free(stringUnicode->errors);
         stringUnicode->errors = strdup(handler);
-        stringUnicode->strdup = true;
-        if (!stringUnicode->errors) lua_new_error(L, "failed to set encoding handler (memory error)");
+        if (!stringUnicode->errors)
+            lua_new_error(L, "failed to set encoding handler (memory error)");
+        stringUnicode->errors_dealloc = true;
     }
 }
 
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
-    if (stringUnicode->strdup) {
+    if (stringUnicode->encoding_dealloc)
         free(stringUnicode->encoding);
-        free(stringUnicode->errors);
-    }
     stringUnicode->encoding = strdup(luaL_check_string(L, 1));
-    if (!stringUnicode->encoding) {
+    if (!stringUnicode->encoding)
         lua_new_error(L, "failed to set encoding (memory error)");
-    }
-    stringUnicode->strdup = true;
+    stringUnicode->encoding_dealloc = true;
     _set_string_encoding_errors(L, 2);
 }
 
@@ -417,10 +417,11 @@ static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L) {
-    if (stringUnicode->strdup) { // free globals pointer
+    // free globals pointer
+    if (stringUnicode->encoding_dealloc)
         free(stringUnicode->encoding);
+    if (stringUnicode->errors_dealloc)
         free(stringUnicode->errors);
-    }
     free(stringUnicode);
     if (Py_IsInitialized() && PYTHON_EMBEDDED_MODE)
         Py_Finalize();
@@ -477,7 +478,8 @@ LUA_API int luaopen_python(lua_State *L) {
     stringUnicode = malloc(sizeof(StringUnicode));
     stringUnicode->encoding = "utf8";
     stringUnicode->errors = "strict";
-    stringUnicode->strdup = false;
+    stringUnicode->encoding_dealloc = false;
+    stringUnicode->errors_dealloc = false;
 
     lua_Object python = lua_createtable(L);
 
