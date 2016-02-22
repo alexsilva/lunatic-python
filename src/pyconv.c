@@ -26,13 +26,6 @@ void set_object_by_reference(lua_State *L, int n) {
     lua_rawsettable(L);
 }
 
-PyObject *get_custom_object(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, name);
-    lua_Object lobj = lua_rawgettable(L);
-    return get_pobject(L, lobj);
-}
-
 /* python string bytes */
 void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
     PyString_AsStringAndSize(o, &str->buff, &str->size);
