@@ -7,8 +7,24 @@
 #include "utils.h"
 #include "constants.h"
 
-StringUnicode *stringUnicode;
-bool PYTHON_OBJECT_BYREF = false;
+StringUnicode *get_unicode_config(lua_State *L) {
+    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushstring(L, STRING_UNICODE);
+    return lua_getuserdata(L, lua_rawgettable(L));
+}
+
+int get_isby_reference(lua_State *L) {
+    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushstring(L, OBJECT_BY_REFERENCE);
+    return (int) lua_getnumber(L, lua_rawgettable(L));
+}
+
+void set_object_by_reference(lua_State *L, int n) {
+    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushstring(L, OBJECT_BY_REFERENCE);
+    lua_pushnumber(L, n);
+    lua_rawsettable(L);
+}
 
 /* python string bytes */
 void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
@@ -20,7 +36,8 @@ void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 
 /* python string unicode */
 void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    PyObject *obj = PyUnicode_AsEncodedString(o, stringUnicode->encoding, stringUnicode->errors);
+    StringUnicode *unicode = get_unicode_config(L);
+    PyObject *obj = PyUnicode_AsEncodedString(o, unicode->encoding, unicode->errors);
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }
@@ -112,9 +129,8 @@ static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
 }
 
 static int by_reference(lua_State *L) {
-    bool byref = PYTHON_OBJECT_BYREF;
-    if (PYTHON_OBJECT_BYREF)
-        PYTHON_OBJECT_BYREF = false; // disable
+    int byref = get_isby_reference(L);
+    if (byref) set_object_by_reference(L, 0); // disable
     return byref;
 }
 

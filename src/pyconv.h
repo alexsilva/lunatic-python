@@ -37,8 +37,8 @@ typedef struct STRING_UNICODE {
     bool encoding_dealloc;
 } StringUnicode;
 
-extern StringUnicode *stringUnicode;
-extern bool PYTHON_OBJECT_BYREF;
+StringUnicode *get_unicode_config(lua_State *L);
+void set_object_by_reference(lua_State *L, int n);
 
 lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);

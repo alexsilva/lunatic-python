@@ -348,18 +348,18 @@ static void py_get_version(lua_State *L) {
 
 /* Turn off the conversion of object */
 static void py_byref(lua_State *L) {
-    PYTHON_OBJECT_BYREF = true;
+    set_object_by_reference(L, 1);
     py_object_index(L);
 }
 
 /* Turn off the conversion of object */
 static void py_byrefc(lua_State *L) {
-    PYTHON_OBJECT_BYREF = true;
+    set_object_by_reference(L, 1);
     py_object_call(L);
 }
 
 /* allows the setting error control string in unicode string conversion */
-static void _set_string_encoding_errors(lua_State *L, int stackpos) {
+static void _set_string_encoding_errors(lua_State *L, int stackpos, StringUnicode *unicode) {
     lua_Object lobj = lua_getparam(L, stackpos);
     if (lua_isstring(L, lobj)) {
         char *handler = lua_getstring(L, lobj);
@@ -378,39 +378,42 @@ static void _set_string_encoding_errors(lua_State *L, int stackpos) {
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
-        if (stringUnicode->errors_dealloc)
-            free(stringUnicode->errors);
-        stringUnicode->errors = strdup(handler);
-        if (!stringUnicode->errors)
+        if (unicode->errors_dealloc)
+            free(unicode->errors);
+        unicode->errors = strdup(handler);
+        if (!unicode->errors)
             lua_new_error(L, "failed to set encoding handler (memory error)");
-        stringUnicode->errors_dealloc = true;
+        unicode->errors_dealloc = true;
     }
 }
 
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
-    if (stringUnicode->encoding_dealloc)
-        free(stringUnicode->encoding);
-    stringUnicode->encoding = strdup(luaL_check_string(L, 1));
-    if (!stringUnicode->encoding)
+    StringUnicode *unicode = get_unicode_config(L);
+    if (unicode->encoding_dealloc)
+        free(unicode->encoding);
+    unicode->encoding = strdup(luaL_check_string(L, 1));
+    if (!unicode->encoding)
         lua_new_error(L, "failed to set encoding (memory error)");
-    stringUnicode->encoding_dealloc = true;
-    _set_string_encoding_errors(L, 2);
+    unicode->encoding_dealloc = true;
+    _set_string_encoding_errors(L, 2, unicode);
 }
 
 /* Allows the setting error control string in unicode string conversion */
 static void py_set_string_encoding_errors(lua_State *L) {
-    _set_string_encoding_errors(L, 1);
+    _set_string_encoding_errors(L, 1, get_unicode_config(L));
 }
 
 /* Returns the encoding used in the string conversion */
 static void py_get_string_encoding(lua_State *L) {
-    lua_pushstring(L, stringUnicode->encoding);
+    StringUnicode *unicode = get_unicode_config(L);
+    lua_pushstring(L, unicode->encoding);
 }
 
 /* Returns the string of errors controller */
 static void py_get_string_encoding_errors(lua_State *L) {
-    lua_pushstring(L, stringUnicode->errors);
+    StringUnicode *unicode = get_unicode_config(L);
+    lua_pushstring(L, unicode->errors);
 }
 
 static void python_system_init(lua_State *L);
@@ -418,11 +421,12 @@ static void python_system_init(lua_State *L);
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L) {
     // free globals pointer
-    if (stringUnicode->encoding_dealloc)
-        free(stringUnicode->encoding);
-    if (stringUnicode->errors_dealloc)
-        free(stringUnicode->errors);
-    free(stringUnicode);
+    StringUnicode *unicode = get_unicode_config(L);
+    if (unicode->encoding_dealloc)
+        free(unicode->encoding);
+    if (unicode->errors_dealloc)
+        free(unicode->errors);
+    free(unicode);
     if (Py_IsInitialized() && PYTHON_EMBEDDED_MODE)
         Py_Finalize();
 }
@@ -474,14 +478,18 @@ static struct luaL_reg lua_tag_methods[] = {
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
     PYTHON_EMBEDDED_MODE = false;  // If Python is inside Lua
-    // default setting for unicode strings.
-    stringUnicode = malloc(sizeof(StringUnicode));
-    stringUnicode->encoding = "utf8";
-    stringUnicode->errors = "strict";
-    stringUnicode->encoding_dealloc = false;
-    stringUnicode->errors_dealloc = false;
 
     lua_Object python = lua_createtable(L);
+
+    // default setting for unicode strings.
+    StringUnicode *unicode = malloc(sizeof(StringUnicode));
+    unicode->encoding = "utf8";
+    unicode->errors = "strict";
+    unicode->encoding_dealloc = false;
+    unicode->errors_dealloc = false;
+
+    set_table_userdata(L, python, STRING_UNICODE, unicode);
+    set_table_number(L, python, OBJECT_BY_REFERENCE, 0);
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
