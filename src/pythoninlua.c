@@ -427,6 +427,9 @@ static void python_system_exit(lua_State *L) {
     if (unicode->errors_dealloc)
         free(unicode->errors);
     free(unicode);
+    Py_XDECREF(get_custom_object(L, PY_TRUE));
+    Py_XDECREF(get_custom_object(L, PY_FALSE));
+    Py_XDECREF(get_custom_object(L, PY_NONE));
     if (Py_IsInitialized() && PYTHON_EMBEDDED_MODE)
         Py_Finalize();
 }
