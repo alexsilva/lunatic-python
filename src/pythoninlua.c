@@ -358,6 +358,32 @@ static void py_byrefc(lua_State *L) {
     py_object_call(L);
 }
 
+/* allows the setting error control string in unicode string conversion */
+static void _set_string_encoding_errors(lua_State *L, int stackpos) {
+    lua_Object lobj = lua_getparam(L, stackpos);
+    if (lua_isstring(L, lobj)) {
+        char *handler = lua_getstring(L, lobj);
+        lobj = lua_getparam(L, stackpos + 1);
+        if (lobj == LUA_NOOBJECT ? 1 : (int) lua_getnumber(L, lobj)) { // default true
+            char *handlers[] = {"strict", "replace", "ignore"};
+            bool found = false;
+            for (int index = 0; index < 3; index++) {
+                if (strcmp(handlers[index], handler) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                lua_new_error(L, "encoding handler for invalid strings. " \
+                             "choices are: \"strict\", \"replace\", \"ignore\"");
+            }
+        }
+        stringUnicode->errors = strdup(handler);
+        stringUnicode->strdup = true;
+        if (!stringUnicode->errors) lua_new_error(L, "failed to set encoding handler (memory error)");
+    }
+}
+
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
     if (stringUnicode->strdup) {
@@ -369,24 +395,12 @@ static void py_set_string_encoding(lua_State *L) {
         lua_new_error(L, "failed to set encoding (memory error)");
     }
     stringUnicode->strdup = true;
-    lua_Object lobj = lua_getparam(L, 2);
-    if (lua_isstring(L, lobj)) {
-        char *items[] = {"strict", "replace", "ignore"};
-        char *errors = lua_getstring(L, lobj);
-        bool found = false;
-        for (int index=0; index < 3; index++) {
-            if (strcmp(items[index], errors) == 0) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            lua_new_error(L, "encoding mode for invalid strings. " \
-                             "choices are: \"strict\", \"replace\", \"ignore\"");
-        }
-        stringUnicode->errors = strdup(errors);
-        if (!stringUnicode->errors) lua_new_error(L, "failed to set encoding errors (memory error)");
-    }
+    _set_string_encoding_errors(L, 2);
+}
+
+/* Allows the setting error control string in unicode string conversion */
+static void py_set_string_encoding_errors(lua_State *L) {
+    _set_string_encoding_errors(L, 1);
 }
 
 /* Returns the encoding used in the string conversion */
@@ -439,6 +453,7 @@ static struct luaL_reg py_lib[] = {
     {"raw"        ,         lua_raw},
     {"get_version",         py_get_version},
     {"set_string_encoding", py_set_string_encoding},
+    {"set_string_encoding_errors", py_set_string_encoding_errors},
     {"get_string_encoding", py_get_string_encoding},
     {"get_string_encoding_errors", py_get_string_encoding_errors},
     {"byref",               py_byref},
