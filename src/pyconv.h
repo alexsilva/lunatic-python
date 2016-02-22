@@ -37,6 +37,7 @@ typedef struct STRING_UNICODE {
 } StringUnicode;
 
 extern StringUnicode *stringUnicode;
+extern bool PYTHON_OBJECT_BYREF;
 
 lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);

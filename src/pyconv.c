@@ -8,6 +8,7 @@
 #include "constants.h"
 
 StringUnicode *stringUnicode;
+bool PYTHON_OBJECT_BYREF = false;
 
 /* python string bytes */
 void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
@@ -111,11 +112,9 @@ static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
 }
 
 static int by_reference(lua_State *L) {
-    int byref = (int) lua_getnumber(L, lua_getglobal(L, PYTHON_OBJECT_BYREF));
-    if (byref) {
-        lua_pushnumber(L, 0);
-        lua_setglobal(L, PYTHON_OBJECT_BYREF); // delete
-    }
+    bool byref = PYTHON_OBJECT_BYREF;
+    if (PYTHON_OBJECT_BYREF)
+        PYTHON_OBJECT_BYREF = false; // disable
     return byref;
 }
 

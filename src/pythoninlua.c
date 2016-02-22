@@ -348,15 +348,13 @@ static void py_get_version(lua_State *L) {
 
 /* Turn off the conversion of object */
 static void py_byref(lua_State *L) {
-    lua_pushnumber(L, 1);
-    lua_setglobal(L, PYTHON_OBJECT_BYREF);
+    PYTHON_OBJECT_BYREF = true;
     py_object_index(L);
 }
 
 /* Turn off the conversion of object */
 static void py_byrefc(lua_State *L) {
-    lua_pushnumber(L, 1);
-    lua_setglobal(L, PYTHON_OBJECT_BYREF);
+    PYTHON_OBJECT_BYREF = true;
     py_object_call(L);
 }
 
