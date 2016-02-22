@@ -389,6 +389,16 @@ static void py_set_string_encoding(lua_State *L) {
     }
 }
 
+/* Returns the encoding used in the string conversion */
+static void py_get_string_encoding(lua_State *L) {
+    lua_pushstring(L, stringUnicode->encoding);
+}
+
+/* Returns the string of errors controller */
+static void py_get_string_encoding_errors(lua_State *L) {
+    lua_pushstring(L, stringUnicode->errors);
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -429,6 +439,8 @@ static struct luaL_reg py_lib[] = {
     {"raw"        ,         lua_raw},
     {"get_version",         py_get_version},
     {"set_string_encoding", py_set_string_encoding},
+    {"get_string_encoding", py_get_string_encoding},
+    {"get_string_encoding_errors", py_get_string_encoding_errors},
     {"byref",               py_byref},
     {"byrefc",              py_byrefc},
     {NULL, NULL}
