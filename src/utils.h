@@ -38,4 +38,8 @@ void lua_new_error(lua_State *L, char *message);
 char *get_pyobject_str(PyObject *pyobject, char *dftstr);
 void python_new_error(PyObject *exception, char *message);
 
+#ifndef strdup
+char *strdup(const char *s);
+#endif
+
 #endif //LUNATIC_UTILS_H

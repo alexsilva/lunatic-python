@@ -30,6 +30,14 @@ typedef enum {
     WRAP = 2
 } Conversion;
 
+typedef struct STRING_UNICODE {
+    char *encoding;
+    char *errors;
+    bool strdup;
+} StringUnicode;
+
+extern StringUnicode *stringUnicode;
+
 lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_convert(lua_State *L, PyObject *o);

@@ -8,6 +8,14 @@
 #include <Python.h>
 #include "utils.h"
 
+#ifndef strdup
+char *strdup(const char * s) {
+    size_t len = strlen(s) + 1;
+    char *p = malloc(len);
+    return p ? memcpy(p, s, len) : NULL;
+}
+#endif
+
 char *get_pyobject_str(PyObject *pyobject, char *dftstr) {
     char *str = NULL;
     char *attr_name = "__name__";

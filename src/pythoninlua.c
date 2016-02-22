@@ -362,24 +362,32 @@ static void py_byrefc(lua_State *L) {
 
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
-    lua_pushstring(L, luaL_check_string(L, 1));
-    lua_setglobal(L, PYTHON_STRING_ENCODING);
+    if (stringUnicode->strdup) {
+        free(stringUnicode->encoding);
+        free(stringUnicode->errors);
+    }
+    stringUnicode->encoding = strdup(luaL_check_string(L, 1));
+    if (!stringUnicode->encoding) {
+        lua_new_error(L, "failed to set encoding (memory error)");
+    }
+    stringUnicode->strdup = true;
     lua_Object lobj = lua_getparam(L, 2);
     if (lua_isstring(L, lobj)) {
-        char *errors[] = {"strict", "replace", "ignore"};
-        char *name = lua_getstring(L, lobj);
+        char *items[] = {"strict", "replace", "ignore"};
+        char *errors = lua_getstring(L, lobj);
         bool found = false;
         for (int index=0; index < 3; index++) {
-            if (strcmp(errors[index], name) == 0) {
+            if (strcmp(items[index], errors) == 0) {
                 found = true;
                 break;
             }
         }
-        if (!found)
-            lua_new_error(L, "encoding mode for invalid strings. choices are: "
-                             "\"strict\", \"replace\", \"ignore\"");
-        lua_pushstring(L, luaL_check_string(L, 2));
-        lua_setglobal(L, PYTHON_STRING_ENCODING_ERRORS);
+        if (!found) {
+            lua_new_error(L, "encoding mode for invalid strings. " \
+                             "choices are: \"strict\", \"replace\", \"ignore\"");
+        }
+        stringUnicode->errors = strdup(errors);
+        if (!stringUnicode->errors) lua_new_error(L, "failed to set encoding errors (memory error)");
     }
 }
 
@@ -387,7 +395,12 @@ static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L) {
-    if (Py_IsInitialized())
+    if (stringUnicode->strdup) { // free globals pointer
+        free(stringUnicode->encoding);
+        free(stringUnicode->errors);
+    }
+    free(stringUnicode);
+    if (Py_IsInitialized() && PYTHON_EMBEDDED_MODE)
         Py_Finalize();
 }
 
@@ -435,6 +448,11 @@ static struct luaL_reg lua_tag_methods[] = {
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
     PYTHON_EMBEDDED_MODE = false;  // If Python is inside Lua
+    // default setting for unicode strings.
+    stringUnicode = malloc(sizeof(StringUnicode));
+    stringUnicode->encoding = "utf8";
+    stringUnicode->errors = "strict";
+    stringUnicode->strdup = false;
 
     lua_Object python = lua_createtable(L);
 
