@@ -167,12 +167,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         lua_pushobject(L, lua_getref(L, ((LuaObject*)o)->ref));
         ret = CONVERTED;
     } else {
-        int asindx = 0;
-        if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||
-            PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
-            PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
-            asindx = 1;
-        ret = py_object_wrap_lua(L, o, asindx);
+        ret = py_object_wrapper(L, o);
     }
     return ret;
 }
