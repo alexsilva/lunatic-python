@@ -438,9 +438,9 @@ static struct luaL_reg py_lib[] = {
     {"raw"        ,                lua_raw},
     {"get_version",                py_get_version},
     {"set_string_encoding",        py_set_string_encoding},
-    {"set_string_encoding_errors", py_set_string_encoding_errorhandler},
+    {"set_string_encoding_errorhandler", py_set_string_encoding_errorhandler},
     {"get_string_encoding",        py_get_string_encoding},
-    {"get_string_encoding_errors", py_get_string_encoding_errorhandler},
+    {"get_string_encoding_errorhandler", py_get_string_encoding_errorhandler},
     {"byref",                      py_byref},
     {"byrefc",                     py_byrefc},
     {NULL, NULL}
