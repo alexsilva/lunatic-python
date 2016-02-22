@@ -41,7 +41,7 @@
 bool PYTHON_EMBEDDED_MODE = false;
 
 // Extension version python
-#define PY_EXT_VERSION "1.2.1"
+#define PY_EXT_VERSION "1.2.2"
 
 
 static void py_object_call(lua_State *L) {
