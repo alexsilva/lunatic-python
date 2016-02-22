@@ -30,15 +30,11 @@ typedef enum {
     WRAP = 2
 } Conversion;
 
-typedef struct STRING_UNICODE {
-    char *encoding;
-    char *errors;
-    bool errors_dealloc;
-    bool encoding_dealloc;
-} StringUnicode;
-
-StringUnicode *get_unicode_config(lua_State *L);
 void set_object_by_reference(lua_State *L, int n);
+void set_unicode_string(lua_State *L, char *name, char *value);
+
+char *get_unicode_encoding(lua_State *L);
+char *get_unicode_errorhandler(lua_State *L);
 
 lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
 Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);

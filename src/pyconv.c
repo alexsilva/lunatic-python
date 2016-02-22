@@ -7,12 +7,28 @@
 #include "utils.h"
 #include "constants.h"
 
-StringUnicode *get_unicode_config(lua_State *L) {
+/* returns the encoding currently being used */
+char *get_unicode_encoding(lua_State *L) {
     lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, STRING_UNICODE);
-    return lua_getuserdata(L, lua_rawgettable(L));
+    lua_pushstring(L, UNICODE_STRING_ENCODING);
+    return lua_getstring(L, lua_rawgettable(L));
 }
 
+/* returns the error handler in the conversion of unicode strings */
+char *get_unicode_errorhandler(lua_State *L) {
+    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushstring(L, UNICODE_STRING_ENCODING_ERRORHANDLER);
+    return lua_getstring(L, lua_rawgettable(L));
+}
+
+void set_unicode_string(lua_State *L, char *name, char *value) {
+    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushstring(L, name);
+    lua_pushstring(L, value);
+    lua_rawsettable(L);
+}
+
+/* It indicates whether the object reference should be returned */
 int get_isby_reference(lua_State *L) {
     lua_pushobject(L, lua_getglobal(L, PYTHON_API));
     lua_pushstring(L, OBJECT_BY_REFERENCE);
@@ -36,8 +52,9 @@ void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 
 /* python string unicode */
 void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    StringUnicode *unicode = get_unicode_config(L);
-    PyObject *obj = PyUnicode_AsEncodedString(o, unicode->encoding, unicode->errors);
+    char *encoding = get_unicode_encoding(L);
+    char *errorhandler = get_unicode_errorhandler(L);
+    PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errorhandler);
     if (!obj) {
         lua_new_error(L, "converting unicode string");
     }

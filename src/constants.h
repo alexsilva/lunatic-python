@@ -22,7 +22,7 @@
 
 #define LUA_BASE_TAG "base"
 
-#define STRING_UNICODE "_unicode_string"
-#define OBJECT_BY_REFERENCE "_by_reference"
-
+#define OBJECT_BY_REFERENCE "_object_by_reference"
+#define UNICODE_STRING_ENCODING "_unicode_string_encoding"
+#define UNICODE_STRING_ENCODING_ERRORHANDLER "_unicode_string_encoding_errorhandler"
 #endif //LUNATIC_CONSTANTS_H
