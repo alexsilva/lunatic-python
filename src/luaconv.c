@@ -102,13 +102,7 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) lua_new_error(L, "failed to create arguments tuple");
-
-    // remove n attribute
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, "n");
-    lua_pushnil(L);
-    lua_rawsettable(L);
-
+    set_table_nil(L, ltable, "n"); // remove "n"
     int index = lua_next(L, ltable, 0);
     int count = 0, stackpos = 2;
     lua_Object larg;

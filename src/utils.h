@@ -40,6 +40,13 @@
     lua_pushstring(L, str);\
     lua_rawsettable(L);
 
+/* set object */
+#define set_table_nil(L, ltable, name) \
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushnil(L);\
+    lua_rawsettable(L);
+
 int calc_buff_size(int nargs, ...);
 void lua_new_error(lua_State *L, char *message);
 char *get_pyobject_str(PyObject *pyobject, char *dftstr);
