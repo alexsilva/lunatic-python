@@ -64,7 +64,7 @@ void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
 /**/
-py_object *py_object_container(lua_State *L, PyObject *obj, int asindx) {
+py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
     py_object *pobj = malloc(sizeof(py_object));
     if (!pobj) lua_error(L, "failed to allocate memory for container");
     pobj->asindx = asindx;
@@ -76,7 +76,7 @@ py_object *py_object_container(lua_State *L, PyObject *obj, int asindx) {
 }
 #pragma clang diagnostic pop
 
-Conversion push_pyobject_container(lua_State *L, PyObject *obj, int asindx) {
+Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
     lua_pushusertag(L, py_object_container(L, obj, asindx), get_base_tag(L));
     return WRAP;
 }
@@ -134,11 +134,11 @@ void lua_raw(lua_State *L) {
 }
 
 static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
-    int asindx = 0;
+    bool asindx = false;
     if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||
         PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
         PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
-        asindx = 1;
+        asindx = true;
     return push_pyobject_container(L, o, asindx);
 }
 

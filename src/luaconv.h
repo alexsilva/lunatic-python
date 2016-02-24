@@ -10,7 +10,7 @@
 
 typedef struct {
     PyObject *object;
-    int asindx;
+    bool asindx;
     bool isbase;
     bool isargs;
     bool iskwargs;

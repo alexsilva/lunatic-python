@@ -255,15 +255,15 @@ static void py_eval(lua_State *L) {
 }
 
 static void py_asindx(lua_State *L) {
-    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    push_pyobject_container(L, obj, 1);
-    Py_INCREF(obj);
+    lua_Object obj = lua_getparam(L, 1);
+    get_py_object(L, obj)->asindx = true;
+    lua_pushobject(L, obj);
 }
 
 static void py_asattr(lua_State *L) {
-    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    push_pyobject_container(L, obj, 0);
-    Py_INCREF(obj);
+    lua_Object obj = lua_getparam(L, 1);
+    get_py_object(L, obj)->asindx = false;
+    lua_pushobject(L, obj);
 }
 
 static void py_globals(lua_State *L) {
