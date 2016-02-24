@@ -53,7 +53,7 @@ int lua_gettop(lua_State *L) {
 
 /*Base table object*/
 int get_base_tag(lua_State *L) {
-    lua_Object python = lua_getglobal(L, PYTHON_API);
+    lua_Object python = lua_getglobal(L, PY_API_NAME);
     lua_pushobject(L, python);
     lua_pushstring(L, PY_OBJECT);
     return lua_tag(L, lua_gettable(L));
@@ -66,7 +66,7 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
 }
 
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
-    return getnumber(L, LUA_BASE_TAG, lobj);
+    return getnumber(L, PY_OBJECT_BASE_TAG, lobj);
 }
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
@@ -278,7 +278,7 @@ py_object *get_py_object(lua_State *L, lua_Object ltable) {
     po->o = (PyObject *) lua_getuserdata(L, lua_rawgettable(L));
 
     lua_pushobject(L, ltable);
-    lua_pushstring(L, PY_OBJECT_AS_INDEX);
+    lua_pushstring(L, PY_OBJECT_INDEX);
 
     po->asindx = (int) lua_getnumber(L, lua_rawgettable(L));
 

@@ -380,13 +380,13 @@ static void _set_string_encoding_errorhandler(lua_State *L, int stackpos) {
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
-        set_unicode_string(L, UNICODE_STRING_ENCODING_ERRORHANDLER, handler);
+        set_unicode_string(L, PY_UNICODE_ENCODING_ERRORHANDLER, handler);
     }
 }
 
 /* function that allows changing the default encoding */
 static void py_set_string_encoding(lua_State *L) {
-    set_unicode_string(L, UNICODE_STRING_ENCODING, luaL_check_string(L, 1));
+    set_unicode_string(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
     _set_string_encoding_errorhandler(L, 2);
 }
 
@@ -464,9 +464,9 @@ LUA_API int luaopen_python(lua_State *L) {
 
     lua_Object python = lua_createtable(L);
 
-    set_table_string(L, python, UNICODE_STRING_ENCODING, "utf8");
-    set_table_string(L, python, UNICODE_STRING_ENCODING_ERRORHANDLER, "strict");
-    set_table_number(L, python, OBJECT_BY_REFERENCE, 0);
+    set_table_string(L, python, PY_UNICODE_ENCODING, "utf8");
+    set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, "strict");
+    set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
@@ -478,7 +478,7 @@ LUA_API int luaopen_python(lua_State *L) {
     lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
 
     lua_pushobject(L, python);
-    lua_setglobal(L, PYTHON_API);  // api python
+    lua_setglobal(L, PY_API_NAME);  // api python
 
     int index = 0;
     while (py_lib[index].name) {
@@ -498,7 +498,7 @@ LUA_API int luaopen_python(lua_State *L) {
     // base python object
     lua_Object ltable = lua_createtable(L);
     set_table_object(L, python, PY_OBJECT, ltable);
-    set_table_number(L, python, LUA_BASE_TAG, 1);
+    set_table_number(L, python, PY_OBJECT_BASE_TAG, 1);
     // set tag
     lua_pushobject(L, ltable);
     lua_settag(L, ntag);

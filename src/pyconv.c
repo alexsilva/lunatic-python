@@ -9,20 +9,20 @@
 
 /* returns the encoding currently being used */
 char *get_unicode_encoding(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, UNICODE_STRING_ENCODING);
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, PY_UNICODE_ENCODING);
     return lua_getstring(L, lua_rawgettable(L));
 }
 
 /* returns the error handler in the conversion of unicode strings */
 char *get_unicode_errorhandler(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, UNICODE_STRING_ENCODING_ERRORHANDLER);
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, PY_UNICODE_ENCODING_ERRORHANDLER);
     return lua_getstring(L, lua_rawgettable(L));
 }
 
 void set_unicode_string(lua_State *L, char *name, char *value) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
     lua_pushstring(L, name);
     lua_pushstring(L, value);
     lua_rawsettable(L);
@@ -30,14 +30,14 @@ void set_unicode_string(lua_State *L, char *name, char *value) {
 
 /* It indicates whether the object reference should be returned */
 int get_isby_reference(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, OBJECT_BY_REFERENCE);
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, PY_OBJECT_BY_REFERENCE);
     return (int) lua_getnumber(L, lua_rawgettable(L));
 }
 
 void set_object_by_reference(lua_State *L, int n) {
-    lua_pushobject(L, lua_getglobal(L, PYTHON_API));
-    lua_pushstring(L, OBJECT_BY_REFERENCE);
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, PY_OBJECT_BY_REFERENCE);
     lua_pushnumber(L, n);
     lua_rawsettable(L);
 }
@@ -67,8 +67,8 @@ lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx) {
     lua_Object ltable = lua_createtable(L);
 
     set_table_userdata(L, ltable, PY_OBJECT, pobj);
-    set_table_number(L, ltable, PY_OBJECT_AS_INDEX, asindx);
-    set_table_number(L, ltable, LUA_BASE_TAG, 0);  // derived
+    set_table_number(L, ltable, PY_OBJECT_INDEX, asindx);
+    set_table_number(L, ltable, PY_OBJECT_BASE_TAG, 0);  // derived
 
     // register all tag methods
     int tag = get_base_tag(L);
