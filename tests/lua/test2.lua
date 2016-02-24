@@ -73,6 +73,11 @@ def TestFunc6(*args, **kwargs):
     assert kwargs == {}, '[TestFunc6] kwargs no match!'
 ]])
 
+python.execute([[
+def TestFunc7(*args):
+    assert cmp(args, ('a', 'b', 'c', 1, 2, 3)) == 0, '[TestFunc7] args no match!'
+    return args
+]])
 
 local index = 0
 while (index < 10) do
@@ -90,6 +95,9 @@ locals.TestFunc3(pyargs(1,2,3,4), pykwargs{a=1, b=2, c=3})
 locals.TestFunc4(pykwargs{a=1, b=2, c=3})
 locals.TestFunc5(pyargs(1,2,3,4))
 locals.TestFunc6(pyargs(), pykwargs{})
+
+-- test table -> tuple
+locals.TestFunc7(pyargs_array(locals.TestFunc7(pyargs_array{'a', 'b', 'c', 1, 2, 3})))
 
 -- lua callback teste
 function cmp_callback(a, b)
