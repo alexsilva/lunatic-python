@@ -95,11 +95,17 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
     return true;
 }
 
-/* Convert a lua table for python tuple */
+/* Returns the number of elements in a table */
+static int lua_tablesize(lua_State *L, lua_Object ltable) {
+    lua_pushobject(L, ltable); lua_call(L, "getn");
+    return (int) lua_getnumber(L, lua_getresult(L, 1));
+}
+
+/**
+ * Convert a lua table for python tuple
+ **/
 PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
-    lua_pushobject(L, ltable);
-    lua_call(L, "getn");
-    int nargs = (int) lua_getnumber(L, lua_getresult(L, 1));
+    int nargs = lua_tablesize(L, ltable);
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) lua_new_error(L, "failed to create arguments tuple");
     set_table_nil(L, ltable, "n"); // remove "n"
