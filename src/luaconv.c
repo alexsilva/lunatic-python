@@ -103,22 +103,29 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) lua_new_error(L, "failed to create arguments tuple");
     set_table_nil(L, ltable, "n"); // remove "n"
-    int index = lua_next(L, ltable, 0);
-    int count = 0, stackpos = 2;
+    int nextindex = lua_next(L, ltable, 0);
+    int index = 0, stackpos = 2;
     lua_Object larg;
     PyObject *arg;
-    while (index != 0) {
+    while (nextindex != 0) {
         larg = lua_getparam(L, stackpos);
         arg = lua_stack_convert(L, stackpos, larg);
+        if (!arg) {
+            Py_DECREF(tuple);
+            char *format = "failed to convert argument #%d";
+            char buff[strlen(format) + 32];
+            sprintf(buff, format, index + 1);
+            lua_error(L, &buff[0]);
+        }
         if (is_wrapped_object(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
-        if (PyTuple_SetItem(tuple, count, arg) != 0) {
+        if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
             Py_DECREF(tuple);
             lua_new_error(L, "failed to set item in tuple");
         }
-        index = lua_next(L, ltable, index);
-        count++;
+        nextindex = lua_next(L, ltable, nextindex);
+        index++;
     }
     return tuple;
 }
