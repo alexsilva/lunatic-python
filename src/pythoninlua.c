@@ -91,9 +91,9 @@ static void py_object_call(lua_State *L) {
         }
     } else {
         char *name = get_pyobject_str(obj, "...");
-        char *error = "call python function \"%s\"";
-        char buff[calc_buff_size(2, error, name)];
-        sprintf(buff, error, name);
+        char *format = "call function python \"%s\"";
+        char buff[calc_buff_size(2, format, name)];
+        sprintf(buff, format, name);
         lua_new_error(L, buff);
     }
 }
