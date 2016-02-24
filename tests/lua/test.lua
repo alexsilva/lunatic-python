@@ -45,10 +45,10 @@ while (index > 0) do
 end
 
 local globals = python.globals()
-assert(type(globals) == "table", "globals is not a table")
+assert(type(globals) == "userdata", "globals is not a table")
 
 local builtins = python.builtins()
-assert(type(builtins) == "table", "builtins is not a table")
+assert(type(builtins) == "userdata", "builtins is not a table")
 
 python.execute('import sys')
 local sys = python.eval("sys")
