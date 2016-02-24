@@ -425,26 +425,27 @@ static void python_is_embedded(lua_State *L) {
 static struct luaL_reg py_lib[] = {
     {"execute",     py_execute},
     {"eval",        py_eval},
-    {"asindex",     py_asindx},
-    {"asattr",      py_asattr},
-    {"str",                 py_object_tostring},
-    {"locals",              py_locals},
-    {"globals",                    py_globals},
-    {"builtins",                   py_builtins},
-    {"import",                     py_import},
-    {"system_init",                python_system_init},
-    {"system_exit",                python_system_exit},
-    {"args"       ,                py_args},
-    {"kwargs"     ,                py_kwargs},
-    {"is_embedded",                python_is_embedded},
-    {"raw"        ,                lua_raw},
-    {"get_version",                py_get_version},
-    {"set_string_encoding",        py_set_string_encoding},
+    {"asindex",                          py_asindx},
+    {"asattr",                           py_asattr},
+    {"str",                              py_object_tostring},
+    {"locals",                           py_locals},
+    {"globals",                          py_globals},
+    {"builtins",                         py_builtins},
+    {"import",                           py_import},
+    {"system_init",                      python_system_init},
+    {"system_exit",                      python_system_exit},
+    {"args"       ,                      py_args},
+    {"kwargs"     ,                      py_kwargs},
+    {"args_array"       ,                py_args_array},
+    {"is_embedded",                      python_is_embedded},
+    {"raw"        ,                      lua_raw},
+    {"get_version",                      py_get_version},
+    {"set_string_encoding",              py_set_string_encoding},
     {"set_string_encoding_errorhandler", py_set_string_encoding_errorhandler},
-    {"get_string_encoding",        py_get_string_encoding},
+    {"get_string_encoding",              py_get_string_encoding},
     {"get_string_encoding_errorhandler", py_get_string_encoding_errorhandler},
-    {"byref",                      py_byref},
-    {"byrefc",                     py_byrefc},
+    {"byref",                            py_byref},
+    {"byrefc",                           py_byrefc},
     {NULL, NULL}
 };
 
@@ -472,6 +473,9 @@ LUA_API int luaopen_python(lua_State *L) {
 
     lua_pushcfunction(L, py_kwargs);
     lua_setglobal(L, PY_KWARGS_FUNC);
+
+    lua_pushcfunction(L, py_args_array);
+    lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
 
     lua_pushobject(L, python);
     lua_setglobal(L, PYTHON_API);  // api python

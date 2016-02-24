@@ -74,14 +74,14 @@ int is_wrapped_object(lua_State *L, lua_Object lobj) {
 }
 
 int is_wrapped_args(lua_State *L, lua_Object lwtable) {
-    return is_wrapped_object(L, lwtable) && getnumber(L, PY_ARGS, lwtable);
+    return is_wrapped_object(L, lwtable) && getnumber(L, PY_ARGS_WRAP, lwtable);
 }
 
 int is_wrapped_kwargs(lua_State *L, lua_Object lwtable) {
-    return is_wrapped_object(L, lwtable) && getnumber(L, PY_KWARGS, lwtable);
+    return is_wrapped_object(L, lwtable) && getnumber(L, PY_KWARGS_WRAP, lwtable);
 }
 
-/*checks if a table contains only numbers as keys*/
+/* Checks if a table contains only numbers as keys */
 bool is_indexed_array(lua_State *L, lua_Object ltable) {
     int index = lua_next(L, ltable, 0);
     lua_Object key;
@@ -95,7 +95,7 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
     return true;
 }
 
-/* convert to args python: fn(*args) */
+/* Convert a lua table for python tuple */
 PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     lua_pushobject(L, ltable);
     lua_call(L, "getn");
@@ -129,7 +129,7 @@ PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
     return tuple;
 }
 
-/* convert to args python: fn(*args) */
+/* Convert arguments in the stack lua to tuple */
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
@@ -159,12 +159,28 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     return tuple;
 }
 
+/* Converts the list of arguments in the stack for python args: fn(*args) */
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
     lua_Object lwtable = py_object_wrapped(L, tuple, 1);
-    set_table_number(L, lwtable, PY_ARGS, 1);
+    set_table_number(L, lwtable, PY_ARGS_WRAP, 1);
     lua_pushobject(L, lwtable); // returning table
 }
+
+/* convert a table or a tuple for python args: fn(*args) */
+void py_args_array(lua_State *L) {
+    lua_Object lobj = lua_getparam(L, 1);
+    PyObject *pobj;
+    if (is_wrapped_object(L, lobj)) {
+        pobj = get_pobject(L, lobj);
+    } else {
+        pobj = _get_py_tuple(L, lobj);
+    }
+    lua_Object lwtable = py_object_wrapped(L, pobj, 1);
+    set_table_number(L, lwtable, PY_ARGS_WRAP, 1);
+    lua_pushobject(L, lwtable); // returning table
+}
+
 
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
@@ -207,7 +223,7 @@ void py_kwargs(lua_State *L) {
     }
     PyObject *dict = get_py_dict(L, ltable);
     lua_Object lwtable = py_object_wrapped(L, dict, 1);
-    set_table_number(L, lwtable, PY_KWARGS, 1);
+    set_table_number(L, lwtable, PY_KWARGS_WRAP, 1);
     lua_pushobject(L, lwtable); // returning table
 }
 
