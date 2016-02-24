@@ -153,7 +153,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
             char *error = "failed to convert argument #%d";
             char buff[strlen(error) + 10];
             sprintf(buff, error, index + 1);
-            lua_error(L, &buff[0]);
+            lua_new_error(L, &buff[0]);
         }
         if (is_wrapped_object(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
@@ -201,9 +201,25 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         stackpos = 1;
         lkey = lua_getparam(L, stackpos);
         key = lua_stack_convert(L, stackpos, lkey);
+        if (!key) {
+            Py_DECREF(dict);
+            char *skey = get_pyobject_str(key, "...");
+            char *format = "failed to convert key \"%s\"";
+            char buff[strlen(format) + strlen(skey)];
+            sprintf(buff, format, skey);
+            lua_new_error(L, &buff[0]);
+        }
         stackpos = 2;
         lvalue = lua_getparam(L, stackpos);
         value = lua_stack_convert(L, stackpos, lvalue);
+        if (!value) {
+            Py_DECREF(dict);
+            char *skey = get_pyobject_str(key, "...");
+            char *format = "failed to convert value of key \"%s\"";
+            char buff[strlen(format) + strlen(skey)];
+            sprintf(buff, format, skey);
+            lua_new_error(L, &buff[0]);
+        }
         if (PyDict_SetItem(dict, key, value) != 0) {
             Py_XDECREF(key);
             Py_XDECREF(value);
