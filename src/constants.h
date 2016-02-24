@@ -9,7 +9,7 @@
 
 // Object wrap names
 #define PY_OBJECT "_python_object"
-#define PY_OBJECT_BASE_TAG "_python_object_base_tag"
+#define PY_OBJECT_BASE "_python_object_base"
 #define PY_ARGS_WRAP "_python_args"
 #define PY_KWARGS_WRAP "_python_kwargs"
 #define PY_OBJECT_INDEX "_python_object_index"

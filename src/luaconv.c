@@ -66,7 +66,7 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
 }
 
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
-    return getnumber(L, PY_OBJECT_BASE_TAG, lobj);
+    return getnumber(L, PY_OBJECT_BASE, lobj);
 }
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
