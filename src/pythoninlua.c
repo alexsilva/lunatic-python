@@ -176,8 +176,11 @@ static void py_object_index(lua_State *L) {
 }
 
 static void py_object_gc(lua_State *L) {
-    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    Py_XDECREF(obj);
+    py_object *pobj = lua_getuserdata(L, lua_getparam(L, 1));
+    if (pobj) {
+        Py_XDECREF(pobj->object);
+        free(pobj);
+    }
 }
 
 static void py_object_tostring(lua_State *L) {
