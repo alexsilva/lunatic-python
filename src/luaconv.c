@@ -104,7 +104,7 @@ static int lua_tablesize(lua_State *L, lua_Object ltable) {
 /**
  * Convert a lua table for python tuple
  **/
-PyObject *_get_py_tuple(lua_State *L, lua_Object ltable) {
+PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     int nargs = lua_tablesize(L, ltable);
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) lua_new_error(L, "failed to create arguments tuple");
@@ -181,7 +181,7 @@ void py_args_array(lua_State *L) {
     if (is_wrapped_object(L, lobj)) {
         pobj = get_pobject(L, lobj);
     } else {
-        pobj = _get_py_tuple(L, lobj);
+        pobj = ltable_convert_tuple(L, lobj);
     }
     lua_Object lwtable = py_object_wrapped(L, pobj, 1);
     set_table_number(L, lwtable, PY_ARGS_WRAP, 1);
@@ -318,7 +318,7 @@ static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyOb
         if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
             *ret = LuaObject_PyNew(interpreter, lobj);
         } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
-            *ret = _get_py_tuple(interpreter->L, lobj);
+            *ret = ltable_convert_tuple(interpreter->L, lobj);
         } else {
             *ret = get_py_dict(interpreter->L, lobj);
         }
