@@ -45,8 +45,8 @@ bool PYTHON_EMBEDDED_MODE = false;
 
 
 static void py_object_call(lua_State *L) {
-    PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    if (!PyCallable_Check(obj)) {
+    py_object *obj = get_py_object(L, lua_getparam(L, 1));
+    if (!PyCallable_Check(obj->object)) {
         lua_error(L, "object is not callable");
     }
     PyObject *args = NULL;
@@ -82,7 +82,7 @@ static void py_object_call(lua_State *L) {
         is_wrap_args = false;
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
-    value = PyObject_Call(obj, args, kwargs); // fn(*args, **kwargs)
+    value = PyObject_Call(obj->object, args, kwargs); // fn(*args, **kwargs)
     if (!is_wrap_args) Py_XDECREF(args);
     if (!is_wrap_kwargs) Py_XDECREF(kwargs);
     if (value) {
@@ -90,7 +90,7 @@ static void py_object_call(lua_State *L) {
             Py_DECREF(value);
         }
     } else {
-        char *name = get_pyobject_str(obj, "...");
+        char *name = get_pyobject_str(obj->object, "...");
         char *format = "call function python \"%s\"";
         char buff[calc_buff_size(2, format, name)];
         sprintf(buff, format, name);
@@ -101,38 +101,31 @@ static void py_object_call(lua_State *L) {
 static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int valuen) {
     lua_Object lkey = lua_getparam(L, keyn);
     PyObject *key = lua_stack_convert(L, keyn, lkey);
-    if (!key) {
-        free(pobj);
-        luaL_argerror(L, 1, "failed to convert key");
-    }
+    if (!key) luaL_argerror(L, 1, "failed to convert key");
     lua_Object lval = lua_getparam(L, valuen);
     if (!lua_isnil(L, lval)) {
         PyObject *value = lua_stack_convert(L, valuen, lval);
         if (!value) {
             if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
-            free(pobj);
             luaL_argerror(L, 1, "failed to convert value");
         }
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
         if (pobj->asindx) {
-            if (PyObject_SetItem(pobj->o, key, value) == -1) {
+            if (PyObject_SetItem(pobj->object, key, value) == -1) {
                 if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
                 if (!is_wrapped_object(L, lval)) Py_DECREF(value);
-                free(pobj);
                 lua_new_error(L, "failed to set item");
             }
-        } else if (PyObject_SetAttr(pobj->o, key, value) == -1) {
+        } else if (PyObject_SetAttr(pobj->object, key, value) == -1) {
             if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
             if (!is_wrapped_object(L, lval)) Py_DECREF(value);
-            free(pobj);
             lua_new_error(L, "failed to set item");
         }
         if (!is_wrapped_object(L, lval))
             Py_DECREF(value);
     } else {
-        if (PyObject_DelItem(pobj->o, key) == -1) {
+        if (PyObject_DelItem(pobj->object, key) == -1) {
             if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
-            free(pobj);
             lua_new_error(L, "failed to delete item");
         }
     }
@@ -142,12 +135,11 @@ static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int v
 }
 
 static void py_object_newindex_set(lua_State *L) {
-    py_object *pobj = get_py_object_stack(L, 1);
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
     if (lua_gettop(L) < 2) {
         lua_error(L, "invalid arguments");
     }
     _p_object_newindex_set(L, pobj, 2, 3);
-    free(pobj);
 }
 
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
@@ -155,23 +147,18 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
     PyObject *key = lua_stack_convert(L, keyn, lobj);
     Conversion ret = UNTOUCHED;
     PyObject *item;
-    if (!key) {
-        free(pobj);
-        luaL_argerror(L, 1, "failed to convert key");
-    }
+    if (!key) luaL_argerror(L, 1, "failed to convert key");
     if (pobj->asindx) {
-        item = PyObject_GetItem(pobj->o, key);
+        item = PyObject_GetItem(pobj->object, key);
     } else {
-        item = PyObject_GetAttr(pobj->o, key);
+        item = PyObject_GetAttr(pobj->object, key);
     }
     if (item) {
         if ((ret = py_convert(L, item)) == CONVERTED) {
             Py_DECREF(item);
         }
     } else {
-        if (!is_wrapped_object(L, lobj))
-            Py_DECREF(key);
-        free(pobj);
+        if (!is_wrapped_object(L, lobj)) Py_DECREF(key);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
         char *skey = get_pyobject_str(key, "...");
@@ -185,9 +172,7 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
 }
 
 static void py_object_index(lua_State *L) {
-    py_object *pobj = get_py_object_stack(L, 1);
-    get_py_object_index(L, pobj, 2);
-    free(pobj);
+    get_py_object_index(L, get_py_object(L, lua_getparam(L, 1)), 2);
 }
 
 static void py_object_gc(lua_State *L) {
@@ -451,7 +436,7 @@ static struct luaL_reg py_lib[] = {
 
 static struct luaL_reg lua_tag_methods[] = {
     {"function", py_object_call},
-    {"index",    py_object_index},
+    {"gettable", py_object_index},
     {"settable", py_object_newindex_set},
     {"gc",       py_object_gc},
     {NULL, NULL}
@@ -505,15 +490,15 @@ LUA_API int luaopen_python(lua_State *L) {
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);
-    set_table_object(L, python, PY_TRUE, py_object_wrapped(L, pyObject, 0));
+    set_table_userdata(L, python, PY_TRUE, py_object_container(L, pyObject, 0));
 
     pyObject = Py_False;
     Py_INCREF(pyObject);
-    set_table_object(L, python, PY_FALSE, py_object_wrapped(L, pyObject, 0));
+    set_table_userdata(L, python, PY_FALSE, py_object_container(L, pyObject, 0));
 
     pyObject = Py_None;
     Py_INCREF(pyObject);
-    set_table_object(L, python, PY_NONE, py_object_wrapped(L, pyObject, 0));
+    set_table_userdata(L, python, PY_NONE, py_object_container(L, pyObject, 0));
     return 0;
 }
 

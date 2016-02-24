@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "lua.h"
 #include "luainpython.h"
+#include "luaconv.h"
 
 #define LuaObject_Check(op) PyObject_TypeCheck(op, &LuaObject_Type)
 
@@ -36,8 +37,8 @@ void set_unicode_string(lua_State *L, char *name, char *value);
 char *get_unicode_encoding(lua_State *L);
 char *get_unicode_errorhandler(lua_State *L);
 
-lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx);
-Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx);
+py_object *py_object_container(lua_State *L, PyObject *obj, int asindx);
+Conversion py_object_wrap_lua(lua_State *L, PyObject *obj, int asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
 void lua_raw(lua_State *L);
 

@@ -3,7 +3,6 @@
 //
 
 #include "pyconv.h"
-#include "luaconv.h"
 #include "utils.h"
 #include "constants.h"
 
@@ -62,24 +61,21 @@ void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
     Py_DECREF(obj);
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 /**/
-lua_Object py_object_wrapped(lua_State *L, PyObject *pobj, int asindx) {
-    lua_Object ltable = lua_createtable(L);
-
-    set_table_userdata(L, ltable, PY_OBJECT, pobj);
-    set_table_number(L, ltable, PY_OBJECT_INDEX, asindx);
-    set_table_number(L, ltable, PY_OBJECT_BASE, 0);  // derived
-
-    // register all tag methods
-    int tag = get_base_tag(L);
-    lua_pushobject(L, ltable);
-    lua_settag(L, tag);
-
-    return ltable;
+py_object *py_object_container(lua_State *L, PyObject *obj, int asindx) {
+    py_object *pobj = malloc(sizeof(py_object));
+    if (!pobj) lua_error(L, "failed to allocate memory for container");
+    pobj->asindx = asindx;
+    pobj->isbase = false;
+    pobj->object = obj;
+    return pobj;
 }
+#pragma clang diagnostic pop
 
-Conversion py_object_wrap_lua(lua_State *L, PyObject *pobj, int asindx) {
-    lua_pushobject(L, py_object_wrapped(L, pobj, asindx)); // returning table
+Conversion py_object_wrap_lua(lua_State *L, PyObject *obj, int asindx) {
+    lua_pushusertag(L, py_object_container(L, obj, asindx), get_base_tag(L));
     return WRAP;
 }
 
@@ -128,9 +124,8 @@ lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyOb
 void lua_raw(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_wrapped_object(L, lobj)) {
-        py_object *obj = get_py_object_stack(L, 1);
-        lua_pushobject(L, _lua_object_raw(L, obj->o, 0, NULL));
-        free(obj);
+        py_object *obj = get_py_object(L, lobj);
+        lua_pushobject(L, _lua_object_raw(L, obj->object, 0, NULL));
     } else {
         lua_pushobject(L, lobj);
     }

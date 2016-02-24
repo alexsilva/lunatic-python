@@ -66,19 +66,20 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
 }
 
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
-    return getnumber(L, PY_OBJECT_BASE, lobj);
+    py_object *pobj = (py_object *) lua_getuserdata(L, lobj);
+    return pobj->isbase;
 }
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
-    return lua_istable(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
+    return lua_isuserdata(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
 }
 
-int is_wrapped_args(lua_State *L, lua_Object lwtable) {
-    return is_wrapped_object(L, lwtable) && getnumber(L, PY_ARGS_WRAP, lwtable);
+bool is_wrapped_args(lua_State *L, lua_Object userdata) {
+    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->isargs : false;
 }
 
-int is_wrapped_kwargs(lua_State *L, lua_Object lwtable) {
-    return is_wrapped_object(L, lwtable) && getnumber(L, PY_KWARGS_WRAP, lwtable);
+bool is_wrapped_kwargs(lua_State *L, lua_Object userdata) {
+    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->isargs : false;
 }
 
 /* Checks if a table contains only numbers as keys */
@@ -169,25 +170,24 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 /* Converts the list of arguments in the stack for python args: fn(*args) */
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
-    lua_Object lwtable = py_object_wrapped(L, tuple, 1);
-    set_table_number(L, lwtable, PY_ARGS_WRAP, 1);
-    lua_pushobject(L, lwtable); // returning table
+    py_object *pobj = py_object_container(L, tuple, 1);
+    lua_pushusertag(L, pobj, get_base_tag(L));
+    pobj->isargs = true;
 }
 
 /* convert a table or a tuple for python args: fn(*args) */
 void py_args_array(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
-    PyObject *pobj;
+    PyObject *obj;
     if (is_wrapped_object(L, lobj)) {
-        pobj = get_pobject(L, lobj);
+        obj = get_pobject(L, lobj);
     } else {
-        pobj = ltable_convert_tuple(L, lobj);
+        obj = ltable_convert_tuple(L, lobj);
     }
-    lua_Object lwtable = py_object_wrapped(L, pobj, 1);
-    set_table_number(L, lwtable, PY_ARGS_WRAP, 1);
-    lua_pushobject(L, lwtable); // returning table
+    py_object *pobj = py_object_container(L, obj, 1);
+    lua_pushusertag(L, pobj, get_base_tag(L));
+    pobj->isargs = true;
 }
-
 
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
@@ -245,54 +245,25 @@ void py_kwargs(lua_State *L) {
         lua_error(L, "first arg need be table ex: pykwargs{a=10}");
     }
     PyObject *dict = get_py_dict(L, ltable);
-    lua_Object lwtable = py_object_wrapped(L, dict, 1);
-    set_table_number(L, lwtable, PY_KWARGS_WRAP, 1);
-    lua_pushobject(L, lwtable); // returning table
+    py_object *pobj = py_object_container(L, dict, 1);
+    lua_pushusertag(L, pobj, get_base_tag(L));
+    pobj->iskwargs = true;
 }
 
 /*get py object from wrap table (direct access) */
-PyObject *get_pobject(lua_State *L, lua_Object ltable) {
-    if (!is_wrapped_object(L, ltable))
-        lua_error(L, "wrap table not found!");
-
-    // python object recover
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, PY_OBJECT);
-
-    return lua_getuserdata(L, lua_rawgettable(L));
+PyObject *get_pobject(lua_State *L, lua_Object userdata) {
+    if (!is_wrapped_object(L, userdata))
+        lua_error(L, "data invalid!");
+    py_object *pobj = (py_object *) lua_getuserdata(L, userdata);
+    return pobj->object;
 }
 
 /*get py object from wrap table */
-py_object *get_py_object(lua_State *L, lua_Object ltable) {
-    if (!is_wrapped_object(L, ltable))
-        lua_error(L, "wrap table not found!");
-
-    py_object *po = (py_object *) malloc(sizeof(py_object));
-    if (po == NULL) {
-        lua_error(L, "out of memory!");
-    }
-    // python object recover
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, PY_OBJECT);
-
-    po->o = (PyObject *) lua_getuserdata(L, lua_rawgettable(L));
-
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, PY_OBJECT_INDEX);
-
-    po->asindx = (int) lua_getnumber(L, lua_rawgettable(L));
-
-    // python object recover
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, PY_OBJECT_META);
-
-    po->meta = (py_object_meta *) lua_getuserdata(L, lua_rawgettable(L));
-    return po;
-}
-
-/* get py object in stack */
-py_object *get_py_object_stack(lua_State *L, int n) {
-    return get_py_object(L, lua_getparam(L, n));
+py_object *get_py_object(lua_State *L, lua_Object userdata) {
+    if (!is_wrapped_object(L, userdata))
+        lua_error(L, "data invalid!");
+    py_object *pobj = (py_object *) lua_getuserdata(L, userdata);
+    return pobj;
 }
 
 static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
