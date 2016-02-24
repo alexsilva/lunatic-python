@@ -58,8 +58,8 @@ static void py_object_call(lua_State *L) {
     lua_Object largs = lua_getparam(L, 2);
     lua_Object lkwargs = lua_getparam(L, nargs > 1 ? 3 : 2);
 
-    int is_wrap_args = is_wrapped_args(L, largs);
-    int is_wrap_kwargs = is_wrapped_kwargs(L, lkwargs);
+    bool is_wrap_args = is_wrapped_args(L, largs);
+    bool is_wrap_kwargs = is_wrapped_kwargs(L, lkwargs);
 
     if (nargs == 1 && (is_wrap_args || is_wrap_kwargs)) {
         PyObject *pobj = get_pobject(L, largs);
@@ -490,15 +490,15 @@ LUA_API int luaopen_python(lua_State *L) {
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);
-    set_table_userdata(L, python, PY_TRUE, py_object_container(L, pyObject, 0));
+    set_table_usertag(L, python, PY_TRUE, py_object_container(L, pyObject, 0), ntag);
 
     pyObject = Py_False;
     Py_INCREF(pyObject);
-    set_table_userdata(L, python, PY_FALSE, py_object_container(L, pyObject, 0));
+    set_table_usertag(L, python, PY_FALSE, py_object_container(L, pyObject, 0), ntag);
 
     pyObject = Py_None;
     Py_INCREF(pyObject);
-    set_table_userdata(L, python, PY_NONE, py_object_container(L, pyObject, 0));
+    set_table_usertag(L, python, PY_NONE, py_object_container(L, pyObject, 0), ntag);
     return 0;
 }
 

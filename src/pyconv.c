@@ -70,6 +70,8 @@ py_object *py_object_container(lua_State *L, PyObject *obj, int asindx) {
     pobj->asindx = asindx;
     pobj->isbase = false;
     pobj->object = obj;
+    pobj->isargs = false;
+    pobj->iskwargs = false;
     return pobj;
 }
 #pragma clang diagnostic pop

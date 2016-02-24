@@ -79,7 +79,7 @@ bool is_wrapped_args(lua_State *L, lua_Object userdata) {
 }
 
 bool is_wrapped_kwargs(lua_State *L, lua_Object userdata) {
-    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->isargs : false;
+    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->iskwargs : false;
 }
 
 /* Checks if a table contains only numbers as keys */
@@ -282,25 +282,23 @@ static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 }
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
-    if (is_wrapped_object(interpreter->L, lobj)) {
-        *ret = get_pobject(interpreter->L, lobj);
+    lua_beginblock(interpreter->L);
+    if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
+        *ret = LuaObject_PyNew(interpreter, lobj);
+    } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
+        *ret = ltable_convert_tuple(interpreter->L, lobj);
     } else {
-        lua_beginblock(interpreter->L);
-        if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
-            *ret = LuaObject_PyNew(interpreter, lobj);
-        } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
-            *ret = ltable_convert_tuple(interpreter->L, lobj);
-        } else {
-            *ret = get_py_dict(interpreter->L, lobj);
-        }
-        lua_endblock(interpreter->L);
+        *ret = get_py_dict(interpreter->L, lobj);
     }
+    lua_endblock(interpreter->L);
 }
 
 static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
     if (void_ptr) {
-        if (PYTHON_EMBEDDED_MODE) {
+        if (is_wrapped_object(interpreter->L, lobj)) {
+            *ret = get_pobject(interpreter->L, lobj);
+        } else if (PYTHON_EMBEDDED_MODE) {
             *ret = (PyObject *) void_ptr;
         } else {
             *ret = LuaObject_PyNew(interpreter, lobj);

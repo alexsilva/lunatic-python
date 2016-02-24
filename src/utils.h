@@ -12,6 +12,13 @@
     lua_pushuserdata(L, udata);\
     lua_rawsettable(L);
 
+/* set userdata */
+#define set_table_usertag(L, ltable, name, udata, ntag)\
+    lua_pushobject(L, ltable);\
+    lua_pushstring(L, name);\
+    lua_pushusertag(L, udata, ntag);\
+    lua_rawsettable(L);
+
 /* set number */
 #define set_table_number(L, ltable, name, number)\
     lua_pushobject(L, ltable);\
