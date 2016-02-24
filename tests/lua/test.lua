@@ -66,7 +66,7 @@ Lua also offers good support for object-oriented programming, functional program
 Lua is intended to be used as a powerful, lightweight, embeddable scripting language for any program that needs one.
 Lua is implemented as a library, written in clean C, the common subset of Standard C and C++.
 ]]
-assert(builtins.len(string) == strlen(string))
+assert(builtins.len(string) == strlen(string), "strlen no match")
 
 local struct = python.import("struct")
 local bstr = struct.pack('hhl', 1, 2, 3)
@@ -84,7 +84,7 @@ assert(res[2] == 3, "binary string no match")
 
 python.execute('import json')
 local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300, "items": 100}')]])
-assert(type(loadjson) == "table")
+assert(type(loadjson) == "userdata", "json type error")
 
 assert(loadjson["a"] == 100)
 assert(loadjson["b"] == 2000)
