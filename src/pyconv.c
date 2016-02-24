@@ -76,7 +76,7 @@ py_object *py_object_container(lua_State *L, PyObject *obj, int asindx) {
 }
 #pragma clang diagnostic pop
 
-Conversion py_object_wrap_lua(lua_State *L, PyObject *obj, int asindx) {
+Conversion push_pyobject_container(lua_State *L, PyObject *obj, int asindx) {
     lua_pushusertag(L, py_object_container(L, obj, asindx), get_base_tag(L));
     return WRAP;
 }
@@ -139,7 +139,7 @@ static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
         PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
         PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
         asindx = 1;
-    return py_object_wrap_lua(L, o, asindx);
+    return push_pyobject_container(L, o, asindx);
 }
 
 Conversion py_convert(lua_State *L, PyObject *o) {

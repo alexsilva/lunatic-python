@@ -256,13 +256,13 @@ static void py_eval(lua_State *L) {
 
 static void py_asindx(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    py_object_wrap_lua(L, obj, 1);
+    push_pyobject_container(L, obj, 1);
     Py_INCREF(obj);
 }
 
 static void py_asattr(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    py_object_wrap_lua(L, obj, 0);
+    push_pyobject_container(L, obj, 0);
     Py_INCREF(obj);
 }
 
@@ -283,7 +283,7 @@ static void py_globals(lua_State *L) {
         lua_new_error(L, "can't get globals");
     }
     Py_INCREF(globals);
-    py_object_wrap_lua(L, globals, 1);
+    push_pyobject_container(L, globals, 1);
 }
 
 static void py_locals(lua_State *L) {
@@ -297,7 +297,7 @@ static void py_locals(lua_State *L) {
         return;
     }
     Py_INCREF(locals);
-    py_object_wrap_lua(L, locals, 1);
+    push_pyobject_container(L, locals, 1);
 }
 
 static void py_builtins(lua_State *L) {
@@ -310,7 +310,7 @@ static void py_builtins(lua_State *L) {
         lua_new_error(L, "failed to get builtins");
     }
     Py_INCREF(builtins);
-    py_object_wrap_lua(L, builtins, 1);
+    push_pyobject_container(L, builtins, 1);
 }
 
 static void py_import(lua_State *L) {
@@ -326,7 +326,7 @@ static void py_import(lua_State *L) {
         sprintf(buff, error, name);
         lua_new_error(L, buff);
     }
-    py_object_wrap_lua(L, module, 0);
+    push_pyobject_container(L, module, 0);
 }
 
 /* return version of the python extension */

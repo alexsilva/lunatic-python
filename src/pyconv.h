@@ -38,7 +38,7 @@ char *get_unicode_encoding(lua_State *L);
 char *get_unicode_errorhandler(lua_State *L);
 
 py_object *py_object_container(lua_State *L, PyObject *obj, int asindx);
-Conversion py_object_wrap_lua(lua_State *L, PyObject *obj, int asindx);
+Conversion push_pyobject_container(lua_State *L, PyObject *obj, int asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
 void lua_raw(lua_State *L);
 
