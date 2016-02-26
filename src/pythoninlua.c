@@ -516,7 +516,7 @@ static void python_system_init(lua_State *L) {
         }
         PyObject *luam, *mainm, *maind;
 #if PY_MAJOR_VERSION >= 3
-        wchar_t *argv[] = {L"<lua>", 0};
+        wchar_t *argv[] = {L"<lua_bootstrap>", 0};
 #else
         char *argv[] = {"<lua_bootstrap>", 0};
 #endif
