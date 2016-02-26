@@ -37,9 +37,6 @@
 #include "utils.h"
 #include "constants.h"
 
-// Variable to know in mode python was started (Inside Lua embedded).
-bool PYTHON_EMBEDDED_MODE = false;
-
 // Extension version python
 #define PY_EXT_VERSION "1.5.7"
 
