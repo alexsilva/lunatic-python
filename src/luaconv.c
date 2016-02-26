@@ -65,10 +65,14 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
     return (int) lua_getnumber(L, lua_rawgettable(L));
 }
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
     py_object *pobj = (py_object *) lua_getuserdata(L, lobj);
+    if (!pobj) lua_error(L, "#1 container for invalid pyobject");
     return pobj->isbase;
 }
+#pragma clang diagnostic pop
 
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
     return lua_isuserdata(L, lobj) && get_base_tag(L) == lua_tag(L, lobj) && !is_wrap_base(L, lobj);
@@ -253,7 +257,7 @@ void py_kwargs(lua_State *L) {
 /*get py object from wrap table (direct access) */
 PyObject *get_pobject(lua_State *L, lua_Object userdata) {
     if (!is_wrapped_object(L, userdata))
-        lua_error(L, "data invalid!");
+        lua_error(L, "#2 container for invalid pyobject!");
     py_object *pobj = (py_object *) lua_getuserdata(L, userdata);
     return pobj->object;
 }
@@ -261,7 +265,7 @@ PyObject *get_pobject(lua_State *L, lua_Object userdata) {
 /*get py object from wrap table */
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_wrapped_object(L, userdata))
-        lua_error(L, "data invalid!");
+        lua_error(L, "#3 container for invalid pyobject!");
     py_object *pobj = (py_object *) lua_getuserdata(L, userdata);
     return pobj;
 }
