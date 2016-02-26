@@ -349,7 +349,7 @@ static void py_byrefc(lua_State *L) {
 }
 
 /* allows the setting error control string in unicode string conversion */
-static void _set_string_encoding_errorhandler(lua_State *L, int stackpos) {
+static void _set_unicode_encoding_errorhandler(lua_State *L, int stackpos) {
     lua_Object lobj = lua_getparam(L, stackpos);
     if (lua_isstring(L, lobj)) {
         char *handler = lua_getstring(L, lobj);
@@ -373,23 +373,23 @@ static void _set_string_encoding_errorhandler(lua_State *L, int stackpos) {
 }
 
 /* function that allows changing the default encoding */
-static void py_set_string_encoding(lua_State *L) {
+static void py_set_unicode_encoding(lua_State *L) {
     set_unicode_string(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
-    _set_string_encoding_errorhandler(L, 2);
+    _set_unicode_encoding_errorhandler(L, 2);
 }
 
 /* Allows the setting error control string in unicode string conversion */
-static void py_set_string_encoding_errorhandler(lua_State *L) {
-    _set_string_encoding_errorhandler(L, 1);
+static void py_set_unicode_encoding_errorhandler(lua_State *L) {
+    _set_unicode_encoding_errorhandler(L, 1);
 }
 
 /* Returns the encoding used in the string conversion */
-static void py_get_string_encoding(lua_State *L) {
+static void py_get_unicode_encoding(lua_State *L) {
     lua_pushstring(L, get_unicode_encoding(L));
 }
 
 /* Returns the string of errors controller */
-static void py_get_string_encoding_errorhandler(lua_State *L) {
+static void py_get_unicode_encoding_errorhandler(lua_State *L) {
     lua_pushstring(L, get_unicode_errorhandler(L));
 }
 
@@ -419,21 +419,21 @@ static struct luaL_reg py_lib[] = {
     {"locals",                           py_locals},
     {"globals",                          py_globals},
     {"builtins",                         py_builtins},
-    {"import",                           py_import},
-    {"system_init",                      python_system_init},
-    {"system_exit",                      python_system_exit},
-    {"args"       ,                      py_args},
-    {"kwargs"     ,                      py_kwargs},
-    {"args_array"       ,                py_args_array},
-    {"is_embedded",                      python_is_embedded},
-    {"raw"        ,                      lua_raw},
-    {"get_version",                      py_get_version},
-    {"set_string_encoding",              py_set_string_encoding},
-    {"set_string_encoding_errorhandler", py_set_string_encoding_errorhandler},
-    {"get_string_encoding",              py_get_string_encoding},
-    {"get_string_encoding_errorhandler", py_get_string_encoding_errorhandler},
-    {"byref",                            py_byref},
-    {"byrefc",                           py_byrefc},
+    {"import",                            py_import},
+    {"system_init",                       python_system_init},
+    {"system_exit",                       python_system_exit},
+    {"args"       ,                       py_args},
+    {"kwargs"     ,                       py_kwargs},
+    {"args_array"       ,                 py_args_array},
+    {"is_embedded",                       python_is_embedded},
+    {"raw"        ,                       lua_raw},
+    {"get_version",                       py_get_version},
+    {"set_unicode_encoding",              py_set_unicode_encoding},
+    {"get_unicode_encoding",              py_get_unicode_encoding},
+    {"get_unicode_encoding_errorhandler", py_get_unicode_encoding_errorhandler},
+    {"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
+    {"byref",                             py_byref},
+    {"byrefc",                            py_byrefc},
     {NULL, NULL}
 };
 
