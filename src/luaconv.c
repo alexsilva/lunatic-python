@@ -69,7 +69,7 @@ static int getnumber(lua_State *L, char *name, lua_Object ltable) {
 #pragma ide diagnostic ignored "OCDFAInspection"
 static int is_wrap_base(lua_State *L, lua_Object lobj) {
     py_object *pobj = (py_object *) lua_getuserdata(L, lobj);
-    if (!pobj) lua_error(L, "#1 container for invalid pyobject");
+    if (!pobj) lua_error(L, "#1 container for invalid pyobject!");
     return pobj->isbase;
 }
 #pragma clang diagnostic pop
