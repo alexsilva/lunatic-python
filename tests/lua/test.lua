@@ -37,12 +37,9 @@ assert(builtins.bool(python.False) == nil, "False boolean check error")
 assert(builtins.bool(python.True) == 1, "True boolean check error")
 
 local sys = python.import("sys")
-local index = builtins.len(sys.path)
+
 print("Python sys.path")
-while (index > 0) do
-    print(index, sys.path[index - 1])
-    index = index - 1
-end
+builtins.map(function(path) print(path) end, sys.path)
 
 local globals = python.globals()
 assert(type(globals) == "userdata", "globals is not a table")
