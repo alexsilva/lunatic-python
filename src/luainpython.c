@@ -27,7 +27,6 @@
 #include "luainpython.h"
 
 #include "pyconv.h"
-#include "luaconv.h"
 
 #ifndef lua_next
 #include "lapi.h"
@@ -72,7 +71,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
         char *name;  // get function name
         lua_getobjname(self->interpreter->L, lobj, &name);
         name = name ? name : "...";
-        char *format = "function call (%s)";
+        char *format = "call function lua (%s)";
         char buff[calc_buff_size(2, format, name)];
         sprintf(buff, format, name);
         python_new_error(PyExc_RuntimeError, &buff[0]);
