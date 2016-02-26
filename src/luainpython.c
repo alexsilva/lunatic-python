@@ -57,13 +57,11 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     for (i = 0; i != nargs; i++) {
         arg = PyTuple_GetItem(args, i);
         if (arg == NULL) {
-            PyErr_Format(PyExc_TypeError,
-                     "failed to get tuple item #%d", i);
+            PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", i);
             return NULL;
         }
         if (py_convert(self->interpreter->L, arg) == UNTOUCHED) {
-            PyErr_Format(PyExc_TypeError,
-                     "failed to convert argument #%d", i);
+            PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", i);
             return NULL;
         }
     }
@@ -81,22 +79,19 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     if (nargs == 1) {
         ret = lua_interpreter_stack_convert(self->interpreter, 1);
         if (!ret) {
-            PyErr_SetString(PyExc_TypeError,
-                        "failed to convert return");
+            PyErr_SetString(PyExc_TypeError, "failed to convert return");
             return NULL;
         }
     } else if (nargs > 1) {
         ret = PyTuple_New(nargs);
         if (!ret) {
-            PyErr_SetString(PyExc_RuntimeError,
-                    "failed to create return tuple");
+            PyErr_SetString(PyExc_RuntimeError, "failed to create return tuple");
             return NULL;
         }
         for (i = 0; i != nargs; i++) {
             arg = lua_interpreter_stack_convert(self->interpreter, i + 1);
             if (!arg) {
-                PyErr_Format(PyExc_TypeError,
-                         "failed to convert return #%d", i);
+                PyErr_Format(PyExc_TypeError, "failed to convert return #%d", i);
                 Py_DECREF(ret);
                 return NULL;
             }
@@ -386,14 +381,12 @@ PyObject *Interpreter_globals(InterpreterObject *self, PyObject *args) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getglobal(self->L, "_G");
     if (lua_isnil(self->L, lobj)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                "lost globals reference");
+        PyErr_SetString(PyExc_RuntimeError, "lost globals reference");
         return NULL;
     }
     ret = lua_interpreter_stack_convert(self, 1);
     if (!ret)
-        PyErr_Format(PyExc_TypeError,
-                 "failed to convert globals table");
+        PyErr_Format(PyExc_TypeError, "failed to convert globals table");
     return ret;
 }
 
