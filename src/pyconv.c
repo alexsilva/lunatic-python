@@ -44,9 +44,7 @@ void set_object_by_reference(lua_State *L, int n) {
 /* python string bytes */
 void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
     PyString_AsStringAndSize(o, &str->buff, &str->size);
-    if (!str->buff) {
-        lua_new_error(L, "converting python string");
-    }
+    if (!str->buff) lua_new_error(L, "converting python string");
 }
 
 /* python string unicode */
@@ -54,9 +52,7 @@ void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
     char *encoding = get_unicode_encoding(L);
     char *errorhandler = get_unicode_errorhandler(L);
     PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errorhandler);
-    if (!obj) {
-        lua_new_error(L, "converting unicode string");
-    }
+    if (!obj) lua_new_error(L, "converting unicode string");
     pyobject_as_string(L, obj, str);
     Py_DECREF(obj);
 }
