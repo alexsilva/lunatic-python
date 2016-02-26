@@ -29,7 +29,6 @@
 typedef struct {
     PyObject_HEAD
     lua_State *L;
-    bool allocated;
     bool isPyType;
 } InterpreterObject;
 

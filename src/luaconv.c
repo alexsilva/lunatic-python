@@ -35,7 +35,6 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
 #pragma ide diagnostic ignored "OCDFAInspection"
             obj->interpreter->L = L;
             obj->interpreter->isPyType = false;  // fake type
-            obj->interpreter->allocated = true;
 #pragma clang diagnostic pop
         }
 

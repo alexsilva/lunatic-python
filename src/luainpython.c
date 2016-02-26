@@ -108,7 +108,7 @@ static void LuaObject_dealloc(LuaObject *self) {
     lua_beginblock(self->interpreter->L);
     lua_unref(self->interpreter->L, self->ref);
     lua_endblock(self->interpreter->L);
-    if (self->interpreter->allocated) {
+    if (!self->interpreter->isPyType) {
         self->interpreter->L = NULL;
         free(self->interpreter);
     } else {
@@ -432,7 +432,6 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
-    self->allocated = false;
     self->isPyType = true;
     luaopen_python(self->L);
     return 0;
