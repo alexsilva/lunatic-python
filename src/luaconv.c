@@ -46,6 +46,9 @@ PyObject *LuaObject_New(InterpreterObject *interpreter, int n) {
     return LuaObject_PyNew(interpreter, lua_getparam(interpreter->L, n));
 }
 
+/**
+ * Returns the number of objects on the Lua stack.
+**/
 int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
