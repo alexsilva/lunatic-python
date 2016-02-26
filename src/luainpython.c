@@ -25,13 +25,11 @@
 
 #include "pythoninlua.h"
 #include "luainpython.h"
-
 #include "pyconv.h"
+#include "utils.h"
 
 #ifndef lua_next
 #include "lapi.h"
-#include "utils.h"
-
 #else
 #include "lshared.h"
 #endif
