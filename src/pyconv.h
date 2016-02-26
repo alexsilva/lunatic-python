@@ -31,12 +31,6 @@ typedef enum {
     WRAP = 2
 } Conversion;
 
-void set_object_by_reference(lua_State *L, int n);
-void set_unicode_string(lua_State *L, char *name, char *value);
-
-char *get_unicode_encoding(lua_State *L);
-char *get_unicode_errorhandler(lua_State *L);
-
 py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx);
 Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx);
 Conversion py_convert(lua_State *L, PyObject *o);

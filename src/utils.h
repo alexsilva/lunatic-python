@@ -60,6 +60,8 @@ char *get_pyobject_str(PyObject *pyobject, char *dftstr);
 void python_new_error(PyObject *exception, char *message);
 int python_getnumber(lua_State *L, char *name);
 char *python_getstring(lua_State *L, char *name);
+void python_setstring(lua_State *L, char *name, char *value);
+void python_setnumber(lua_State *L, char *name, int value);
 
 #ifndef strdup
 char *strdup(const char *s);

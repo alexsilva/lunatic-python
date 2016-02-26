@@ -336,16 +336,16 @@ static void py_get_version(lua_State *L) {
 
 /* Turn off the conversion of object */
 static void py_byref(lua_State *L) {
-    set_object_by_reference(L, 1);
+    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 1);
     py_object_index(L);
-    set_object_by_reference(L, 0);
+    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
 }
 
 /* Turn off the conversion of object */
 static void py_byrefc(lua_State *L) {
-    set_object_by_reference(L, 1);
+    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 1);
     py_object_call(L);
-    set_object_by_reference(L, 0);
+    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
 }
 
 /* allows the setting error control string in unicode string conversion */
@@ -368,13 +368,13 @@ static void _set_unicode_encoding_errorhandler(lua_State *L, int stackpos) {
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
-        set_unicode_string(L, PY_UNICODE_ENCODING_ERRORHANDLER, handler);
+        python_setstring(L, PY_UNICODE_ENCODING_ERRORHANDLER, handler);
     }
 }
 
 /* function that allows changing the default encoding */
 static void py_set_unicode_encoding(lua_State *L) {
-    set_unicode_string(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
+    python_setstring(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
     _set_unicode_encoding_errorhandler(L, 2);
 }
 
@@ -385,12 +385,12 @@ static void py_set_unicode_encoding_errorhandler(lua_State *L) {
 
 /* Returns the encoding used in the string conversion */
 static void py_get_unicode_encoding(lua_State *L) {
-    lua_pushstring(L, get_unicode_encoding(L));
+    lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING));
 }
 
 /* Returns the string of errors controller */
 static void py_get_unicode_encoding_errorhandler(lua_State *L) {
-    lua_pushstring(L, get_unicode_errorhandler(L));
+    lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER));
 }
 
 static void python_system_init(lua_State *L);

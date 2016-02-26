@@ -23,6 +23,16 @@ char *python_getstring(lua_State *L, char *name) {
     return lua_getstring(L, lua_rawgettable(L));
 }
 
+/* Returns the string value stored in the API */
+void python_setstring(lua_State *L, char *name, char *value) {
+    set_table_string(L, lua_getglobal(L, PY_API_NAME), name, value);
+}
+
+/* Returns the string value stored in the API */
+void python_setnumber(lua_State *L, char *name, int value) {
+    set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
+}
+
 #ifndef strdup
 char *strdup(const char * s) {
     size_t len = strlen(s) + 1;

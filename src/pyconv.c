@@ -6,41 +6,6 @@
 #include "utils.h"
 #include "constants.h"
 
-/* returns the encoding currently being used */
-char *get_unicode_encoding(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, PY_UNICODE_ENCODING);
-    return lua_getstring(L, lua_rawgettable(L));
-}
-
-/* returns the error handler in the conversion of unicode strings */
-char *get_unicode_errorhandler(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, PY_UNICODE_ENCODING_ERRORHANDLER);
-    return lua_getstring(L, lua_rawgettable(L));
-}
-
-void set_unicode_string(lua_State *L, char *name, char *value) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    lua_pushstring(L, value);
-    lua_rawsettable(L);
-}
-
-/* It indicates whether the object reference should be returned */
-int get_isby_reference(lua_State *L) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, PY_OBJECT_BY_REFERENCE);
-    return (int) lua_getnumber(L, lua_rawgettable(L));
-}
-
-void set_object_by_reference(lua_State *L, int n) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, PY_OBJECT_BY_REFERENCE);
-    lua_pushnumber(L, n);
-    lua_rawsettable(L);
-}
-
 /* python string bytes */
 void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
     PyString_AsStringAndSize(o, &str->buff, &str->size);
@@ -49,8 +14,8 @@ void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
 
 /* python string unicode */
 void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
-    char *encoding = get_unicode_encoding(L);
-    char *errorhandler = get_unicode_errorhandler(L);
+    char *encoding = python_getstring(L, PY_UNICODE_ENCODING);
+    char *errorhandler = python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER);
     PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errorhandler);
     if (!obj) lua_new_error(L, "converting unicode string");
     pyobject_as_string(L, obj, str);
@@ -154,7 +119,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        if (get_isby_reference(L)) {
+        if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
@@ -163,7 +128,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = CONVERTED;
         }
     } else if (PyUnicode_Check(o)) {
-        if (get_isby_reference(L)) {
+        if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
