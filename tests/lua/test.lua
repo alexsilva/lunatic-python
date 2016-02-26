@@ -47,6 +47,29 @@ assert(type(globals) == "userdata", "globals is not a table")
 local builtins = python.builtins()
 assert(type(builtins) == "userdata", "builtins is not a table")
 
+-- encoding
+local encodingdefault = python.get_unicode_encoding()
+local errorhandlerdefault = python.get_unicode_encoding_errorhandler()
+local errorhandler = "strict"
+local encoding = "latin1"
+
+python.set_unicode_encoding(encoding, errorhandler)
+assert(python.get_unicode_encoding() == encoding, "invalid encoding check!")
+assert(python.get_unicode_encoding_errorhandler() == errorhandler, "invalid encoding errorhandler check!")
+
+-- references
+local strref = python.byrefc(builtins.str, "python")
+assert(builtins.isinstance(strref, builtins.tuple({builtins.str, builtins.unicode})), "type ref check error!")
+assert(strref.upper() == "PYTHON", "invalid ref call") -- Only works in the model references
+
+local key = "name"
+local d = builtins.dict(); d[key] = strref.upper()
+local object = builtins.type("ObjectC", builtins.tuple(), d)
+assert(python.byref(object, key).lower(), "python") -- Only works in the model references
+
+-- set default encondig...
+python.set_unicode_encoding(encodingdefault, errorhandlerdefault)
+
 python.execute('import sys')
 local sys = python.eval("sys")
 
