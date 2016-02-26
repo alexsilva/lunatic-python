@@ -30,7 +30,7 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
         } else {
             lua_State *L = interpreter->L;
             obj->interpreter = malloc(sizeof(InterpreterObject));
-            if (!obj->interpreter) lua_error(L, "out of memory!");
+            if (!obj->interpreter) lua_error(L, "failed to allocate memory for the interpreter!");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
             obj->interpreter->L = L;
