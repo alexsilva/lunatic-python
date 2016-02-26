@@ -180,12 +180,22 @@ void py_args(lua_State *L) {
     pobj->isargs = true;
 }
 
-/* convert a table or a tuple for python args: fn(*args) */
+/* Convert a table or a tuple for python args: fn(*args) */
 void py_args_array(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     PyObject *obj;
     if (is_wrapped_object(L, lobj)) {
         obj = get_pobject(L, lobj);
+        // arguments must be tuple (conversion solves this)
+        if (PyObject_IsInstance(obj, (PyObject *) &PyList_Type)) {  // tuple(list)
+            obj = PyList_AsTuple(obj);
+        } else if (!PyObject_IsInstance(obj, (PyObject *) &PyTuple_Type)) {  // invalid type
+            const char *repr = obj->ob_type->tp_name ? obj->ob_type->tp_name : "?";
+            char *format = "object type \"%s\" can not be converted to args!";
+            char buff[strlen(format) + strlen(repr)];
+            sprintf(buff, format, repr);
+            lua_new_error(L, &buff[0]);
+        }
     } else {
         obj = ltable_convert_tuple(L, lobj);
     }
