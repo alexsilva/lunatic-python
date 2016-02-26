@@ -397,13 +397,13 @@ static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L) {
-    if (Py_IsInitialized() && PYTHON_EMBEDDED_MODE)
+    if (Py_IsInitialized() && python_getnumber(L, PY_API_IS_EMBEDDED))
         Py_Finalize();
 }
 
 /* Indicates if Python interpreter was embedded in the Lua */
 static void python_is_embedded(lua_State *L) {
-    if (PYTHON_EMBEDDED_MODE) {
+    if (python_getnumber(L, PY_API_IS_EMBEDDED)) {
         lua_pushnumber(L, 1);
     } else {
         lua_pushnil(L);
@@ -448,13 +448,12 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    PYTHON_EMBEDDED_MODE = false;  // If Python is inside Lua
-
     lua_Object python = lua_createtable(L);
 
     set_table_string(L, python, PY_UNICODE_ENCODING, "utf8");
     set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, "strict");
     set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
+    set_table_number(L, python, PY_API_IS_EMBEDDED, 0);  // If Python is inside Lua
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
@@ -509,7 +508,8 @@ LUA_API int luaopen_python(lua_State *L) {
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
-        PYTHON_EMBEDDED_MODE = true; // If Python is inside Lua
+        // If Python is inside Lua
+        set_table_number(L, lua_getglobal(L, PY_API_NAME), PY_API_IS_EMBEDDED, 1);
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {

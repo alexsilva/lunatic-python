@@ -7,6 +7,21 @@
 #include <lua.h>
 #include <Python.h>
 #include "utils.h"
+#include "constants.h"
+
+/* Returns the numeric value stored in API */
+int python_getnumber(lua_State *L, char *name) {
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, name);
+    return (int) lua_getnumber(L, lua_rawgettable(L));
+}
+
+/* Returns the string value stored in the API */
+char *python_getstring(lua_State *L, char *name) {
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_pushstring(L, name);
+    return lua_getstring(L, lua_rawgettable(L));
+}
 
 #ifndef strdup
 char *strdup(const char * s) {

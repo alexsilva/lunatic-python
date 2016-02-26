@@ -26,9 +26,6 @@
 #include <stdbool.h>
 #include <lua.h>
 
-// Variable to know in mode python was started.
-extern bool  PYTHON_EMBEDDED_MODE;
-
 #if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
 #else //  GCC

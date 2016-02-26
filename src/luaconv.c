@@ -12,7 +12,6 @@
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
-#include "pythoninlua.h"
 #include "constants.h"
 
 
@@ -287,7 +286,7 @@ static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     lua_beginblock(interpreter->L);
-    if (!PYTHON_EMBEDDED_MODE) { // Lua inside Python
+    if (!python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { // Lua inside Python
         *ret = LuaObject_PyNew(interpreter, lobj);
     } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
         *ret = ltable_convert_tuple(interpreter->L, lobj);
@@ -302,7 +301,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
     if (void_ptr) {
         if (is_wrapped_object(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
-        } else if (PYTHON_EMBEDDED_MODE) {
+        } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) {
             *ret = (PyObject *) void_ptr;
         } else {
             *ret = LuaObject_PyNew(interpreter, lobj);
