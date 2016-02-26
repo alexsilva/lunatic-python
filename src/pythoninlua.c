@@ -508,8 +508,7 @@ LUA_API int luaopen_python(lua_State *L) {
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
-        // If Python is inside Lua
-        set_table_number(L, lua_getglobal(L, PY_API_NAME), PY_API_IS_EMBEDDED, 1);
+        python_setnumber(L, PY_API_IS_EMBEDDED, 1); // If python is inside Lua
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {
