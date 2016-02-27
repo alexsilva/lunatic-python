@@ -22,8 +22,9 @@ print(format("python ext <%s> is embedded in lua <%s>", python.get_version(), to
 local builtins = python.builtins()
 local os = python.import("os")
 
-local str = "maçã"
+assert(tag(builtins) == python.tag() and tag(os) == python.tag(), "invalid base tag!")
 
+local str = "maçã"
 assert(builtins.unicode(str, 'utf-8') == str)
 
 local types = python.import("types")
