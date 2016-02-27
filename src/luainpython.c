@@ -275,9 +275,7 @@ static int LuaObject_length(LuaObject *self) {
     } else if (lua_isstring(self->interpreter->L, lobj)) {
         len = lua_strlen(self->interpreter->L, lobj);
     } else if (lua_istable(self->interpreter->L, lobj)) {
-        lua_pushobject(self->interpreter->L, lobj);
-        lua_call(self->interpreter->L, "getn");
-        len = (int) lua_getnumber(self->interpreter->L, lua_getresult(self->interpreter->L, 1));
+        len = lua_tablesize(self->interpreter->L, lobj);
     }
     lua_endblock(self->interpreter->L);
     return len;

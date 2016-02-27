@@ -88,12 +88,6 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
     return true;
 }
 
-/* Returns the number of elements in a table */
-static int lua_tablesize(lua_State *L, lua_Object ltable) {
-    lua_pushobject(L, ltable); lua_call(L, "getn");
-    return (int) lua_getnumber(L, lua_getresult(L, 1));
-}
-
 /**
  * Convert a lua table for python tuple
  **/

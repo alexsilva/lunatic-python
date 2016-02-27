@@ -33,6 +33,13 @@ void python_setnumber(lua_State *L, char *name, int value) {
     set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
 }
 
+/* Returns the number of elements in a table */
+int lua_tablesize(lua_State *L, lua_Object ltable) {
+    lua_pushobject(L, ltable);
+    lua_call(L, "getn");
+    return (int) lua_getnumber(L, lua_getresult(L, 1));
+}
+
 #ifndef strdup
 char *strdup(const char * s) {
     size_t len = strlen(s) + 1;
