@@ -261,14 +261,14 @@ void py_kwargs(lua_State *L) {
 /*get py object from wrap table (direct access) */
 PyObject *get_pobject(lua_State *L, lua_Object userdata) {
     if (!is_wrapped_object(L, userdata))
-        lua_error(L, "#2 container for invalid pyobject!");
+        lua_error(L, "#1 container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata))->object;
 }
 
 /*get py object from wrap table */
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_wrapped_object(L, userdata))
-        lua_error(L, "#3 container for invalid pyobject!");
+        lua_error(L, "#2 container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
 }
 
