@@ -33,6 +33,13 @@ void python_setnumber(lua_State *L, char *name, int value) {
     set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
 }
 
+/**
+ * Tag event base
+ **/
+int python_api_tag(lua_State *L) {
+    return python_getnumber(L, PY_API_TAG);
+}
+
 /* Returns the number of elements in a table */
 int lua_tablesize(lua_State *L, lua_Object ltable) {
     lua_pushobject(L, ltable);

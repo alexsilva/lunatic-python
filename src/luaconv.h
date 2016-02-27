@@ -22,7 +22,6 @@ int is_wrapped_object(lua_State *L, lua_Object lobj);
 bool is_indexed_array(lua_State *L, lua_Object ltable);
 bool is_wrapped_args(lua_State *L, lua_Object userdata);
 bool is_wrapped_kwargs(lua_State *L, lua_Object userdata);
-int get_base_tag(lua_State *L);
 
 PyObject *get_py_tuple(lua_State *, int stackpos);
 PyObject *ltable_convert_tuple(lua_State *, lua_Object lobj);

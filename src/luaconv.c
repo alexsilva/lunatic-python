@@ -53,17 +53,10 @@ int lua_gettop(lua_State *L) {
 }
 
 /**
- * Tag event base
- **/
-int get_base_tag(lua_State *L) {
-    return python_getnumber(L, PY_API_TAG);
-}
-
-/**
  * Checks whether the object is a Lua userdata containing the tag event base.
  **/
 int is_wrapped_object(lua_State *L, lua_Object lobj) {
-    return lua_isuserdata(L, lobj) && lua_tag(L, lobj) == get_base_tag(L);
+    return lua_isuserdata(L, lobj) && lua_tag(L, lobj) == python_api_tag(L);
 }
 
 bool is_wrapped_args(lua_State *L, lua_Object userdata) {
@@ -157,7 +150,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 void py_args(lua_State *L) {
     PyObject *tuple = get_py_tuple(L, 0);
     py_object *pobj = py_object_container(L, tuple, 1);
-    lua_pushusertag(L, pobj, get_base_tag(L));
+    lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
 }
 
@@ -181,7 +174,7 @@ void py_args_array(lua_State *L) {
         obj = ltable_convert_tuple(L, lobj);
     }
     py_object *pobj = py_object_container(L, obj, 1);
-    lua_pushusertag(L, pobj, get_base_tag(L));
+    lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
 }
 
@@ -242,7 +235,7 @@ void py_kwargs(lua_State *L) {
     }
     PyObject *dict = get_py_dict(L, ltable);
     py_object *pobj = py_object_container(L, dict, 1);
-    lua_pushusertag(L, pobj, get_base_tag(L));
+    lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->iskwargs = true;
 }
 

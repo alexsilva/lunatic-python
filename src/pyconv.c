@@ -37,7 +37,7 @@ py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
 #pragma clang diagnostic pop
 
 Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
-    lua_pushusertag(L, py_object_container(L, obj, asindx), get_base_tag(L));
+    lua_pushusertag(L, py_object_container(L, obj, asindx), python_api_tag(L));
     return WRAPPED;
 }
 

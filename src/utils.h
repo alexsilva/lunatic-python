@@ -63,6 +63,7 @@ char *python_getstring(lua_State *L, char *name);
 void python_setstring(lua_State *L, char *name, char *value);
 void python_setnumber(lua_State *L, char *name, int value);
 int lua_tablesize(lua_State *L, lua_Object ltable);
+int python_api_tag(lua_State *L);
 
 #ifndef strdup
 char *strdup(const char *s);
