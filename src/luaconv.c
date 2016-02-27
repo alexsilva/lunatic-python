@@ -52,12 +52,11 @@ int lua_gettop(lua_State *L) {
     return L->Cstack.num;
 }
 
-/*Base table object*/
+/**
+ * Tag event base
+ **/
 int get_base_tag(lua_State *L) {
-    lua_Object python = lua_getglobal(L, PY_API_NAME);
-    lua_pushobject(L, python);
-    lua_pushstring(L, PY_OBJECT);
-    return lua_tag(L, lua_gettable(L));
+    return python_getnumber(L, PY_BASE_TAG);
 }
 
 static int getnumber(lua_State *L, char *name, lua_Object ltable) {

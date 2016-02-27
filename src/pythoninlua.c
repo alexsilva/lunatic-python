@@ -479,13 +479,8 @@ LUA_API int luaopen_python(lua_State *L) {
         index++;
     }
 
-    // base python object
-    lua_Object ltable = lua_createtable(L);
-    set_table_object(L, python, PY_OBJECT, ltable);
-    set_table_number(L, python, PY_OBJECT_BASE, 1);
-    // set tag
-    lua_pushobject(L, ltable);
-    lua_settag(L, ntag);
+    // tag event
+    set_table_number(L, python, PY_BASE_TAG, ntag);
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);

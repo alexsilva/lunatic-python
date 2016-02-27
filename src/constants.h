@@ -8,8 +8,7 @@
 #define PY_API_NAME "python"
 
 // Object wrap names
-#define PY_OBJECT "_python_object"
-#define PY_OBJECT_BASE "_python_object_base"
+#define PY_BASE_TAG "_python_base_tag"
 #define PY_UNICODE_ENCODING_ERRORHANDLER "_python_unicode_encoding_errorhandler"
 #define PY_UNICODE_ENCODING "_python_unicode_encoding"
 #define PY_OBJECT_BY_REFERENCE "_python_object_by_reference"
