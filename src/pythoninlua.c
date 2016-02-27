@@ -347,7 +347,7 @@ static void py_byrefc(lua_State *L) {
 
 /* Returns the number of registration of the events tag */
 static void py_get_tag(lua_State *L) {
-    lua_pushnumber(L, python_getnumber(L, PY_BASE_TAG));
+    lua_pushnumber(L, python_getnumber(L, PY_API_TAG));
 }
 
 /* allows the setting error control string in unicode string conversion */
@@ -486,7 +486,7 @@ LUA_API int luaopen_python(lua_State *L) {
     }
 
     // tag event
-    set_table_number(L, python, PY_BASE_TAG, ntag);
+    set_table_number(L, python, PY_API_TAG, ntag);
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);

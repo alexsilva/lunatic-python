@@ -56,7 +56,7 @@ int lua_gettop(lua_State *L) {
  * Tag event base
  **/
 int get_base_tag(lua_State *L) {
-    return python_getnumber(L, PY_BASE_TAG);
+    return python_getnumber(L, PY_API_TAG);
 }
 
 /**
