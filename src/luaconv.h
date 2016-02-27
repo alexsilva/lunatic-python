@@ -11,7 +11,6 @@
 typedef struct {
     PyObject *object;
     bool asindx;
-    bool isbase;
     bool isargs;
     bool iskwargs;
 } py_object;

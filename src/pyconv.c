@@ -29,7 +29,6 @@ py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
     py_object *pobj = malloc(sizeof(py_object));
     if (!pobj) lua_error(L, "failed to allocate memory for container");
     pobj->asindx = asindx;
-    pobj->isbase = false;
     pobj->object = obj;
     pobj->isargs = false;
     pobj->iskwargs = false;
