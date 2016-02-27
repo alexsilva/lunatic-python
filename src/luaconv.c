@@ -59,12 +59,6 @@ int get_base_tag(lua_State *L) {
     return python_getnumber(L, PY_BASE_TAG);
 }
 
-static int getnumber(lua_State *L, char *name, lua_Object ltable) {
-    lua_pushobject(L, ltable);
-    lua_pushstring(L, name);
-    return (int) lua_getnumber(L, lua_rawgettable(L));
-}
-
 /**
  * Checks whether the object is a Lua userdata containing the tag event base.
  **/
