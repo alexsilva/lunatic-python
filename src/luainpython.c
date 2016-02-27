@@ -128,9 +128,19 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     }
     PyObject *ret = NULL;
     lua_pushobject(self->interpreter->L, ltable); // push table
-
     if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
         lua_Object lobj = lua_gettable(self->interpreter->L);
+        //  it indicates that the Lua table has not the attr
+        if (lua_isnil(self->interpreter->L, lobj)) {
+            // allows access references set in the object python
+            if (!(ret = PyObject_GenericGetAttr((PyObject *)self, attr))) {
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+                    return NULL;
+                PyErr_Clear();
+            } else {
+                return ret;
+            }
+        }
         ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
         if (is_wrapped_object(self->interpreter->L, lobj)) {
             // The object will be shared with the python which in turn will remove a reference.
@@ -245,6 +255,14 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     return ret;
 }
 
+/**
+ * Returns the iteration index of object to zero.
+**/
+static PyObject *LuaObject_iterindex_reset(LuaObject *self) {
+    self->refiter = 0;
+    Py_RETURN_NONE;
+}
+
 static int LuaObject_length(LuaObject *self) {
     lua_beginblock(self->interpreter->L);
     int len = 0;
@@ -270,6 +288,11 @@ static int LuaObject_ass_subscript(LuaObject *self, PyObject *key, PyObject *val
     return LuaObject_setattr(self, key, value);
 }
 
+static PyMethodDef LuaObject_methods[] = {
+    {"iterindex_reset", (PyCFunction) LuaObject_iterindex_reset, METH_NOARGS},
+    {NULL, NULL}
+};
+
 static PyMappingMethods LuaObject_as_mapping = {
 #if PY_VERSION_HEX >= 0x02050000
     (lenfunc)LuaObject_length,    /*mp_length*/
@@ -282,7 +305,7 @@ static PyMappingMethods LuaObject_as_mapping = {
 
 PyTypeObject LuaObject_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "lua.LuaObject",             /*tp_name*/
+    "lua.LuaObject",          /*tp_name*/
     sizeof(LuaObject),        /*tp_basicsize*/
     0,                        /*tp_itemsize*/
     (destructor)LuaObject_dealloc, /*tp_dealloc*/
@@ -296,7 +319,7 @@ PyTypeObject LuaObject_Type = {
     &LuaObject_as_mapping,    /*tp_as_mapping*/
     0,                        /*tp_hash*/
     (ternaryfunc) LuaObject_call, /*tp_call*/
-    (reprfunc) LuaObject_str,     /*tp_str*/
+    (reprfunc) LuaObject_str, /*tp_str*/
     (getattrofunc) LuaObject_getattr, /*tp_getattro*/
     (setattrofunc) LuaObject_setattr, /*tp_setattro*/
     0,                        /*tp_as_buffer*/
@@ -308,7 +331,7 @@ PyTypeObject LuaObject_Type = {
     0,                        /*tp_weaklistoffset*/
     PyObject_SelfIter,        /*tp_iter*/
     (iternextfunc)LuaObject_iternext, /*tp_iternext*/
-    0,                        /*tp_methods*/
+    LuaObject_methods,        /*tp_methods*/
     0,                        /*tp_members*/
     0,                        /*tp_getset*/
     0,                        /*tp_base*/
@@ -319,7 +342,7 @@ PyTypeObject LuaObject_Type = {
     0,                        /*tp_init*/
     PyType_GenericAlloc,      /*tp_alloc*/
     PyType_GenericNew,        /*tp_new*/
-    PyObject_Del,            /*tp_free*/
+    PyObject_Del,             /*tp_free*/
     0,                        /*tp_is_gc*/
 };
 
