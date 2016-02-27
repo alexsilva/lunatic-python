@@ -345,6 +345,11 @@ static void py_byrefc(lua_State *L) {
     python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
 }
 
+/* Returns the number of registration of the events tag */
+static void py_get_tag(lua_State *L) {
+    lua_pushnumber(L, python_getnumber(L, PY_BASE_TAG));
+}
+
 /* allows the setting error control string in unicode string conversion */
 static void _set_unicode_encoding_errorhandler(lua_State *L, int stackpos) {
     lua_Object lobj = lua_getparam(L, stackpos);
@@ -431,6 +436,7 @@ static struct luaL_reg py_lib[] = {
     {"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
     {"byref",                             py_byref},
     {"byrefc",                            py_byrefc},
+    {"tag",                               py_get_tag},
     {NULL, NULL}
 };
 
