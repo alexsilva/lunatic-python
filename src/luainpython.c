@@ -250,6 +250,9 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
             // python does not know that the lua is managing the reference.
             Py_INCREF(ret);
         }
+    } else {
+        /* Raising of standard StopIteration exception with empty value. */
+        PyErr_SetNone(PyExc_StopIteration);
     }
     lua_endblock(self->interpreter->L);
     return ret;
