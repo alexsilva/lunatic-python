@@ -58,7 +58,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", i);
             return NULL;
         }
-        if (py_convert(self->interpreter->L, arg) == UNTOUCHED) {
+        if (py_convert(self->interpreter->L, arg) == UNCHANGED) {
             PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", i);
             return NULL;
         }
@@ -129,7 +129,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     PyObject *ret = NULL;
     lua_pushobject(self->interpreter->L, ltable); // push table
 
-    if (py_convert(self->interpreter->L, attr) != UNTOUCHED) { // push key
+    if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
         lua_Object lobj = lua_gettable(self->interpreter->L);
         ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
         if (is_wrapped_object(self->interpreter->L, lobj)) {
@@ -167,7 +167,7 @@ static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
         }
         if (rc) {
             lua_settable(self->interpreter->L);
-            ret = UNTOUCHED;
+            ret = UNCHANGED;
         } else {
             PyErr_SetString(PyExc_ValueError, "can't convert value");
         }

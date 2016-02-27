@@ -26,9 +26,9 @@ typedef struct STRING {
 } String;
 
 typedef enum {
-    UNTOUCHED = 0,
+    UNCHANGED = 0,
     CONVERTED = 1,
-    WRAP = 2
+    WRAPPED = 2
 } Conversion;
 
 py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx);

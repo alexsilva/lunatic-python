@@ -142,7 +142,7 @@ static void py_object_newindex_set(lua_State *L) {
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
     lua_Object lobj = lua_getparam(L, keyn);
     PyObject *key = lua_stack_convert(L, keyn, lobj);
-    Conversion ret = UNTOUCHED;
+    Conversion ret = UNCHANGED;
     PyObject *item;
     if (!key) luaL_argerror(L, 1, "failed to convert key");
     if (pobj->asindx) {

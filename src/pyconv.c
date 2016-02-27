@@ -38,7 +38,7 @@ py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
 
 Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
     lua_pushusertag(L, py_object_container(L, obj, asindx), get_base_tag(L));
-    return WRAP;
+    return WRAPPED;
 }
 
 lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
