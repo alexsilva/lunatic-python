@@ -251,18 +251,33 @@ static void py_eval(lua_State *L) {
     py_run(L, 1);
 }
 
+/**
+ * Change the mode of access to object references to indexes
+ * Ex:
+ * local sys = python.import(sys)
+ * sys.path[0]  # '0' as index (default)
+**/
 static void py_asindx(lua_State *L) {
     lua_Object obj = lua_getparam(L, 1);
     get_py_object(L, obj)->asindx = true;
     lua_pushobject(L, obj);
 }
 
+/**
+ * Change the mode of access to object references to attributes
+ * Ex:
+ * local sys = python.import(sys)
+ * python.asattr(sys.path).pop(0) # 'pop' as attribute
+**/
 static void py_asattr(lua_State *L) {
     lua_Object obj = lua_getparam(L, 1);
     get_py_object(L, obj)->asindx = false;
     lua_pushobject(L, obj);
 }
 
+/**
+ * Returns the globals dictionary
+**/
 static void py_globals(lua_State *L) {
     PyObject *globals;
     if (lua_gettop(L) != 0) {
@@ -283,6 +298,9 @@ static void py_globals(lua_State *L) {
     push_pyobject_container(L, globals, 1);
 }
 
+/**
+ * Returns the locals dictionary
+**/
 static void py_locals(lua_State *L) {
     PyObject *locals;
     if (lua_gettop(L) != 0) {
@@ -297,6 +315,9 @@ static void py_locals(lua_State *L) {
     push_pyobject_container(L, locals, 1);
 }
 
+/**
+ * Returns the builtins dictionary
+**/
 static void py_builtins(lua_State *L) {
     PyObject *builtins;
     if (lua_gettop(L) != 0) {
@@ -310,6 +331,10 @@ static void py_builtins(lua_State *L) {
     push_pyobject_container(L, builtins, 1);
 }
 
+/**
+ * Import a new module and returns its reference
+ * Lua stack #1: module name (str)
+**/
 static void py_import(lua_State *L) {
     const char *name = luaL_check_string(L, 1);
     PyObject *module;
