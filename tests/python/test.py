@@ -69,6 +69,13 @@ def fn(interpreter, index):
 
     print data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index)
 
+    letters = interpreter.eval("{'a', 'b', 'c'}")
+    for i, v in enumerate(letters, 0):
+        if i == 1:
+            break
+    letters.iterindex_reset()  # (C) refiter = 0
+    assert "a" in letters, "'a' item not found"
+
     # load test of python!
     interpreter.require(os.path.join(PATH, "..", "lua", "test.lua"))
 
