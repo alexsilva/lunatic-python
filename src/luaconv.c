@@ -59,10 +59,18 @@ int is_object_container(lua_State *L, lua_Object lobj) {
     return lua_isuserdata(L, lobj) && lua_tag(L, lobj) == python_api_tag(L);
 }
 
+/**
+ * Verifies that container (userdata) is a tuple with function arguments fn(*args)
+ * return [bool] true|false
+**/
 bool ispyargs(lua_State *L, lua_Object userdata) {
     return is_object_container(L, userdata) ? get_py_object(L, userdata)->isargs : false;
 }
 
+/**
+ * Verifies that container (userdata) is a dictionary with function arguments fn(**kwargs)
+ * return [bool] true|false
+**/
 bool ispykwargs(lua_State *L, lua_Object userdata) {
     return is_object_container(L, userdata) ? get_py_object(L, userdata)->iskwargs : false;
 }
