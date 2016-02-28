@@ -7,19 +7,19 @@
 #include "constants.h"
 
 /* python string bytes */
-void pyobject_as_string(lua_State *L, PyObject *o, String *str) {
-    PyString_AsStringAndSize(o, &str->buff, &str->size);
-    if (!str->buff) lua_new_error(L, "converting python string");
+void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str) {
+    PyString_AsStringAndSize(obj, &str->buff, &str->size);
+    if (!str->buff) lua_new_error(L, "converting string");
 }
 
-/* python string unicode */
-void pyobject_as_encoded_string(lua_State *L, PyObject *o, String *str) {
+/* python string unicode as string bytes */
+PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String *str) {
     char *encoding = python_getstring(L, PY_UNICODE_ENCODING);
     char *errorhandler = python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER);
-    PyObject *obj = PyUnicode_AsEncodedString(o, encoding, errorhandler);
-    if (!obj) lua_new_error(L, "converting unicode string");
-    pyobject_as_string(L, obj, str);
-    Py_DECREF(obj);
+    PyObject *pyStr = PyUnicode_AsEncodedString(obj, encoding, errorhandler);
+    if (!pyStr) lua_new_error(L, "converting unicode string");
+    get_pyobject_string_buffer(L, pyStr, str);
+    return pyStr;
 }
 
 #pragma clang diagnostic push
@@ -122,7 +122,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
-            pyobject_as_string(L, o, &str);
+            get_pyobject_string_buffer(L, o, &str);
             lua_pushlstring(L, str.buff, str.size);
             ret = CONVERTED;
         }
@@ -131,8 +131,9 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = py_object_wrapper(L, o);
         } else {
             String str;
-            pyobject_as_encoded_string(L, o, &str);
+            PyObject *pyStr = get_pyobject_encoded_string_buffer(L, o, &str);
             lua_pushlstring(L, str.buff, str.size);
+            Py_DECREF(pyStr);
             ret = CONVERTED;
         }
 #endif
