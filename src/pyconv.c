@@ -85,7 +85,7 @@ lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyOb
 
 void lua_raw(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
-    if (is_wrapped_object(L, lobj)) {
+    if (is_object_container(L, lobj)) {
         py_object *obj = get_py_object(L, lobj);
         lua_pushobject(L, _lua_object_raw(L, obj->object, 0, NULL));
     } else {

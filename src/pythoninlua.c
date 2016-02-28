@@ -55,10 +55,9 @@ static void py_object_call(lua_State *L) {
     lua_Object largs = lua_getparam(L, 2);
     lua_Object lkwargs = lua_getparam(L, nargs > 1 ? 3 : 2);
 
-    bool is_wrap_args = is_wrapped_args(L, largs);
-    bool is_wrap_kwargs = is_wrapped_kwargs(L, lkwargs);
+    bool isargs = ispyargs(L, largs), iskwargs = ispykwargs(L, lkwargs);
 
-    if (nargs == 1 && (is_wrap_args || is_wrap_kwargs)) {
+    if (nargs == 1 && (isargs || iskwargs)) {
         PyObject *pobj = get_pobject(L, largs);
         if (PyTuple_Check(pobj)) {
             args = pobj;
@@ -67,7 +66,7 @@ static void py_object_call(lua_State *L) {
         } else {
             lua_error(L, "invalid args|kwargs");
         }
-    } else if (nargs == 2 && is_wrap_args && is_wrap_kwargs) {
+    } else if (nargs == 2 && isargs && iskwargs) {
         args   = get_pobject(L, largs);
         kwargs = get_pobject(L, lkwargs); // is args and kwargs ?
         // check the order (), {}
@@ -76,12 +75,12 @@ static void py_object_call(lua_State *L) {
 
     } else if (nargs > 0) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
-        is_wrap_args = false;
+        isargs = false;
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
     value = PyObject_Call(obj->object, args, kwargs); // fn(*args, **kwargs)
-    if (!is_wrap_args) Py_XDECREF(args);
-    if (!is_wrap_kwargs) Py_XDECREF(kwargs);
+    if (!isargs) Py_XDECREF(args);
+    if (!iskwargs) Py_XDECREF(kwargs);
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
@@ -105,30 +104,30 @@ static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int v
     if (!lua_isnil(L, lval)) {
         PyObject *value = lua_stack_convert(L, valuen, lval);
         if (!value) {
-            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+            if (!is_object_container(L, lkey)) Py_DECREF(key);
             luaL_argerror(L, 1, "failed to convert value");
         }
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
         if (pobj->asindx) {
             if (PyObject_SetItem(pobj->object, key, value) == -1) {
-                if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
-                if (!is_wrapped_object(L, lval)) Py_DECREF(value);
+                if (!is_object_container(L, lkey)) Py_DECREF(key);
+                if (!is_object_container(L, lval)) Py_DECREF(value);
                 lua_new_error(L, "failed to set item");
             }
         } else if (PyObject_SetAttr(pobj->object, key, value) == -1) {
-            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
-            if (!is_wrapped_object(L, lval)) Py_DECREF(value);
+            if (!is_object_container(L, lkey)) Py_DECREF(key);
+            if (!is_object_container(L, lval)) Py_DECREF(value);
             lua_new_error(L, "failed to set item");
         }
-        if (!is_wrapped_object(L, lval))
+        if (!is_object_container(L, lval))
             Py_DECREF(value);
     } else {
         if (PyObject_DelItem(pobj->object, key) == -1) {
-            if (!is_wrapped_object(L, lkey)) Py_DECREF(key);
+            if (!is_object_container(L, lkey)) Py_DECREF(key);
             lua_new_error(L, "failed to delete item");
         }
     }
-    if (!is_wrapped_object(L, lkey))
+    if (!is_object_container(L, lkey))
         Py_DECREF(key);
     return 0;
 }
@@ -157,7 +156,7 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
             Py_DECREF(item);
         }
     } else {
-        if (!is_wrapped_object(L, lobj)) Py_DECREF(key);
+        if (!is_object_container(L, lobj)) Py_DECREF(key);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
         char *mkey = get_pyobject_str(key);
@@ -167,7 +166,7 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         free(mkey); // free pointer!
         lua_new_error(L, buff);
     }
-    if (!is_wrapped_object(L, lobj))
+    if (!is_object_container(L, lobj))
         Py_DECREF(key);
     return ret;
 }

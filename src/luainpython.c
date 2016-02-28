@@ -142,7 +142,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
             }
         }
         ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
-        if (is_wrapped_object(self->interpreter->L, lobj)) {
+        if (is_object_container(self->interpreter->L, lobj)) {
             // The object will be shared with the python which in turn will remove a reference.
             // python does not know that the lua is managing the reference.
             Py_INCREF(ret);
@@ -245,7 +245,7 @@ static PyObject *LuaObject_iternext(LuaObject *self) {
     if (self->refiter > 0) {
         int argn = self->indexed ? 2 : 1;
         ret = lua_interpreter_stack_convert(self->interpreter, argn);  // value / key
-        if (is_wrapped_object(self->interpreter->L, lua_getparam(self->interpreter->L, argn))) {
+        if (is_object_container(self->interpreter->L, lua_getparam(self->interpreter->L, argn))) {
             // The object will be shared with the python which in turn will remove a reference.
             // python does not know that the lua is managing the reference.
             Py_INCREF(ret);

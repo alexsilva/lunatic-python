@@ -55,16 +55,16 @@ int lua_gettop(lua_State *L) {
 /**
  * Checks whether the object is a Lua userdata containing the tag event base.
  **/
-int is_wrapped_object(lua_State *L, lua_Object lobj) {
+int is_object_container(lua_State *L, lua_Object lobj) {
     return lua_isuserdata(L, lobj) && lua_tag(L, lobj) == python_api_tag(L);
 }
 
-bool is_wrapped_args(lua_State *L, lua_Object userdata) {
-    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->isargs : false;
+bool ispyargs(lua_State *L, lua_Object userdata) {
+    return is_object_container(L, userdata) ? get_py_object(L, userdata)->isargs : false;
 }
 
-bool is_wrapped_kwargs(lua_State *L, lua_Object userdata) {
-    return is_wrapped_object(L, userdata) ? get_py_object(L, userdata)->iskwargs : false;
+bool ispykwargs(lua_State *L, lua_Object userdata) {
+    return is_object_container(L, userdata) ? get_py_object(L, userdata)->iskwargs : false;
 }
 
 /* Checks if a table contains only numbers as keys */
@@ -103,7 +103,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
             sprintf(buff, format, index + 1);
             lua_error(L, &buff[0]);
         }
-        if (is_wrapped_object(L, larg))
+        if (is_object_container(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
@@ -135,7 +135,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
             sprintf(buff, error, index + 1);
             lua_new_error(L, &buff[0]);
         }
-        if (is_wrapped_object(L, larg))
+        if (is_object_container(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
@@ -158,7 +158,7 @@ void py_args(lua_State *L) {
 void py_args_array(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     PyObject *obj;
-    if (is_wrapped_object(L, lobj)) {
+    if (is_object_container(L, lobj)) {
         obj = get_pobject(L, lobj);
         // arguments must be tuple (conversion solves this)
         if (PyObject_IsInstance(obj, (PyObject *) &PyList_Type)) {  // tuple(list)
@@ -219,9 +219,9 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             Py_DECREF(dict);
             lua_new_error(L, "failed to set item in dict");
         }
-        if (!is_wrapped_object(L, lkey))
+        if (!is_object_container(L, lkey))
             Py_DECREF(key); // The key has no external references (will be deleted with the dict)
-        if (!is_wrapped_object(L, lvalue))
+        if (!is_object_container(L, lvalue))
             Py_DECREF(value); // The value has no external references (will be deleted with the dict)
         index = lua_next(L, ltable, index);
     }
@@ -247,7 +247,7 @@ void py_kwargs(lua_State *L) {
  * Returns the object python inside the container.
 **/
 PyObject *get_pobject(lua_State *L, lua_Object userdata) {
-    if (!is_wrapped_object(L, userdata))
+    if (!is_object_container(L, userdata))
         lua_error(L, "#1 container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata))->object;
 }
@@ -256,7 +256,7 @@ PyObject *get_pobject(lua_State *L, lua_Object userdata) {
  * Returns the pointer stored by the Lua object.
 **/
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
-    if (!is_wrapped_object(L, userdata))
+    if (!is_object_container(L, userdata))
         lua_error(L, "#2 container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
 }
@@ -291,7 +291,7 @@ static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyOb
 static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
     if (void_ptr) {
-        if (is_wrapped_object(interpreter->L, lobj)) {
+        if (is_object_container(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
         } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) {
             *ret = (PyObject *) void_ptr;
