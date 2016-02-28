@@ -60,7 +60,7 @@ int is_object_container(lua_State *L, lua_Object lobj) {
 }
 
 /**
- * Verifies that container (userdata) is a tuple with function arguments fn(*args)
+ * Verifies that container (userdata) is a tuple with arguments of function fn(*args)
  * return [bool] true|false
 **/
 bool ispyargs(lua_State *L, lua_Object userdata) {
@@ -68,7 +68,7 @@ bool ispyargs(lua_State *L, lua_Object userdata) {
 }
 
 /**
- * Verifies that container (userdata) is a dictionary with function arguments fn(**kwargs)
+ * Verifies that container (userdata) is a dictionary of keyword arguments of function fn(**kwargs)
  * return [bool] true|false
 **/
 bool ispykwargs(lua_State *L, lua_Object userdata) {
