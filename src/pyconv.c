@@ -93,13 +93,13 @@ void lua_raw(lua_State *L) {
     }
 }
 
-static Conversion py_object_wrapper(lua_State *L, PyObject *o) {
+static Conversion xpush_pyobject_container(lua_State *L, PyObject *obj) {
     bool asindx = false;
-    if (PyObject_IsInstance(o, (PyObject*) &PyList_Type) ||
-        PyObject_IsInstance(o, (PyObject*) &PyTuple_Type) ||
-        PyObject_IsInstance(o, (PyObject*) &PyDict_Type))
+    if (PyObject_IsInstance(obj, (PyObject*) &PyList_Type) ||
+        PyObject_IsInstance(obj, (PyObject*) &PyTuple_Type) ||
+        PyObject_IsInstance(obj, (PyObject*) &PyDict_Type))
         asindx = true;
-    return push_pyobject_container(L, o, asindx);
+    return push_pyobject_container(L, obj, asindx);
 }
 
 Conversion py_convert(lua_State *L, PyObject *o) {
@@ -119,7 +119,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
 #else
     } else if (PyString_Check(o)) {
         if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
-            ret = py_object_wrapper(L, o);
+            ret = xpush_pyobject_container(L, o);
         } else {
             String str;
             get_pyobject_string_buffer(L, o, &str);
@@ -128,7 +128,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         }
     } else if (PyUnicode_Check(o)) {
         if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
-            ret = py_object_wrapper(L, o);
+            ret = xpush_pyobject_container(L, o);
         } else {
             String str;
             PyObject *pyStr = get_pyobject_encoded_string_buffer(L, o, &str);
@@ -152,7 +152,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         lua_pushobject(L, lua_getref(L, ((LuaObject*)o)->ref));
         ret = CONVERTED;
     } else {
-        ret = py_object_wrapper(L, o);
+        ret = xpush_pyobject_container(L, o);
     }
     return ret;
 }
