@@ -57,7 +57,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", index);
             return NULL;
         }
-        if (py_convert(self->interpreter->L, arg) == UNCHANGED) {
+        if (!isvalidstatus(py_convert(self->interpreter->L, arg))) {
             PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", index);
             return NULL;
         }
