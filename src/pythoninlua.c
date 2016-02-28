@@ -90,7 +90,7 @@ static void py_object_call(lua_State *L) {
         char *mname = get_pyobject_str(obj->object);
         char *name = mname ? mname : "...";
         char *format = "call function python \"%s\"";
-        char buff[calc_buff_size(2, format, name)];
+        char buff[buffsize_calc(2, format, name)];
         sprintf(buff, format, name);
         free(mname); // free pointer!
         lua_new_error(L, buff);
@@ -162,7 +162,7 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         char *name = pobj->asindx ? "index" : "attribute";
         char *mkey = get_pyobject_str(key);
         char *skey = mkey ? mkey : "...";
-        char buff[calc_buff_size(3, error, name, skey)];
+        char buff[buffsize_calc(3, error, name, skey)];
         sprintf(buff, error, name, skey);
         free(mkey); // free pointer!
         lua_new_error(L, buff);
@@ -348,7 +348,7 @@ static void py_import(lua_State *L) {
     module = PyImport_ImportModule((char *) name);
     if (!module) {
         char *error = "failed importing \"%s\"";
-        char buff[calc_buff_size(2, error, name)];
+        char buff[buffsize_calc(2, error, name)];
         sprintf(buff, error, name);
         lua_new_error(L, buff);
     }

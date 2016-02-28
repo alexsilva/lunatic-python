@@ -68,7 +68,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
         lua_getobjname(self->interpreter->L, lobj, &name);
         name = name ? name : "...";
         char *format = "call function lua (%s)";
-        char buff[calc_buff_size(2, format, name)];
+        char buff[buffsize_calc(2, format, name)];
         sprintf(buff, format, name);
         python_new_error(PyExc_RuntimeError, &buff[0]);
         return NULL;
@@ -368,7 +368,7 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     }
     if (lua_dobuffer(self->L, s, len, "<python>") != 0) {
         char *format = "eval code (%s)";
-        char buff[calc_buff_size(2, format, s)];
+        char buff[buffsize_calc(2, format, s)];
         sprintf(buff, format, s);
         python_new_error(PyExc_RuntimeError, &buff[0]);
         return NULL;
@@ -417,7 +417,7 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
     int ret = lua_dofile(self->L, (char *) command);
     if (ret) {
         char *format = "require file (%s)";
-        char buff[calc_buff_size(2, format, command)];
+        char buff[buffsize_calc(2, format, command)];
         sprintf(buff, format, command);
         python_new_error(PyExc_ImportError, &buff[0]);
         return NULL;

@@ -92,17 +92,18 @@ char *get_pyobject_str(PyObject *obj) {
     return str;
 }
 
-int calc_buff_size(int nargs, ...) {
+/**
+ * Returns the total number of bytes +1 in argument strings.
+**/
+int buffsize_calc(int nargs, ...) {
     int size = 0;
     va_list ap;
     int i;
-
     va_start(ap, nargs);
     for(i = 0; i < nargs; i++) {
         size += strlen(va_arg(ap, char *));
     }
     va_end(ap);
-
     return size + 1;
 }
 
@@ -125,7 +126,7 @@ void python_new_error(PyObject *exception, char *message) {
         return;
     }
     char *format = "%s\n%s";
-    char buff[calc_buff_size(3, format, message, error)];
+    char buff[buffsize_calc(3, format, message, error)];
     sprintf(buff, format, message, error);
     free(error); // free pointer!
     PyErr_SetString(exception, &buff[0]);
@@ -150,7 +151,7 @@ void lua_new_error(lua_State *L, char *message) {
         return;
     }
     char *format = "%s (%s)";
-    char buff[calc_buff_size(3, format, message, error)];
+    char buff[buffsize_calc(3, format, message, error)];
     sprintf(buff, format, message, error);
     free(error); // free pointer!
     lua_error(L, &buff[0]);

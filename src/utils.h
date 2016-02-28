@@ -54,7 +54,7 @@
     lua_pushnil(L);\
     lua_rawsettable(L);
 
-int calc_buff_size(int nargs, ...);
+int buffsize_calc(int nargs, ...);
 void lua_new_error(lua_State *L, char *message);
 char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
