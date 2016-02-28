@@ -44,22 +44,21 @@
 
 
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
-    PyObject *ret = NULL;
-    PyObject *arg;
-    int nargs, i;
     if (!PyTuple_Check(args)) {
         PyErr_SetString(PyExc_TypeError, "tuple expected");
         return NULL;
     }
+    PyObject *arg;
+    int nargs, index;
     nargs = PyTuple_Size(args);
-    for (i = 0; i != nargs; i++) {
-        arg = PyTuple_GetItem(args, i);
+    for (index = 0; index < nargs; index++) {
+        arg = PyTuple_GetItem(args, index);
         if (arg == NULL) {
-            PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", i);
+            PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", index);
             return NULL;
         }
         if (py_convert(self->interpreter->L, arg) == UNCHANGED) {
-            PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", i);
+            PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", index);
             return NULL;
         }
     }
@@ -73,6 +72,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
         python_new_error(PyExc_RuntimeError, &buff[0]);
         return NULL;
     }
+    PyObject *ret;
     nargs = lua_gettop(self->interpreter->L);
     if (nargs == 1) {
         ret = lua_interpreter_stack_convert(self->interpreter, 1);
@@ -86,14 +86,14 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             PyErr_SetString(PyExc_RuntimeError, "failed to create return tuple");
             return NULL;
         }
-        for (i = 0; i != nargs; i++) {
-            arg = lua_interpreter_stack_convert(self->interpreter, i + 1);
+        for (index = 0; index != nargs; index++) {
+            arg = lua_interpreter_stack_convert(self->interpreter, index + 1);
             if (!arg) {
-                PyErr_Format(PyExc_TypeError, "failed to convert return #%d", i);
+                PyErr_Format(PyExc_TypeError, "failed to convert return #%d", index);
                 Py_DECREF(ret);
                 return NULL;
             }
-            PyTuple_SetItem(ret, i, arg);
+            PyTuple_SetItem(ret, index, arg);
         }
     } else {
         Py_INCREF(Py_None);
