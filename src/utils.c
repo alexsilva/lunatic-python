@@ -85,7 +85,7 @@ char *get_pyobject_str(PyObject *obj) {
             return NULL;
         }
         str = tostring(pObjStr);
-        Py_DECREF(obj);
+        Py_DECREF(pObjStr);
     } else {
         str  = tostring(obj);
     }
