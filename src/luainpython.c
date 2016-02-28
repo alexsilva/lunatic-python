@@ -371,6 +371,7 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         char buff[buffsize_calc(2, format, s)];
         sprintf(buff, format, s);
         python_new_error(PyExc_RuntimeError, &buff[0]);
+        if (eval) free(buf);
         return NULL;
     }
     if (eval) free(buf);
