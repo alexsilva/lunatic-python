@@ -192,10 +192,12 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         key = lua_stack_convert(L, stackpos, lkey);
         if (!key) {
             Py_DECREF(dict);
-            char *skey = get_pyobject_str(key, "...");
+            char *mkey = get_pyobject_str(key);
+            char *skey = mkey ? mkey : "...";
             char *format = "failed to convert key \"%s\"";
             char buff[strlen(format) + strlen(skey)];
             sprintf(buff, format, skey);
+            free(mkey); // free pointer!
             lua_new_error(L, &buff[0]);
         }
         stackpos = 2;
@@ -203,10 +205,12 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         value = lua_stack_convert(L, stackpos, lvalue);
         if (!value) {
             Py_DECREF(dict);
-            char *skey = get_pyobject_str(key, "...");
+            char *mkey = get_pyobject_str(key);
+            char *skey = mkey ? mkey : "...";
             char *format = "failed to convert value of key \"%s\"";
             char buff[strlen(format) + strlen(skey)];
             sprintf(buff, format, skey);
+            free(mkey); // free pointer!
             lua_new_error(L, &buff[0]);
         }
         if (PyDict_SetItem(dict, key, value) != 0) {

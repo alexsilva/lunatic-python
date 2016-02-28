@@ -55,17 +55,41 @@ char *strdup(const char * s) {
 }
 #endif
 
-char *get_pyobject_str(PyObject *pyobject, char *dftstr) {
-    char *str = NULL;
-    char *attr_name = "__name__";
-    if (PyCallable_Check(pyobject) && PyObject_HasAttrString(pyobject, attr_name)) {
-        pyobject = PyObject_GetAttrString(pyobject, attr_name);  // function name
+static char *tostring(PyObject *obj) {
+    PyObject *pObjStr = PyObject_Str(obj);
+    char *str;
+    if (pObjStr) {
+        str = PyString_AsString(pObjStr);
+        if (str && strlen(str) == 0) {
+            Py_DECREF(pObjStr);
+            return NULL;
+        }
+        str = strdup(str);
+        Py_DECREF(pObjStr);
+    } else {
+        PyErr_Clear();
+        str = NULL;
     }
-    pyobject = PyObject_Str(pyobject);
-    if (pyobject) {
-        str = PyString_AsString(pyobject);
+    return str;
+}
+
+#define ATTRNAME "__name__"
+
+char *get_pyobject_str(PyObject *obj) {
+    if (!obj) return NULL;
+    char *str;
+    if (PyCallable_Check(obj) && PyObject_HasAttrString(obj, ATTRNAME)) {
+        PyObject *pObjStr = PyObject_GetAttrString(obj, ATTRNAME);  // function name
+        if (!pObjStr) {
+            PyErr_Clear();
+            return NULL;
+        }
+        str = tostring(pObjStr);
+        Py_DECREF(obj);
+    } else {
+        str  = tostring(obj);
     }
-    return str && strlen(str) > 0 ? str : dftstr;
+    return str;
 }
 
 int calc_buff_size(int nargs, ...) {
@@ -86,8 +110,15 @@ void python_new_error(PyObject *exception, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     char *error = NULL;
-    if (pvalue != NULL) {
-        error = get_pyobject_str(pvalue, get_pyobject_str(ptype, NULL));
+    if (pvalue || ptype || ptraceback) {
+        error = get_pyobject_str(pvalue);
+        if (!error) {
+            error = get_pyobject_str(ptype);
+            if (!error) error = get_pyobject_str(ptraceback);
+        }
+        Py_XDECREF(ptype);
+        Py_XDECREF(pvalue);
+        Py_XDECREF(ptraceback);
     }
     if (!error) {
         PyErr_SetString(exception, message);
@@ -96,6 +127,7 @@ void python_new_error(PyObject *exception, char *message) {
     char *format = "%s\n%s";
     char buff[calc_buff_size(3, format, message, error)];
     sprintf(buff, format, message, error);
+    free(error); // free pointer!
     PyErr_SetString(exception, &buff[0]);
 }
 
@@ -103,8 +135,15 @@ void lua_new_error(lua_State *L, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     char *error = NULL;
-    if (pvalue != NULL) {
-        error = get_pyobject_str(pvalue, get_pyobject_str(ptype, NULL));
+    if (pvalue || ptype || ptraceback) {
+        error = get_pyobject_str(pvalue);
+        if (!error) {
+            error = get_pyobject_str(ptype);
+            if (!error) error = get_pyobject_str(ptraceback);
+        }
+        Py_XDECREF(ptype);
+        Py_XDECREF(pvalue);
+        Py_XDECREF(ptraceback);
     }
     if (!error) {
         lua_error(L, message);
@@ -113,5 +152,6 @@ void lua_new_error(lua_State *L, char *message) {
     char *format = "%s (%s)";
     char buff[calc_buff_size(3, format, message, error)];
     sprintf(buff, format, message, error);
+    free(error); // free pointer!
     lua_error(L, &buff[0]);
 }

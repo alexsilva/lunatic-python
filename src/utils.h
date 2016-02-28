@@ -56,7 +56,7 @@
 
 int calc_buff_size(int nargs, ...);
 void lua_new_error(lua_State *L, char *message);
-char *get_pyobject_str(PyObject *pyobject, char *dftstr);
+char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
 int python_getnumber(lua_State *L, char *name);
 char *python_getstring(lua_State *L, char *name);

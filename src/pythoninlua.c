@@ -87,10 +87,12 @@ static void py_object_call(lua_State *L) {
             Py_DECREF(value);
         }
     } else {
-        char *name = get_pyobject_str(obj->object, "...");
+        char *mname = get_pyobject_str(obj->object);
+        char *name = mname ? mname : "...";
         char *format = "call function python \"%s\"";
         char buff[calc_buff_size(2, format, name)];
         sprintf(buff, format, name);
+        free(mname); // free pointer!
         lua_new_error(L, buff);
     }
 }
@@ -158,9 +160,11 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         if (!is_wrapped_object(L, lobj)) Py_DECREF(key);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
-        char *skey = get_pyobject_str(key, "...");
+        char *mkey = get_pyobject_str(key);
+        char *skey = mkey ? mkey : "...";
         char buff[calc_buff_size(3, error, name, skey)];
         sprintf(buff, error, name, skey);
+        free(mkey); // free pointer!
         lua_new_error(L, buff);
     }
     if (!is_wrapped_object(L, lobj))
