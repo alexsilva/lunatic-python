@@ -156,28 +156,28 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
 
 static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
     lua_beginblock(self->interpreter->L);
-    int rc, ret = -1;
+    int ret = -1;
     lua_Object ltable = lua_getref(self->interpreter->L, self->ref);
     if (lua_isnil(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
-        return -1;
+        return ret;
     }
     if (!lua_istable(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_TypeError, "Lua object is not a table");
-        return -1;
+        return ret;
     }
     lua_pushobject(self->interpreter->L, ltable); // push table
-    rc = py_convert(self->interpreter->L, attr);
-    if (rc) {
+    Conversion res = py_convert(self->interpreter->L, attr);
+    if (isvalidstatus(res)) {
         if (value == NULL) {
             lua_pushnil(self->interpreter->L);
-            rc = CONVERTED;
+            res = CONVERTED;
         } else {
-            rc = py_convert(self->interpreter->L, value); // push value ?
+            res = py_convert(self->interpreter->L, value); // push value ?
         }
-        if (rc) {
+        if (isvalidstatus(res)) {
             lua_settable(self->interpreter->L);
-            ret = UNCHANGED;
+            ret = 0;
         } else {
             PyErr_SetString(PyExc_ValueError, "can't convert value");
         }

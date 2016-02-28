@@ -69,4 +69,5 @@ int python_api_tag(lua_State *L);
 char *strdup(const char *s);
 #endif
 
+#define isvalidstatus(res) ((res != UNCHANGED))
 #endif //LUNATIC_UTILS_H
