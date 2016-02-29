@@ -100,16 +100,12 @@ globals.TestFunc6(pyargs(), pykwargs{})
 globals.TestFunc7(pyargs_array(globals.TestFunc7(pyargs_array{'a', 'b', 'c', 1, 2, 3})))
 
 -- lua callback teste
-function cmp_callback(a, b)
-    if (a > b) then
-        return python.True
-    else
-        return python.False
-    end
+function shorfn(a, b)
+    return % builtins.cmp(a, b)
 end
 
 local res_expected = builtins.iter({-5, -1, 0, 1, 4, 7, 10, 100})
-local result = builtins.sorted({1, -1, 4, 10, 0, 100, 7, -5}, cmp_callback)
+local result = builtins.sorted({1, -1, 4, 10, 0, 100, 7, -5}, shorfn)
 local v = builtins.next(res_expected);
 
 while (v) do
