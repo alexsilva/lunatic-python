@@ -17,7 +17,7 @@ if (not python) then
 end
 
 local builtins = python.builtins()
-local locals = python.locals()
+local globals = python.globals()
 
 python.execute([[
 def TestFunc(*args, **kwargs):
@@ -83,21 +83,21 @@ local index = 0
 while (index < 10) do
     local args = python.args(1,2,3,4,5,{'a','c','d','e', {a=1,b=2,c=3}})
     local kwargs = python.kwargs({host='127.0.0.1', user='user', passwd='12345&*', db='mysqdb'})
-    locals.TestFunc(args, kwargs)
+    globals.TestFunc(args, kwargs)
     index = index + 1
 end
 
-locals.TestFunc2(5, builtins.range(1,5))
-locals.TestFunc2(5, python.args(1,2,3,4))
+globals.TestFunc2(5, builtins.range(1,5))
+globals.TestFunc2(5, python.args(1,2,3,4))
 
 -- global args, kwargs
-locals.TestFunc3(pyargs(1,2,3,4), pykwargs{a=1, b=2, c=3})
-locals.TestFunc4(pykwargs{a=1, b=2, c=3})
-locals.TestFunc5(pyargs(1,2,3,4))
-locals.TestFunc6(pyargs(), pykwargs{})
+globals.TestFunc3(pyargs(1,2,3,4), pykwargs{a=1, b=2, c=3})
+globals.TestFunc4(pykwargs{a=1, b=2, c=3})
+globals.TestFunc5(pyargs(1,2,3,4))
+globals.TestFunc6(pyargs(), pykwargs{})
 
 -- test table -> tuple
-locals.TestFunc7(pyargs_array(locals.TestFunc7(pyargs_array{'a', 'b', 'c', 1, 2, 3})))
+globals.TestFunc7(pyargs_array(globals.TestFunc7(pyargs_array{'a', 'b', 'c', 1, 2, 3})))
 
 -- lua callback teste
 function cmp_callback(a, b)
