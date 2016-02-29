@@ -11,8 +11,8 @@ print 'in lua: ', ' | '.join(dir(lua))
 PATH = os.path.dirname(os.path.abspath(__file__))
 
 def reversed_relation_call(arg):
-    assert arg.sys.path
-    assert arg.os.getcwd()
+    assert arg['sys'].path
+    assert arg['os'].getcwd()
 
 def reversed_relation_iter(arg):
     assert sys in arg
@@ -76,8 +76,13 @@ def fn(interpreter, index):
     letters.iterindex_reset()  # (C) refiter = 0
     assert "a" in letters, "'a' item not found"
 
-    # load test of python!
+    # load test of python embed!
+
+    print 'running test script 1'
     interpreter.require(os.path.join(PATH, "..", "lua", "test.lua"))
+
+    print 'running test script 2'
+    interpreter.require(os.path.join(PATH, "..", "lua", "test2.lua"))
 
 
 index = 0
