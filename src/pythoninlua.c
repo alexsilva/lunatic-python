@@ -74,7 +74,9 @@ static void py_object_call(lua_State *L) {
         if (PyDict_Check(args)) luaL_argerror(L, 2, "object dict expected kwargs{a=1,...}");
 
     } else if (nargs > 0) {
+        python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
+        python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
         isargs = false;
     }
     if (!args) args = PyTuple_New(0);  // Can not be NULL
@@ -485,6 +487,7 @@ LUA_API int luaopen_python(lua_State *L) {
     set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, "strict");
     set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
     set_table_number(L, python, PY_API_IS_EMBEDDED, 0);  // If Python is inside Lua
+    set_table_number(L, python, PY_LUA_TABLE_CONVERT, 0); // table convert ?
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);

@@ -156,14 +156,17 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 
 /* Converts the list of arguments in the stack for python args: fn(*args) */
 void py_args(lua_State *L) {
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
     PyObject *tuple = get_py_tuple(L, 0);
     py_object *pobj = py_object_container(L, tuple, 1);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
 /* Convert a table or a tuple for python args: fn(*args) */
 void py_args_array(lua_State *L) {
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
     lua_Object lobj = lua_getparam(L, 1);
     PyObject *obj;
     if (is_object_container(L, lobj)) {
@@ -184,6 +187,7 @@ void py_args_array(lua_State *L) {
     py_object *pobj = py_object_container(L, obj, 1);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
 /* convert to kwargs python: fn(**kwargs) */
@@ -237,6 +241,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 }
 
 void py_kwargs(lua_State *L) {
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
     int nargs = lua_gettop(L);
     if (nargs < 1 || nargs > 1) {
         lua_error(L, "expected only one table");
@@ -249,6 +254,7 @@ void py_kwargs(lua_State *L) {
     py_object *pobj = py_object_container(L, dict, 1);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->iskwargs = true;
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
 /**
@@ -286,7 +292,8 @@ static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     lua_beginblock(interpreter->L);
-    if (!python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { // Lua inside Python
+    if (!python_getnumber(interpreter->L, PY_API_IS_EMBEDDED) && // Lua inside Python
+        !python_getnumber(interpreter->L, PY_LUA_TABLE_CONVERT)){
         *ret = LuaObject_PyNew(interpreter, lobj);
     } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
         *ret = ltable_convert_tuple(interpreter->L, lobj);
@@ -301,7 +308,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
     if (void_ptr) {
         if (is_object_container(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
-        } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) {
+        } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { //  Python inside Lua
             *ret = (PyObject *) void_ptr;
         } else {
             *ret = LuaObject_PyNew(interpreter, lobj);
