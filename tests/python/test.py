@@ -24,10 +24,33 @@ class LuaInterpreter(lua.Interpreter):
     def __exit__(self, *args, **kwargs):
         pass
 
+def _assert_python_cobject(arg):
+    assert type(arg) is not dict, "arg is not a custom object!"
+
+def _assert_luapython_dict(arg):
+    assert type(arg) is dict, "arg is not a dict!"
+
+_map = {
+    'python' : _assert_python_cobject,
+    'luapython' : _assert_luapython_dict
+}
+def func_type_check(origin, arg):
+    _map[origin](arg)
+    return arg
+
 def fn(interpreter, index):
     assert interpreter.eval("10") == 10, "error in the int conversion"
     assert interpreter.eval("1.0000001") == 1.0000001, "error in the float conversion"
     assert interpreter.eval("\"a\"") == "a", "error evaluating a"
+
+    interpreter.execute("""
+    function func_type_check(arg)
+        assert(type(arg) == "table", "arg is not a table")
+        python.eval("func_type_check")("luapython", arg)
+        return arg
+    end
+    """)
+    interpreter.eval("func_type_check")(func_type_check("python", interpreter.eval("{a = 1}")))
 
     interpreter.execute("""
     local os = python.import("os")
