@@ -119,7 +119,7 @@ static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int v
         } else if (PyObject_SetAttr(pobj->object, key, value) == -1) {
             if (!is_object_container(L, lkey)) Py_DECREF(key);
             if (!is_object_container(L, lval)) Py_DECREF(value);
-            lua_new_error(L, "failed to set item");
+            lua_new_error(L, "failed to set attribute");
         }
         if (!is_object_container(L, lval))
             Py_DECREF(value);
