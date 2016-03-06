@@ -44,7 +44,11 @@
 static void py_object_call(lua_State *L) {
     py_object *pobj = get_py_object(L, lua_getparam(L, 1));
     if (!PyCallable_Check(pobj->object)) {
-        lua_error(L, "object is not callable");
+        const char *name = pobj->object->ob_type->tp_name;
+        char *format = "object \"%s\" is not callable";
+        char buff[buffsize_calc(2, format, name)];
+        sprintf(buff, format, name);
+        lua_new_error(L, &buff[0]);
     }
     PyObject *args = NULL;
     PyObject *kwargs = NULL;
