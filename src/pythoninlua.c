@@ -90,8 +90,9 @@ static void py_object_call(lua_State *L) {
         if (!args) lua_new_error(L, "#3 failed to create arguments tuple");
     }
     value = PyObject_Call(pobj->object, args, kwargs); // fn(*args, **kwargs)
-    if (!isargs) Py_XDECREF(args);
-    if (!iskwargs) Py_XDECREF(kwargs);
+    if (!isargs) Py_DECREF(args);
+    if (!iskwargs && kwargs)
+        Py_DECREF(kwargs);
     if (value) {
         if (py_convert(L, value) == CONVERTED) {
             Py_DECREF(value);
