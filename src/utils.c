@@ -156,3 +156,16 @@ void lua_new_error(lua_State *L, char *message) {
     free(error); // free pointer!
     lua_error(L, &buff[0]);
 }
+
+/**
+ * Same as 'lua_new_error', but receives a message format.
+**/
+void lua_raise_error(lua_State *L, char *format,
+                     PyObject *obj) {
+    char *pstr = get_pyobject_str(obj);
+    char *str = pstr ? pstr : "?";
+    char buff[buffsize_calc(2, format, str)];
+    sprintf(buff, format, str);
+    free(pstr); // free pointer!
+    lua_new_error(L, &buff[0]);
+}
