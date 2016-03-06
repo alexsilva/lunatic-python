@@ -103,14 +103,16 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 }
 
 static void LuaObject_dealloc(LuaObject *self) {
-    lua_beginblock(self->interpreter->L);
-    lua_unref(self->interpreter->L, self->ref);
-    lua_endblock(self->interpreter->L);
-    if (!self->interpreter->isPyType) {
-        self->interpreter->L = NULL;
-        free(self->interpreter);
-    } else {
-        Py_DECREF(self->interpreter);
+    if (self->interpreter) { // blocked in init ?
+        lua_beginblock(self->interpreter->L);
+        lua_unref(self->interpreter->L, self->ref);
+        lua_endblock(self->interpreter->L);
+        if (!self->interpreter->isPyType) {
+            self->interpreter->L = NULL;
+            free(self->interpreter);
+        } else {
+            Py_DECREF(self->interpreter);
+        }
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -328,6 +330,14 @@ static int LuaObject_ass_subscript(LuaObject *self, PyObject *key, PyObject *val
     return LuaObject_setattr(self, key, value);
 }
 
+static int LuaObject_init(LuaObject *self, PyObject *args, PyObject *kwargs) {
+    self->interpreter = NULL;
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "can not be instantiated"
+                    " (available only for comparison purposes)");
+    return -1;
+}
+
 static PyMappingMethods LuaObject_as_mapping = {
 #if PY_VERSION_HEX >= 0x02050000
     (lenfunc)LuaObject_length,    /*mp_length*/
@@ -374,7 +384,7 @@ PyTypeObject LuaObject_Type = {
     0,                        /*tp_descr_get*/
     0,                        /*tp_descr_set*/
     0,                        /*tp_dictoffset*/
-    0,                        /*tp_init*/
+    (initproc) LuaObject_init,/*tp_init*/
     PyType_GenericAlloc,      /*tp_alloc*/
     PyType_GenericNew,        /*tp_new*/
     PyObject_Del,             /*tp_free*/
@@ -602,6 +612,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
     Py_INCREF(&InterpreterObject_Type);
 
     PyModule_AddObject(m, "Interpreter", (PyObject *)&InterpreterObject_Type);
+    PyModule_AddObject(m, "LuaObject", (PyObject *)&LuaObject_Type);
 
 #if PY_MAJOR_VERSION >= 3
     return m;
