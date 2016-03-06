@@ -71,7 +71,7 @@ static void py_object_call(lua_State *L) {
             if (!args) lua_new_error(L, "#1 failed to create arguments tuple");
             kwargs = obj;
         } else {
-            lua_error(L, "invalid args|kwargs");
+            lua_error(L, "reference pyargs or pykwargs invalid!");
         }
     } else if (nargs == 2 && isargs && iskwargs) {
         args   = get_pobject(L, largs);
