@@ -52,8 +52,12 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
                 py_object_raw(L, value, ltable, key);
             } else {
                 lua_pushobject(L, ltable);
-                py_convert(L, key);
-                py_convert(L, value);
+                if (py_convert(L, key) == WRAPPED) {
+                    Py_INCREF(key); // borrow reference
+                }
+                if (py_convert(L, value) == WRAPPED) {
+                    Py_INCREF(value); // borrow reference
+                }
                 lua_settable(L);
             }
         }
@@ -81,7 +85,12 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
             }
         }
     } else {
-        lua_error(L, "unsupported raw type");
+        char *format = "unsupported raw type \"%s\"";
+        char *pstr = get_pyobject_str(obj);
+        char *str = pstr ? pstr : "?";
+        char buff[buffsize_calc(2, format, str)];
+        lua_new_error(L, &buff[0]);
+        free(pstr); // free pointer!
     }
     if (lptable && lpkey) {
         lua_pushobject(L, lptable);
