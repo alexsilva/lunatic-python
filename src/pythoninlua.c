@@ -396,7 +396,7 @@ static void _set_unicode_encoding_errorhandler(lua_State *L, int stackpos) {
                 }
             }
             if (!found) {
-                lua_new_error(L, "encoding handler for invalid strings. " \
+                lua_new_error(L, "error handler to unicode string invalid. " \
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
