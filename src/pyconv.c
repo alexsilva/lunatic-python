@@ -87,13 +87,7 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
             }
         }
     } else {
-        char *format = "raw type not supported \"%s\"";
-        char *pstr = get_pyobject_str(obj);
-        char *str = pstr ? pstr : "?";
-        char buff[buffsize_calc(2, format, str)];
-        sprintf(buff, format, str);
-        free(pstr); // free pointer!
-        lua_new_error(L, &buff[0]);
+        lua_raise_error(L, "raw type not supported \"%s\"", obj);
     }
     if (lptable && lpkey) {
         lua_pushobject(L, lptable);
