@@ -48,6 +48,8 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
         PyObject *key, *value;
         Py_ssize_t pos = 0;
         while (PyDict_Next(obj, &pos, &key, &value)) {
+            if (!key) lua_raise_error(L, "failed to convert the key %s", key);
+            if (!value) lua_raise_error(L, "failed to convert the key value %s", key);
             if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
                 py_object_raw(L, value, ltable, key);
             } else {
