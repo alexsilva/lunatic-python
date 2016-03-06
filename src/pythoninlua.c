@@ -458,7 +458,7 @@ static struct luaL_reg py_lib[] = {
     {"kwargs",                            py_kwargs},
     {"args_array",                        py_args_array},
     {"is_embedded",                       python_is_embedded},
-    {"raw",                               lua_raw},
+    {"raw",                               py_raw},
     {"get_version",                       py_get_version},
     {"set_unicode_encoding",              py_set_unicode_encoding},
     {"get_unicode_encoding",              py_get_unicode_encoding},

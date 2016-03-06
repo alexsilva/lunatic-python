@@ -41,14 +41,14 @@ Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
     return WRAPPED;
 }
 
-lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
+lua_Object py_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
     lua_Object ltable = lua_createtable(L);
     if (PyDict_Check(obj)) {
         PyObject *key, *value;
         Py_ssize_t pos = 0;
         while (PyDict_Next(obj, &pos, &key, &value)) {
             if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
-                _lua_object_raw(L, value, ltable, key);
+                py_object_raw(L, value, ltable, key);
             } else {
                 lua_pushobject(L, ltable);
                 py_convert(L, key);
@@ -63,7 +63,7 @@ lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyOb
         for (index = 0; index < size; index++) {
             value = PyObject_GetItem(obj, PyInt_FromSsize_t(index));
             if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
-                _lua_object_raw(L, value, ltable, PyInt_FromSsize_t(index + 1));
+                py_object_raw(L, value, ltable, PyInt_FromSsize_t(index + 1));
             } else {
                 lua_pushobject(L, ltable);
                 py_convert(L, PyInt_FromSsize_t(index + 1));
@@ -83,11 +83,12 @@ lua_Object _lua_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyOb
     return ltable;
 }
 
-void lua_raw(lua_State *L) {
+/* Convert types in Python directly to the Lua */
+void py_raw(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_object_container(L, lobj)) {
         py_object *obj = get_py_object(L, lobj);
-        lua_pushobject(L, _lua_object_raw(L, obj->object, 0, NULL));
+        lua_pushobject(L, py_object_raw(L, obj->object, 0, NULL));
     } else {
         lua_pushobject(L, lobj);
     }

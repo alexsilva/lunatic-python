@@ -34,7 +34,7 @@ typedef enum {
 py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx);
 Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
-void lua_raw(lua_State *L);
+void py_raw(lua_State *L);
 
 void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str);
 PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String *str);
