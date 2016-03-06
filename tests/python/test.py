@@ -96,8 +96,15 @@ def fn(interpreter, index):
     for i, v in enumerate(letters, 0):
         if i == 1:
             break
-    letters.iterindex_reset()  # (C) refiter = 0
-    assert "a" in letters, "'a' item not found"
+    assert "a" in letters, "(in) 'a' item not found"
+    li = iter(letters)
+
+    assert li.next() == 'a', "(next) 'a' item not found"
+    assert li.next() == 'b', "(next) 'b' item not found"
+    assert li.next() == 'c', "(next) 'c' item not found"
+
+    assert list(letters)[0] == 'a', "(list) 'a' item not found"
+    assert tuple(letters)[1] == 'b', "(tuple) 'b' item not found"
 
     # load test of python embed!
 
