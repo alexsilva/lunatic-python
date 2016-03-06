@@ -259,7 +259,7 @@ static void LuaObjectIter_dealloc(luaiterobject *li) {
 }
 
 PyTypeObject LuaObjectIter_Type = {
-    PyVarObject_HEAD_INIT(&LuaObjectIter_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "LuaObject_iterator",                       /* tp_name */
     sizeof(luaiterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -285,7 +285,7 @@ PyTypeObject LuaObjectIter_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc) LuaObjectIter_next,           /* tp_iternext */
+    (iternextfunc) LuaObjectIter_next,          /* tp_iternext */
     0,                                          /* tp_methods */
     0,
 };
@@ -590,6 +590,9 @@ PyMODINIT_FUNC PyInit_lua(void) {
     if (PyType_Ready(&InterpreterObject_Type) < 0)
         return;
 
+    if (PyType_Ready(&LuaObjectIter_Type) < 0)
+        return;
+
     m = Py_InitModule3("lua", lua_methods,
                        "Lunatic-Python Python-Lua bridge");
     if (m == NULL) return;
@@ -597,6 +600,7 @@ PyMODINIT_FUNC PyInit_lua(void) {
 
     Py_INCREF(&LuaObject_Type);
     Py_INCREF(&InterpreterObject_Type);
+
     PyModule_AddObject(m, "Interpreter", (PyObject *)&InterpreterObject_Type);
 
 #if PY_MAJOR_VERSION >= 3
