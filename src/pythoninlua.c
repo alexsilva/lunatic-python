@@ -96,13 +96,7 @@ static void py_object_call(lua_State *L) {
             Py_DECREF(value);
         }
     } else {
-        char *mname = get_pyobject_str(pobj->object);
-        char *name = mname ? mname : "...";
-        char *format = "call function python \"%s\"";
-        char buff[buffsize_calc(2, format, name)];
-        sprintf(buff, format, name);
-        free(mname); // free pointer!
-        lua_new_error(L, buff);
+        lua_raise_error(L, "call function python \"%s\"", pobj->object);
     }
 }
 
