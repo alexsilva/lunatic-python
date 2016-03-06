@@ -42,8 +42,8 @@
 
 
 static void py_object_call(lua_State *L) {
-    py_object *obj = get_py_object(L, lua_getparam(L, 1));
-    if (!PyCallable_Check(obj->object)) {
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
+    if (!PyCallable_Check(pobj->object)) {
         lua_error(L, "object is not callable");
     }
     PyObject *args = NULL;
@@ -58,11 +58,13 @@ static void py_object_call(lua_State *L) {
     bool isargs = ispyargs(L, largs), iskwargs = ispykwargs(L, lkwargs);
 
     if (nargs == 1 && (isargs || iskwargs)) {
-        PyObject *pobj = get_pobject(L, largs);
-        if (PyTuple_Check(pobj)) {
-            args = pobj;
-        } else if (PyDict_Check(pobj)) {
-            kwargs = pobj;
+        PyObject *obj = get_pobject(L, largs);
+        if (PyTuple_Check(obj)) {
+            args = obj;
+        } else if (PyDict_Check(obj)) {
+            args = PyTuple_New(0);
+            if (!args) lua_new_error(L, "#1 failed to create arguments tuple");
+            kwargs = obj;
         } else {
             lua_error(L, "invalid args|kwargs");
         }
@@ -78,9 +80,11 @@ static void py_object_call(lua_State *L) {
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
         python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
         isargs = false;
+    } else {
+        args = PyTuple_New(0);
+        if (!args) lua_new_error(L, "#3 failed to create arguments tuple");
     }
-    if (!args) args = PyTuple_New(0);  // Can not be NULL
-    value = PyObject_Call(obj->object, args, kwargs); // fn(*args, **kwargs)
+    value = PyObject_Call(pobj->object, args, kwargs); // fn(*args, **kwargs)
     if (!isargs) Py_XDECREF(args);
     if (!iskwargs) Py_XDECREF(kwargs);
     if (value) {
@@ -88,7 +92,7 @@ static void py_object_call(lua_State *L) {
             Py_DECREF(value);
         }
     } else {
-        char *mname = get_pyobject_str(obj->object);
+        char *mname = get_pyobject_str(pobj->object);
         char *name = mname ? mname : "...";
         char *format = "call function python \"%s\"";
         char buff[buffsize_calc(2, format, name)];

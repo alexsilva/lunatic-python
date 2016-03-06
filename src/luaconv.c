@@ -95,7 +95,7 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
 PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     int nargs = lua_tablesize(L, ltable);
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "failed to create arguments tuple");
+    if (!tuple) lua_new_error(L, "#4 failed to create arguments tuple");
     set_table_nil(L, ltable, "n"); // remove "n"
     int nextindex = lua_next(L, ltable, 0);
     int index = 0, stackpos = 2;
@@ -128,7 +128,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "failed to create arguments tuple");
+    if (!tuple) lua_new_error(L, "#2 failed to create arguments tuple");
     int index, pos;
     PyObject *arg;
     lua_Object larg;
