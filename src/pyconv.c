@@ -41,7 +41,8 @@ Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
     return WRAPPED;
 }
 
-lua_Object py_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObject *lpkey) {
+lua_Object py_object_raw(lua_State *L, PyObject *obj,
+                         lua_Object lptable, PyObject *lpkey) {
     lua_Object ltable = lua_createtable(L);
     if (PyDict_Check(obj)) {
         PyObject *key, *value;
@@ -60,14 +61,22 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj, lua_Object lptable, PyObje
         Py_ssize_t size = PyList_Check(obj) ? PyList_Size(obj) : PyTuple_Size(obj);
         Py_ssize_t index;
         PyObject *value;
+        PyObject *ikey;
         for (index = 0; index < size; index++) {
-            value = PyObject_GetItem(obj, PyInt_FromSsize_t(index));
+            ikey = PyInt_FromSsize_t(index);
+            value = PyObject_GetItem(obj, ikey);
+            Py_DECREF(ikey);
             if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
-                py_object_raw(L, value, ltable, PyInt_FromSsize_t(index + 1));
+                ikey = PyInt_FromSsize_t(index + 1);
+                py_object_raw(L, value, ltable, ikey);
+                Py_DECREF(value);
+                Py_DECREF(ikey);
             } else {
                 lua_pushobject(L, ltable);
-                py_convert(L, PyInt_FromSsize_t(index + 1));
-                py_convert(L, value);
+                lua_pushnumber(L, index + 1);
+                if (py_convert(L, value) == CONVERTED) {
+                    Py_DECREF(value);
+                }
                 lua_settable(L);
             }
         }
