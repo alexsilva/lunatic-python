@@ -40,7 +40,7 @@
 #include <lualib.h>
 #endif
 
-#define LUA_EXT_VERSION "1.0.0"
+#define LUA_EXT_VERSION "2.0.0"
 
 
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {

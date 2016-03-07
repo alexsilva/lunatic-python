@@ -38,7 +38,7 @@
 #include "constants.h"
 
 // Extension version python
-#define PY_EXT_VERSION "1.5.7"
+#define PY_EXT_VERSION "2.0.0"
 
 
 static void py_object_call(lua_State *L) {
