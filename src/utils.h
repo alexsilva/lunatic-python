@@ -70,5 +70,9 @@ int python_api_tag(lua_State *L);
 char *strdup(const char *s);
 #endif
 
+int PyObject_IsListInstance(PyObject *obj);
+int PyObject_IsTupleInstance(PyObject *obj);
+int PyObject_IsDictInstance(PyObject *obj);
+
 #define isvalidstatus(res) ((res != UNCHANGED))
 #endif //LUNATIC_UTILS_H

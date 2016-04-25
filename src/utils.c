@@ -169,3 +169,18 @@ void lua_raise_error(lua_State *L, char *format,
     free(pstr); // free pointer!
     lua_new_error(L, &buff[0]);
 }
+
+/* If the object is an instance of a list */
+int PyObject_IsListInstance(PyObject *obj) {
+    return PyObject_IsInstance(obj, (PyObject*) &PyList_Type);
+}
+
+/* If the object is an instance of a tuple */
+int PyObject_IsTupleInstance(PyObject *obj) {
+    return PyObject_IsInstance(obj, (PyObject*) &PyTuple_Type);
+}
+
+/* If the object is an instance of a dictionary */
+int PyObject_IsDictInstance(PyObject *obj) {
+    return PyObject_IsInstance(obj, (PyObject*) &PyDict_Type);
+}
