@@ -124,9 +124,8 @@ void py_raw(lua_State *L) {
 
 static Conversion xpush_pyobject_container(lua_State *L, PyObject *obj) {
     bool asindx = false;
-    if (PyObject_IsInstance(obj, (PyObject*) &PyList_Type) ||
-        PyObject_IsInstance(obj, (PyObject*) &PyTuple_Type) ||
-        PyObject_IsInstance(obj, (PyObject*) &PyDict_Type))
+    if (PyObject_IsListInstance(obj) || PyObject_IsTupleInstance(obj) ||
+        PyObject_IsDictInstance(obj))
         asindx = true;
     return push_pyobject_container(L, obj, asindx);
 }
