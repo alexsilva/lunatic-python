@@ -44,54 +44,64 @@ Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx) {
 lua_Object py_object_raw(lua_State *L, PyObject *obj,
                          lua_Object lptable, PyObject *lpkey) {
     lua_Object ltable = lua_createtable(L);
-    if (PyDict_Check(obj)) {
+    if (PyObject_IsDictInstance(obj)) {
+        PyObject *iterator = PyObject_GetIter(obj); // iterator keys
+        if (!iterator) lua_new_error(L, "failed to create the dictionary iterator");
         PyObject *key, *value;
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(obj, &pos, &key, &value)) {
-            if (!key) lua_raise_error(L, "failed to convert the key %s", key);
-            if (!value) lua_raise_error(L, "failed to convert the key value %s", key);
-            if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
-                py_object_raw(L, value, ltable, key);
+        while ((key = PyIter_Next(iterator))) {
+            value = PyObject_GetItem(obj, key);
+            if (!value) {
+                Py_DECREF(iterator); Py_DECREF(key);
+                lua_raise_error(L, "failed to convert the key value %s", key);
+            }
+            if (PyObject_IsDictInstance(value) || PyObject_IsListInstance(value) ||
+                PyObject_IsTupleInstance(value)) {
+                if (py_object_raw(L, value, ltable, key) == LUA_NOOBJECT) {
+                    Py_DECREF(key); Py_DECREF(value); Py_DECREF(iterator);
+                    lua_raise_error(L, "raw type not supported \"%s\"", value);
+                } else {
+                    Py_DECREF(value);
+                }
             } else {
                 lua_pushobject(L, ltable);
-                if (py_convert(L, key) == WRAPPED) {
-                    Py_INCREF(key); // borrow reference
-                }
-                if (py_convert(L, value) == WRAPPED) {
-                    Py_INCREF(value); // borrow reference
-                }
+                if (py_convert(L, key) == CONVERTED) Py_DECREF(key);
+                if (py_convert(L, value) == CONVERTED) Py_DECREF(value);
                 lua_settable(L);
             }
         }
-    } else if (PyList_Check(obj) || PyTuple_Check(obj)) {
-        Py_ssize_t size = PyList_Check(obj) ? PyList_Size(obj) : PyTuple_Size(obj);
-        Py_ssize_t index;
-        PyObject *value;
-        PyObject *ikey;
+        Py_DECREF(iterator);
+        if (PyErr_Occurred()) {
+            lua_raise_error(L, "failure iterating dictionary: %s", obj);
+        }
+    } else if (PyObject_IsListInstance(obj) || PyObject_IsTupleInstance(obj)) {
+        Py_ssize_t index, size = PyObject_Size(obj);
+        PyObject *ikey, *value;
         for (index = 0; index < size; index++) {
             ikey = PyInt_FromSsize_t(index);
             value = PyObject_GetItem(obj, ikey);
             Py_DECREF(ikey);
-            if (PyDict_Check(value) || PyList_Check(value) || PyTuple_Check(value)) {
+            if (PyObject_IsDictInstance(value) || PyObject_IsListInstance(value) ||
+                PyObject_IsTupleInstance(value)) {
                 ikey = PyInt_FromSsize_t(index + 1);
-                py_object_raw(L, value, ltable, ikey);
-                Py_DECREF(value);
-                Py_DECREF(ikey);
+                if (py_object_raw(L, value, ltable, ikey) == LUA_NOOBJECT) {
+                    Py_DECREF(ikey); Py_DECREF(value);
+                    lua_raise_error(L, "raw type not supported \"%s\"", value);
+                } else {
+                    Py_DECREF(value);
+                }
             } else {
                 lua_pushobject(L, ltable);
                 lua_pushnumber(L, index + 1);
-                if (py_convert(L, value) == CONVERTED) {
-                    Py_DECREF(value);
-                }
+                if (py_convert(L, value) == CONVERTED) Py_DECREF(value);
                 lua_settable(L);
             }
         }
     } else {
-        lua_raise_error(L, "raw type not supported \"%s\"", obj);
+        return LUA_NOOBJECT; // error: invalid type
     }
     if (lptable && lpkey) {
         lua_pushobject(L, lptable);
-        py_convert(L, lpkey);
+        if (py_convert(L, lpkey) == CONVERTED) Py_DECREF(lpkey);
         lua_pushobject(L, ltable);
         lua_settable(L);
     }
@@ -103,7 +113,10 @@ void py_raw(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_object_container(L, lobj)) {
         py_object *obj = get_py_object(L, lobj);
-        lua_pushobject(L, py_object_raw(L, obj->object, 0, NULL));
+        lua_Object retval = py_object_raw(L, obj->object, 0, NULL);
+        if (retval == LUA_NOOBJECT)
+            lua_raise_error(L, "raw type not supported \"%s\"", obj->object);
+        lua_pushobject(L, retval);
     } else {
         lua_pushobject(L, lobj);
     }
