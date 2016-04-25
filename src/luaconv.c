@@ -79,11 +79,22 @@ bool ispykwargs(lua_State *L, lua_Object userdata) {
 bool is_indexed_array(lua_State *L, lua_Object ltable) {
     int index = lua_next(L, ltable, 0);
     lua_Object key;
+    TObject *obj;
+    double num;
     while (index != 0) {
         key = lua_getparam(L, 1);
-        if ((!lua_isnumber(L, key) && lua_isstring(L, key) &&
-             strcmp(lua_getstring(L, key), "n") != 0))
-            return false;
+        obj = lapi_address(L, key);
+        switch (ttype(obj)) {
+            case LUA_T_STRING:
+                if (strcmp(lua_getstring(L, key), "n") != 0)
+                    return false; // string key {"a" = 1} dict
+            case LUA_T_NUMBER:
+                num = lua_getnumber(L, key);
+                if (rintf((float) num) != num)
+                    return false; // float key {[2.5] = "a"} dict
+            default:
+                break; // int key {[1] = "a"} // list
+        }
         index = lua_next(L, ltable, index);
     }
     return true;
