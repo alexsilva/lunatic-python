@@ -153,6 +153,13 @@ assert(json.loads(jsond)[2] == 'c', "json parsed list 2 index invalid value")
 assert(python.eval("1") == 1, "eval int no match")
 assert(python.eval("1.0001") == 1.0001, "eval float no match")
 
+local jvl = json.loads('{"a" : 1}')
+local jvlc = python.raw(jvl)
+
+assert(builtins.isinstance(jvl, builtins.dict), "dict check: type error")
+assert(type(jvlc) == "table", "raw type: invalid type!")
+assert(jvlc["a"] == 1, "raw type: key 'a' not found!")
+
 python.execute([[
 def fn_args(arg):
     assert len(arg) == 5, "no args!"
