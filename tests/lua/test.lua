@@ -48,6 +48,28 @@ assert(type(globals) == "userdata", "globals is not a table")
 local builtins = python.builtins()
 assert(type(builtins) == "userdata", "builtins is not a table")
 
+local d = builtins.dict({["1.0"] = "a", [2] = "b"})
+assert(d["1.0"] == "a", "#1 dict error!")
+assert(d[2] == "b", "#2 dict error!")
+
+d = {[1.5] = "a", [2.6] = 5, [3] = 6}
+local x = builtins.list(d)
+local y = builtins.dict(d)
+
+builtins.map(function(v)
+    assert(python.asattr(% x).count(v) > 0, "# list check error!")
+end, {1.5, 2.6, 3})
+
+assert(y[1.5] == "a", "#1 dict value error!")
+assert(y[2.6] == 5, "#2 dict value error!")
+assert(y[3] == 6, "#3 dict value error!")
+
+d = {[1] = "a", [2] = 5, [3] = "b" }
+x = builtins.list(d)
+builtins.map(function(v)
+    assert(python.asattr(% x).count(v) > 0, "## list check error!")
+end, {"a", 5, "b"})
+
 -- encoding
 local encodingdefault = python.get_unicode_encoding()
 local errorhandlerdefault = python.get_unicode_encoding_errorhandler()
