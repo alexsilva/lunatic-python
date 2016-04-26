@@ -223,7 +223,7 @@ void py_args_array(lua_State *L) {
         } else if (!PyObject_IsInstance(obj, (PyObject *) &PyTuple_Type)) {  // invalid type
             const char *repr = obj->ob_type->tp_name ? obj->ob_type->tp_name : "?";
             char *format = "object type \"%s\" can not be converted to args!";
-            char buff[strlen(format) + strlen(repr)];
+            char buff[buffsize_calc(2, format, repr)];
             sprintf(buff, format, repr);
             lua_new_error(L, &buff[0]);
         }
@@ -253,7 +253,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             char *mkey = get_pyobject_str(key);
             char *skey = mkey ? mkey : "...";
             char *format = "failed to convert key \"%s\"";
-            char buff[strlen(format) + strlen(skey)];
+            char buff[buffsize_calc(2, format, skey)];
             sprintf(buff, format, skey);
             free(mkey); // free pointer!
             lua_new_error(L, &buff[0]);
@@ -266,7 +266,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             char *mkey = get_pyobject_str(key);
             char *skey = mkey ? mkey : "...";
             char *format = "failed to convert value of key \"%s\"";
-            char buff[strlen(format) + strlen(skey)];
+            char buff[buffsize_calc(2, format, skey)];
             sprintf(buff, format, skey);
             free(mkey); // free pointer!
             lua_new_error(L, &buff[0]);
