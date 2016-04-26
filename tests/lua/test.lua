@@ -48,6 +48,10 @@ assert(type(globals) == "userdata", "globals is not a table")
 local builtins = python.builtins()
 assert(type(builtins) == "userdata", "builtins is not a table")
 
+assert(builtins.isinstance(python.tuple{1,2,3}, builtins.tuple), "tuple error!")
+assert(builtins.isinstance(python.list{1,2,3,4,5}, builtins.list), "list error!")
+assert(builtins.isinstance(python.dict{a=10, b=builtins.range(5)}, builtins.dict), "dict error!")
+
 local d = builtins.dict({["1.0"] = "a", [2] = "b"})
 assert(d["1.0"] == "a", "#1 dict error!")
 assert(d[2] == "b", "#2 dict error!")
