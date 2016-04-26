@@ -109,7 +109,7 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
 }
 
 /* Convert types in Python directly to the Lua */
-void py_raw(lua_State *L) {
+void pyobj2table(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_object_container(L, lobj)) {
         py_object *obj = get_py_object(L, lobj);

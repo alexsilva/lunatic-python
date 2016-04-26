@@ -489,7 +489,6 @@ static struct luaL_reg py_lib[] = {
     {"kwargs",                            py_kwargs},
     {"args_array",                        py_args_array},
     {"is_embedded",                       python_is_embedded},
-    {"raw",                               py_raw},
     {"get_version",                       py_get_version},
     {"set_unicode_encoding",              py_set_unicode_encoding},
     {"get_unicode_encoding",              py_get_unicode_encoding},
@@ -501,6 +500,8 @@ static struct luaL_reg py_lib[] = {
     {"dict",                              table2dict},
     {"tuple",                             table2tuple},
     {"list",                              table2list},
+    {"table",                             pyobj2table},
+    {"raw",                               pyobj2table},
     {NULL, NULL}
 };
 
