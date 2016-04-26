@@ -25,6 +25,7 @@ bool ispykwargs(lua_State *L, lua_Object userdata);
 
 PyObject *get_py_tuple(lua_State *, int stackpos);
 PyObject *ltable_convert_tuple(lua_State *, lua_Object lobj);
+PyObject *ltable2list(lua_State *L, lua_Object ltable);
 PyObject *get_py_dict(lua_State *L, lua_Object ltable);
 
 void py_args_array(lua_State *L);
