@@ -474,34 +474,34 @@ static void python_is_embedded(lua_State *L) {
 }
 
 static struct luaL_reg py_lib[] = {
-    {"execute",                           py_execute},
-    {"eval",                              py_eval},
-    {"asindex",                           py_asindx},
-    {"asattr",                            py_asattr},
-    {"str",                               py_object_tostring},
-    {"locals",                            py_locals},
-    {"globals",                           py_globals},
-    {"builtins",                          py_builtins},
-    {"import",                            py_import},
-    {"system_init",                       python_system_init},
-    {"system_exit",                       python_system_exit},
+    {"execute",                           py_execute}, // run arbitrary expressions in the interpreter.
+    {"eval",                              py_eval},  // assesses the value of a variable and returns its reference.
+    {"asindex",                           py_asindx}, // change the mode of access to attributes of an object for indexes.
+    {"asattr",                            py_asattr}, // changes the way to access the attributes of an object for attributes.
+    {"str",                               py_object_tostring}, // represents the object as a string (str(o)).
+    {"locals",                            py_locals}, // returns the local scope variables dictionary.
+    {"globals",                           py_globals}, // returns the global scope variables dictionary.
+    {"builtins",                          py_builtins}, // returns the dictionary embedded objects.
+    {"import",                            py_import}, // importing a module by its name (import("os")).
+    {"system_init",                       python_system_init}, // initializes the interpreter in the location.
+    {"system_exit",                       python_system_exit}, // terminates the interpreter (when embedded).
     {"args",                              py_args},
     {"kwargs",                            py_kwargs},
     {"args_array",                        py_args_array},
-    {"is_embedded",                       python_is_embedded},
-    {"get_version",                       py_get_version},
+    {"is_embedded",                       python_is_embedded}, // report of the python interpreter was embedded in the Lua
+    {"get_version",                       py_get_version}, // return release of the extension.
     {"set_unicode_encoding",              py_set_unicode_encoding},
     {"get_unicode_encoding",              py_get_unicode_encoding},
     {"get_unicode_encoding_errorhandler", py_get_unicode_encoding_errorhandler},
     {"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
-    {"byref",                             py_byref},
-    {"byrefc",                            py_byrefc},
-    {"tag",                               py_get_tag},
-    {"dict",                              table2dict},
-    {"tuple",                             table2tuple},
-    {"list",                              table2list},
-    {"table",                             pyobj2table},
-    {"raw",                               pyobj2table},
+    {"byref",                             py_byref}, // returns the result reference (no conversion).
+    {"byrefc",                            py_byrefc}, // returns the result reference (no conversion).
+    {"tag",                               py_get_tag}, // returns the container tag objects python.
+    {"dict",                              table2dict}, // returns a converted table to dictionary.
+    {"tuple",                             table2tuple}, // returns a converted table to tuple.
+    {"list",                              table2list}, // returns a converted table to list.
+    {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
+    {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
     {NULL, NULL}
 };
 
