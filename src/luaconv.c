@@ -227,8 +227,11 @@ void py_args_array(lua_State *L) {
             sprintf(buff, format, repr);
             lua_new_error(L, &buff[0]);
         }
-    } else {
+    } else if (lua_istable(L, lobj)){
         obj = ltable_convert_tuple(L, lobj);
+    } else {
+        lua_new_error(L, "#1 table or list expected");
+        return;
     }
     py_object *pobj = py_object_container(L, obj, 1);
     lua_pushusertag(L, pobj, python_api_tag(L));
