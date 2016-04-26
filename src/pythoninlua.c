@@ -267,9 +267,9 @@ static void py_eval(lua_State *L) {
  * sys.path[0]  # '0' as index (default)
 **/
 static void py_asindx(lua_State *L) {
-    lua_Object obj = lua_getparam(L, 1);
-    get_py_object(L, obj)->asindx = true;
-    lua_pushobject(L, obj);
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
+    Py_INCREF(pobj->object); // new ref
+    push_pyobject_container(L, pobj->object, true);
 }
 
 /**
@@ -279,9 +279,9 @@ static void py_asindx(lua_State *L) {
  * python.asattr(sys.path).pop(0) # 'pop' as attribute
 **/
 static void py_asattr(lua_State *L) {
-    lua_Object obj = lua_getparam(L, 1);
-    get_py_object(L, obj)->asindx = false;
-    lua_pushobject(L, obj);
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
+    Py_INCREF(pobj->object); // new ref
+    push_pyobject_container(L, pobj->object, false);
 }
 
 /**
