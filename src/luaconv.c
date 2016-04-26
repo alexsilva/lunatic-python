@@ -122,7 +122,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
             char *format = "failed to convert argument #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, index + 1);
-            lua_error(L, &buff[0]);
+            lua_new_error(L, &buff[0]);
         }
         if (is_object_container(L, larg))
             Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
@@ -156,7 +156,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
             char *format = "failed to convert argument #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, index + 1);
-            lua_error(L, &buff[0]);
+            lua_new_error(L, &buff[0]);
         }
         if (PyList_Append(list, arg) != 0) {
             if (!is_object_container(L, larg))
