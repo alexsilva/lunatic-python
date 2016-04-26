@@ -218,9 +218,9 @@ void py_args_array(lua_State *L) {
     if (is_object_container(L, lobj)) {
         obj = get_pobject(L, lobj);
         // arguments must be tuple (conversion solves this)
-        if (PyObject_IsInstance(obj, (PyObject *) &PyList_Type)) {  // tuple(list)
+        if (PyObject_IsListInstance(obj)) {  // tuple(list)
             obj = PyList_AsTuple(obj);
-        } else if (!PyObject_IsInstance(obj, (PyObject *) &PyTuple_Type)) {  // invalid type
+        } else if (!PyObject_IsTupleInstance(obj)) { // invalid type
             const char *repr = obj->ob_type->tp_name ? obj->ob_type->tp_name : "?";
             char *format = "object type \"%s\" can not be converted to args!";
             char buff[buffsize_calc(2, format, repr)];
