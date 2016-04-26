@@ -88,10 +88,12 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
             case LUA_T_STRING:
                 if (strcmp(lua_getstring(L, key), "n") != 0)
                     return false; // string key {"a" = 1} dict
+                break;
             case LUA_T_NUMBER:
                 num = lua_getnumber(L, key);
                 if (rintf((float) num) != num)
                     return false; // float key {[2.5] = "a"} dict
+                break;
             default:
                 break; // int key {[1] = "a"} // list
         }
