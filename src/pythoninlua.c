@@ -429,6 +429,27 @@ static void py_get_unicode_encoding_errorhandler(lua_State *L) {
     lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER));
 }
 
+/* Convert a Lua table into a Python dictionary */
+static void table2dict(lua_State *L) {
+    PyObject *dict = get_py_dict(L, luaL_tablearg(L, 1));
+    py_object *pobj = py_object_container(L, dict, 1);
+    lua_pushusertag(L, pobj, python_api_tag(L));
+}
+
+/* Convert a Lua table to a python tuple */
+static void table2tuple(lua_State *L) {
+    PyObject *tuple = ltable_convert_tuple(L, luaL_tablearg(L, 1));
+    py_object *pobj = py_object_container(L, tuple, 1);
+    lua_pushusertag(L, pobj, python_api_tag(L));
+}
+
+/* Convert a Lua table to a python list */
+static void table2list(lua_State *L) {
+    PyObject *list = ltable2list(L, luaL_tablearg(L, 1));
+    py_object *pobj = py_object_container(L, list, 1);
+    lua_pushusertag(L, pobj, python_api_tag(L));
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -471,6 +492,9 @@ static struct luaL_reg py_lib[] = {
     {"byref",                             py_byref},
     {"byrefc",                            py_byrefc},
     {"tag",                               py_get_tag},
+    {"dict",                              table2dict},
+    {"tuple",                             table2tuple},
+    {"list",                              table2list},
     {NULL, NULL}
 };
 
