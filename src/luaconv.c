@@ -114,7 +114,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     int index = 0, stackpos = 2;
     lua_Object larg;
     PyObject *arg;
-    while (nextindex != 0) {
+    while (nextindex > 0) {
         larg = lua_getparam(L, stackpos);
         arg = lua_stack_convert(L, stackpos, larg);
         if (!arg) {
@@ -148,7 +148,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
     int index = 0, stackpos = 2;
     lua_Object larg;
     PyObject *arg;
-    while (nextindex != 0) {
+    while (nextindex > 0) {
         larg = lua_getparam(L, stackpos);
         arg = lua_stack_convert(L, stackpos, larg);
         if (!arg) {
@@ -244,7 +244,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     int index = lua_next(L, ltable, 0);
     lua_Object lkey, lvalue;
     int stackpos;
-    while (index != 0) {
+    while (index > 0) {
         stackpos = 1;
         lkey = lua_getparam(L, stackpos);
         key = lua_stack_convert(L, stackpos, lkey);
