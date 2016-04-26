@@ -184,9 +184,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         arg = lua_stack_convert(L, pos, larg);
         if (!arg) {
             Py_DECREF(tuple);
-            char *error = "failed to convert argument #%d";
-            char buff[strlen(error) + 10];
-            sprintf(buff, error, index + 1);
+            char *format = "failed to convert argument #%d";
+            char buff[strlen(format) + 32];
+            sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
         }
         if (is_object_container(L, larg))
