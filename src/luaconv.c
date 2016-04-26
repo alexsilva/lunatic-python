@@ -135,6 +135,39 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     return tuple;
 }
 
+/**
+ * Convert a lua table for python tuple
+ **/
+PyObject *ltable2list(lua_State *L, lua_Object ltable) {
+    PyObject *list = PyList_New(0);
+    if (!list) lua_new_error(L, "failed to create list");
+    set_table_nil(L, ltable, "n"); // remove "n"
+    int nextindex = lua_next(L, ltable, 0);
+    int index = 0, stackpos = 2;
+    lua_Object larg;
+    PyObject *arg;
+    while (nextindex != 0) {
+        larg = lua_getparam(L, stackpos);
+        arg = lua_stack_convert(L, stackpos, larg);
+        if (!arg) {
+            Py_DECREF(list);
+            char *format = "failed to convert argument #%d";
+            char buff[strlen(format) + 32];
+            sprintf(buff, format, index + 1);
+            lua_error(L, &buff[0]);
+        }
+        if (PyList_Append(list, arg) != 0) {
+            if (!is_object_container(L, larg))
+                Py_DECREF(arg);
+            Py_DECREF(list);
+            lua_new_error(L, "failed to set item in list");
+        }
+        nextindex = lua_next(L, ltable, nextindex);
+        index++;
+    }
+    return list;
+}
+
 /* Convert arguments in the stack lua to tuple */
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
