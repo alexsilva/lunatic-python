@@ -230,7 +230,7 @@ void py_args_array(lua_State *L) {
     } else if (lua_istable(L, lobj)){
         obj = ltable_convert_tuple(L, lobj);
     } else {
-        lua_new_error(L, "#1 table or list expected");
+        lua_new_error(L, "table, list or tuple expected as argument");
         return;
     }
     py_object *pobj = py_object_container(L, obj, 1);
