@@ -262,6 +262,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         lvalue = lua_getparam(L, stackpos);
         value = lua_stack_convert(L, stackpos, lvalue);
         if (!value) {
+            Py_DECREF(key);
             Py_DECREF(dict);
             char *mkey = get_pyobject_str(key);
             char *skey = mkey ? mkey : "...";
@@ -272,8 +273,8 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             lua_new_error(L, &buff[0]);
         }
         if (PyDict_SetItem(dict, key, value) != 0) {
-            Py_XDECREF(key);
-            Py_XDECREF(value);
+            Py_DECREF(key);
+            Py_DECREF(value);
             Py_DECREF(dict);
             lua_new_error(L, "failed to set item in dict");
         }
