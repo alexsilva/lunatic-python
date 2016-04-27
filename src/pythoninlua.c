@@ -450,6 +450,28 @@ static void table2list(lua_State *L) {
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
+/* Split lists and tuples slices o[start:end] */
+static void pyobject_slice(lua_State *L) {
+    lua_Object lobj = lua_getparam(L, 1);
+    if (is_object_container(L, lobj)) {
+        int start = luaL_check_int(L, 2);
+        int end = luaL_check_int(L, 3);
+        PyObject *object = get_pobject(L, lobj);
+        PyObject *obj = PySequence_GetSlice(object, start, end);
+        if (!obj) {
+            const char *name = object->ob_type->tp_name;
+            char *format = "object \"%s\" does not support slices";
+            const char *str = name ? name : "?";
+            char buff[buffsize_calc(2, format, str)];
+            sprintf(buff, format, str);
+            lua_new_error(L, &buff[0]);
+        }
+        push_pyobject_container(L, obj, 1);
+    } else {
+        lua_error(L, "#1 is not a container for python object!");
+    }
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -496,6 +518,7 @@ static struct luaL_reg py_lib[] = {
     {"list",                              table2list}, // returns a converted table to list.
     {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
     {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
+    {"slice",                             pyobject_slice},
     {NULL, NULL}
 };
 
