@@ -52,6 +52,9 @@ assert(builtins.isinstance(python.tuple{1,2,3}, builtins.tuple), "tuple error!")
 assert(builtins.isinstance(python.list{1,2,3,4,5}, builtins.list), "list error!")
 assert(builtins.isinstance(python.dict{a=10, b=builtins.range(5)}, builtins.dict), "dict error!")
 
+local l = python.list{"a", "b", "c", "d"}
+assert(python.slice(l, 2, -1)[0] == "c", "slice error!")
+
 local d = builtins.dict({["1.0"] = "a", [2] = "b"})
 assert(d["1.0"] == "a", "#1 dict error!")
 assert(d[2] == "b", "#2 dict error!")
