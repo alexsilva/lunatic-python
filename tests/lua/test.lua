@@ -43,10 +43,10 @@ print("Python sys.path")
 builtins.map(function(path) print(path) end, sys.path)
 
 local globals = python.globals()
-assert(type(globals) == "userdata", "globals is not a table")
+assert(type(globals) == "userdata", "globals is not a userdata")
 
 local builtins = python.builtins()
-assert(type(builtins) == "userdata", "builtins is not a table")
+assert(type(builtins) == "userdata", "builtins is not a userdata")
 
 assert(builtins.isinstance(python.tuple{1,2,3}, builtins.tuple), "tuple error!")
 assert(builtins.isinstance(python.list{1,2,3,4,5}, builtins.list), "list error!")
