@@ -28,7 +28,7 @@
 
 #include "pythoninlua.h"
 
-#ifndef lua_next
+#if defined(_WIN32)
 #include "lapi.h"
 #endif
 

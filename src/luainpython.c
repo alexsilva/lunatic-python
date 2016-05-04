@@ -27,11 +27,10 @@
 #include "luainpython.h"
 #include "pyconv.h"
 #include "utils.h"
-
-#ifndef lua_next
-#include "lapi.h"
-#else
 #include "lshared.h"
+
+#if defined(_WIN32)
+#include "lapi.h"
 #endif
 
 #ifdef CGILUA_ENV

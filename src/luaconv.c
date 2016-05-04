@@ -5,7 +5,7 @@
 
 #include <lua.h>
 
-#ifndef lua_next
+#if defined(_WIN32)
 #include "lapi.h"
 #endif
 
@@ -13,7 +13,7 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "constants.h"
-
+#include "lshared.h"
 
 PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
     LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
