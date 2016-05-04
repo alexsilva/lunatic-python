@@ -603,7 +603,7 @@ static void python_system_init(lua_State *L) {
 #endif
         Py_SetProgramName(argv[0]);
         Py_SetPythonHome(python_home);
-        Py_Initialize();
+        Py_InitializeEx(0);
         PySys_SetArgv(1, argv);
         /* Import 'lua' automatically. */
         luam = PyImport_ImportModule("lua_bootstrap");
