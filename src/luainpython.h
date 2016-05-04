@@ -24,7 +24,6 @@
 #define LUAINPYTHON_H
 
 #include <stdbool.h>
-#include <pthread.h>
 
 typedef struct {
     PyObject_HEAD
