@@ -62,11 +62,13 @@ set_target_properties(lua PROPERTIES
 # =====================
 
 if (UNIX)
-    target_link_libraries(python python2.7 pthread util)
-    target_link_libraries(lua python2.7 pthread util)
+    set(LINK_LIBRARY python2.7 pthread util)
+    target_link_libraries(python ${LINK_LIBRARY})
+    target_link_libraries(lua ${LINK_LIBRARY})
 else(UNIX)
-    target_link_libraries(python python27 lua32ng lualib32ng)
-    target_link_libraries(lua python27 lua32ng lualib32ng)
+    set(LINK_LIBRARY python27 lua32ng lualib32ng)
+    target_link_libraries(python ${LINK_LIBRARY})
+    target_link_libraries(lua ${LINK_LIBRARY})
 endif (UNIX)
 
 
