@@ -21,7 +21,7 @@ set(SOURCES
     src/lshared.h
     src/constants.h)
 
-if (WIN32) # LINUX
+if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)
 endif()
 
