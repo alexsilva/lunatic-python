@@ -19,8 +19,11 @@ set(SOURCES
     src/utils.h
     src/utils.c
     src/lshared.h
-    src/lapi.c
     src/constants.h)
+
+if (WIN32) # LINUX
+    set(SOURCES ${SOURCES} src/lapi.c)
+endif()
 
 add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})
@@ -30,6 +33,11 @@ if (CGILUA_ENV)
     include_directories(${cgilua_DIR})
     add_definitions(-DCGILUA_ENV=ON)
     set(CGILUA_LIBS ${cgilua_DIR}/Release/libcgilua.a)
+    if (UNIX) # LINUX
+        find_package(lua REQUIRED)
+        link_directories(lua_DIR)
+        set(CGILUA_LIBS ${CGILUA_LIBS} ${lua_DIR}/Release/liblua.a)
+    endif()
     target_link_libraries(lua ${CGILUA_LIBS})
     target_link_libraries(python ${CGILUA_LIBS})
 endif(CGILUA_ENV)
