@@ -184,7 +184,8 @@ static void py_object_index(lua_State *L) {
 static void py_object_gc(lua_State *L) {
     py_object *pobj = lua_getuserdata(L, lua_getparam(L, 1));
     if (pobj) {
-        Py_XDECREF(pobj->object);
+        if (Py_IsInitialized())
+            Py_XDECREF(pobj->object);
         free(pobj);
     }
 }
