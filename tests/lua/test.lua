@@ -57,6 +57,8 @@ assert(builtins.isinstance(python.asargs(python.tuple{"a", "b", "c"}), builtins.
 assert(builtins.isinstance(python.asargs(python.list{1,2,3}), builtins.tuple), "#3 tuple expected")
 assert(builtins.isinstance(python.asargs(builtins.range(3)), builtins.tuple), "#4 tuple expected")
 
+assert(builtins.isinstance(python.askwargs(python.dict{a = 1, b = 2, c = 3}), builtins.dict), "#1 dict expected")
+
 local l = python.list{"a", "b", "c", "d"}
 assert(python.slice(l, 2, -1)[0] == "c", "slice error!")
 
