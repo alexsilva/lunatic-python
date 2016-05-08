@@ -302,6 +302,18 @@ static void py_asargs(lua_State *L) {
     }
 }
 
+/* Enables dictionaries as keyword arguments */
+static void py_askwargs(lua_State *L) {
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
+    if (PyObject_IsDictInstance(pobj->object)) {
+        pobj = py_object_container(L, pobj->object, true);
+        pobj->iskwargs = true;
+        lua_pushusertag(L, pobj, python_api_tag(L));
+    } else {
+        luaL_argerror(L, 1, "dict expected");
+    }
+}
+
 /**
  * Returns the globals dictionary
 **/
@@ -538,6 +550,7 @@ static struct luaL_reg py_lib[] = {
     {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
     {"slice",                             pyobject_slice},
     {"asargs",                            py_asargs},
+    {"askwargs",                          py_askwargs},
     {NULL, NULL}
 };
 
