@@ -4,7 +4,6 @@
 
 #include "lapi.h"
 #include <ldo.h>
-#include <ltable.h>
 
 void luaD_checkstack(lua_State *L, int n) { } // missing runtime
 

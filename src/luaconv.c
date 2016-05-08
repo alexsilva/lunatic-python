@@ -80,27 +80,25 @@ bool ispykwargs(lua_State *L, lua_Object userdata) {
 
 /* Checks if a table contains only numbers as keys */
 bool is_indexed_array(lua_State *L, lua_Object ltable) {
-    int index = lua_next(L, ltable, 0);
-    lua_Object key;
-    TObject *obj;
     double num;
-    while (index != 0) {
-        key = lua_getparam(L, 1);
-        obj = lapi_address(L, key);
-        switch (ttype(obj)) {
+    Node *n;
+    TObject *key;
+    int index = 0;
+    while ((index = lraw_next(L, ltable, index, &n)) > 0) {
+        key = lua_getkey(L, n);
+        switch (lua_gettype(key)) {
             case LUA_T_STRING:
-                if (strcmp(lua_getstring(L, key), "n") != 0)
+                if (strcmp(lua_getstr(key), "n") != 0)
                     return false; // string key {"a" = 1} dict
                 break;
             case LUA_T_NUMBER:
-                num = lua_getnumber(L, key);
-                if (rintf((float) num) != num)
+                num = lua_getnum(key);
+                if (rint(num) != num)
                     return false; // float key {[2.5] = "a"} dict
                 break;
             default:
                 break; // int key {[1] = "a"} // list
         }
-        index = lua_next(L, ltable, index);
     }
     return true;
 }
