@@ -4,6 +4,7 @@
 #include <Python.h>
 
 #include <lua.h>
+#include <lauxlib.h>
 
 #if defined(_WIN32)
 #include "lapi.h"
@@ -295,18 +296,10 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 
 void py_kwargs(lua_State *L) {
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
-    int nargs = lua_gettop(L);
-    if (nargs < 1 || nargs > 1) {
-        lua_error(L, "expected only one table");
-    }
-    lua_Object ltable = lua_getparam(L, 1);
-    if (!lua_istable(L, ltable)) {
-        lua_error(L, "first arg need be table ex: pykwargs{a=10}");
-    }
-    PyObject *dict = get_py_dict(L, ltable);
+    PyObject *dict = get_py_dict(L, luaL_tablearg(L, 1));
     py_object *pobj = py_object_container(L, dict, 1);
-    lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->iskwargs = true;
+    lua_pushusertag(L, pobj, python_api_tag(L));
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
