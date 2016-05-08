@@ -29,7 +29,6 @@
 #include "pythoninlua.h"
 
 #if defined(_WIN32)
-#include "lapi.h"
 #endif
 
 #include "luaconv.h"
@@ -285,6 +284,24 @@ static void py_asattr(lua_State *L) {
     push_pyobject_container(L, pobj->object, false);
 }
 
+/* Enables list and tuple as arguments */
+static void py_asargs(lua_State *L) {
+    py_object *pobj = get_py_object(L, lua_getparam(L, 1));
+    if (PyObject_IsListInstance(pobj->object)) {
+        PyObject *obj = PyList_AsTuple(pobj->object);
+        pobj = py_object_container(L, obj, true);
+        pobj->isargs = true;
+        lua_pushusertag(L, pobj, python_api_tag(L));
+    } else if (PyObject_IsTupleInstance(pobj->object)) {
+        Py_INCREF(pobj->object);
+        pobj = py_object_container(L, pobj->object, true);
+        pobj->isargs = true;
+        lua_pushusertag(L, pobj, python_api_tag(L));
+    } else {
+        luaL_argerror(L, 1, "tuple or list expected");
+    }
+}
+
 /**
  * Returns the globals dictionary
 **/
@@ -520,6 +537,7 @@ static struct luaL_reg py_lib[] = {
     {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
     {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
     {"slice",                             pyobject_slice},
+    {"asargs",                            py_asargs},
     {NULL, NULL}
 };
 
