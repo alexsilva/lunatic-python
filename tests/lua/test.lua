@@ -52,6 +52,11 @@ assert(builtins.isinstance(python.tuple{1,2,3}, builtins.tuple), "tuple error!")
 assert(builtins.isinstance(python.list{1,2,3,4,5}, builtins.list), "list error!")
 assert(builtins.isinstance(python.dict{a=10, b=builtins.range(5)}, builtins.dict), "dict error!")
 
+assert(builtins.isinstance(python.asargs(builtins.list(python.dict{a = 1, b = 2, c = 3})), builtins.tuple), "#1 tuple expected")
+assert(builtins.isinstance(python.asargs(python.tuple{"a", "b", "c"}), builtins.tuple), "#2 tuple expected")
+assert(builtins.isinstance(python.asargs(python.list{1,2,3}), builtins.tuple), "#3 tuple expected")
+assert(builtins.isinstance(python.asargs(builtins.range(3)), builtins.tuple), "#4 tuple expected")
+
 local l = python.list{"a", "b", "c", "d"}
 assert(python.slice(l, 2, -1)[0] == "c", "slice error!")
 
