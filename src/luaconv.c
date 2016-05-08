@@ -304,21 +304,19 @@ void py_kwargs(lua_State *L) {
 }
 
 /**
- * Returns the object python inside the container.
-**/
-PyObject *get_pobject(lua_State *L, lua_Object userdata) {
-    if (!is_object_container(L, userdata))
-        lua_error(L, "#1 container for invalid pyobject!");
-    return ((py_object *) lua_getuserdata(L, userdata))->object;
-}
-
-/**
  * Returns the pointer stored by the Lua object.
 **/
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_object_container(L, userdata))
-        lua_error(L, "#2 container for invalid pyobject!");
+        lua_error(L, "container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
+}
+
+/**
+ * Returns the object python inside the container.
+**/
+PyObject *get_pobject(lua_State *L, lua_Object userdata) {
+    return (get_py_object(L, userdata))->object;
 }
 
 static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
