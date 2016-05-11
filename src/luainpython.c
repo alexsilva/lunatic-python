@@ -51,14 +51,20 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     int nargs, index;
     nargs = PyTuple_Size(args);
     for (index = 0; index < nargs; index++) {
-        arg = PyTuple_GetItem(args, index);
+        arg = PyTuple_GetItem(args, index); // Borrowed reference.
         if (arg == NULL) {
             PyErr_Format(PyExc_TypeError, "failed to get tuple item #%d", index);
             return NULL;
         }
-        if (!isvalidstatus(py_convert(self->interpreter->L, arg))) {
-            PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", index);
-            return NULL;
+        switch (py_convert(self->interpreter->L, arg)) {
+            case WRAPPED: // The object is being managed by the Lua
+                Py_INCREF(arg); // PyTuple_GetItem (Borrowed reference)
+                break;
+            case CONVERTED:
+                break; // nop
+            default:
+                PyErr_Format(PyExc_TypeError, "failed to convert argument #%d", index);
+                return NULL;
         }
     }
     if (lua_callfunction(self->interpreter->L, lobj)) {
