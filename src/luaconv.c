@@ -180,7 +180,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int index, pos;
     PyObject *arg;
     lua_Object larg;
-    for (index = 0; index != nargs; index++) {
+    for (index = 0; index < nargs; index++) {
         pos = index + stackpos + 1;
         larg = lua_getparam(L, pos);
         arg = lua_stack_convert(L, pos, larg);
