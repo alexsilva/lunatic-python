@@ -161,7 +161,6 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
             Py_DECREF(item);
         }
     } else {
-        if (!is_object_container(L, lobj)) Py_DECREF(key);
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
         char *mkey = get_pyobject_str(key);
@@ -169,6 +168,8 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         char buff[buffsize_calc(3, error, name, skey)];
         sprintf(buff, error, name, skey);
         free(mkey); // free pointer!
+        if (!is_object_container(L, lobj))
+            Py_DECREF(key);
         lua_new_error(L, buff);
     }
     if (!is_object_container(L, lobj))
