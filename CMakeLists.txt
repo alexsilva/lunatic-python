@@ -30,27 +30,23 @@ add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})
 
 if (CGILUA_ENV)
-    find_package(cgilua REQUIRED)
-    include_directories(${cgilua_DIR})
     add_definitions(-DCGILUA_ENV=ON)
-    set(CGILUA_LIBS ${cgilua_DIR}/Release/libcgilua.a)
+    include_directories(${cgilua_SOURCE_DIR})
+    set(LIBRARIES cgilua)
     if (UNIX) # LINUX
         find_package(lua REQUIRED)
         link_directories(lua_DIR)
-        set(CGILUA_LIBS ${CGILUA_LIBS} ${lua_DIR}/Release/liblua.a)
+        set(LIBRARIES ${LIBRARIES} ${lua_DIR}/Release/liblua.a)
     endif()
-    target_link_libraries(lua ${CGILUA_LIBS})
-    target_link_libraries(python ${CGILUA_LIBS})
-endif(CGILUA_ENV)
+    target_link_libraries(lua ${LIBRARIES})
+    target_link_libraries(python ${LIBRARIES})
+endif()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set_target_properties(lua PROPERTIES
-            PREFIX ""
-            SUFFIX ".pyd")
+if (WIN32)
+    set_target_properties(lua PROPERTIES PREFIX "" SUFFIX ".pyd")
 else ()
-    set_target_properties(lua PROPERTIES
-            PREFIX "")
-endif ()
+    set_target_properties(lua PROPERTIES PREFIX "")
+endif()
 
 # =====================
 set_target_properties(python PROPERTIES
