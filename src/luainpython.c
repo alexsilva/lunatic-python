@@ -481,16 +481,15 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
  */
 static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *kwargs) {
 #ifdef CGILUA_ENV
-    const char *command = NULL;
+    const char *argv = NULL;
 
-    if (!PyArg_ParseTuple(args, "s", &command)) {
+    if (!PyArg_ParseTuple(args, "s", &argv)) {
         PyErr_SetString(PyExc_TypeError, "enter the path to the directory \"cgilua.conf\"");
         self->L = NULL;
         return -1;
     }
-    char *path[1] = {(char *) command};
 
-    self->L = lua_main(1, path);
+    self->L = lua_setup(argv);
 #else
     self->L = lua_open();
 
