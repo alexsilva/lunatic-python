@@ -10,33 +10,43 @@ print 'in lua: ', ' | '.join(dir(lua))
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
+
 def reversed_relation_call(arg):
     assert arg['sys'].path
     assert arg['os'].getcwd()
+
 
 def reversed_relation_iter(arg):
     assert sys in arg
     assert os in arg
 
+
 class LuaInterpreter(lua.Interpreter):
     def __enter__(self):
         return self
+
     def __exit__(self, *args, **kwargs):
         pass
+
 
 def _assert_python_cobject(arg):
     assert type(arg) is not dict, "arg is not a custom object!"
 
+
 def _assert_luapython_dict(arg):
     assert type(arg) is dict, "arg is not a dict!"
 
+
 _map = {
-    'python' : _assert_python_cobject,
-    'luapython' : _assert_luapython_dict
+    'python': _assert_python_cobject,
+    'luapython': _assert_luapython_dict
 }
+
+
 def func_type_check(origin, arg):
     _map[origin](arg)
     return arg
+
 
 def fn(interpreter, index):
     assert interpreter.eval("10") == 10, "error in the int conversion"
@@ -88,7 +98,7 @@ def fn(interpreter, index):
     print(lua_speak(*("Lua", index), **{}))
 
     data = interpreter.eval("{a={b={c={d={e={f={g={h={i={'a','b','c'}, hi=lua_speak},gh='hello'},"
-                       "fg=1.0},ef='a'},de=1},cd={1,2,3}},bc={1,2,3}},ab={1,2,3},}}")
+                            "fg=1.0},ef='a'},de=1},cd={1,2,3}},bc={1,2,3}},ab={1,2,3},}}")
 
     print data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index)
 
