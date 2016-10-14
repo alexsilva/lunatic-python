@@ -331,11 +331,7 @@ static PyObject *LuaObject_subscript(LuaObject *self, PyObject *key) {
 }
 
 static int LuaObject_ass_subscript(LuaObject *self, PyObject *key, PyObject *value) {
-    int ret = LuaObject_setattr(self, key, value);
-    if (ret == 0) {
-
-    }
-    return ret;
+    return LuaObject_setattr(self, key, value);
 }
 
 static int LuaObject_init(LuaObject *self, PyObject *args, PyObject *kwargs) {
