@@ -28,9 +28,6 @@
 
 #include "pythoninlua.h"
 
-#if defined(_WIN32)
-#endif
-
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
