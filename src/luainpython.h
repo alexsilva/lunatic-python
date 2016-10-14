@@ -23,6 +23,8 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
+#define LUA_EXT_VERSION "2.0.2"
+
 #include <stdbool.h>
 
 typedef struct {

@@ -39,8 +39,6 @@
 #include <lualib.h>
 #endif
 
-#define LUA_EXT_VERSION "2.0.2"
-
 
 static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     if (!PyTuple_Check(args)) {
