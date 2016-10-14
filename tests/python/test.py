@@ -92,6 +92,22 @@ def fn(interpreter, index):
     for i in data['d']:
         print i, ": ", data['d'][i]
 
+    table = interpreter.eval("{}")
+
+    table['a'] = 'item-a'
+    table['b'] = 'item-b'
+
+    for k in table:
+        assert k in ['a', 'b'], '#1 key not found %s' % k
+
+    table = interpreter.eval("{}")
+
+    table[1] = 'item-1'
+    table[2] = 'item-2'
+
+    for i in table:
+        assert i in ['item-1', 'item-2'], '#2 item not found %s' % i
+
     lua_speak = interpreter.eval("lua_speak")
     print "callable (%s) function %s" % (callable(lua_speak), lua_speak)
 
