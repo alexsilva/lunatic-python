@@ -307,6 +307,7 @@ static void py_asargs(lua_State *L) {
 static void py_askwargs(lua_State *L) {
     py_object *pobj = get_py_object(L, lua_getparam(L, 1));
     if (PyObject_IsDictInstance(pobj->object)) {
+        Py_INCREF(pobj->object);
         pobj = py_object_container(L, pobj->object, true);
         pobj->iskwargs = true;
         lua_pushusertag(L, pobj, python_api_tag(L));
