@@ -173,6 +173,7 @@ static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
         }
         if (isvalidstatus(res)) {
             lua_settable(self->interpreter->L);
+            self->indexed = is_indexed_array(self->interpreter->L, ltable);
             ret = 0;
         } else {
             PyErr_SetString(PyExc_ValueError, "can't convert value");
@@ -332,7 +333,11 @@ static PyObject *LuaObject_subscript(LuaObject *self, PyObject *key) {
 }
 
 static int LuaObject_ass_subscript(LuaObject *self, PyObject *key, PyObject *value) {
-    return LuaObject_setattr(self, key, value);
+    int ret = LuaObject_setattr(self, key, value);
+    if (ret == 0) {
+
+    }
+    return ret;
 }
 
 static int LuaObject_init(LuaObject *self, PyObject *args, PyObject *kwargs) {
