@@ -75,4 +75,10 @@ int PyObject_IsTupleInstance(PyObject *obj);
 int PyObject_IsDictInstance(PyObject *obj);
 
 #define isvalidstatus(res) ((res != UNCHANGED))
+
+#define PyObjectByIndex(pyObject) \
+    (PyObject_IsListInstance(pyObject) || \
+     PyObject_IsTupleInstance(pyObject) || \
+     PyObject_IsDictInstance(pyObject))
+
 #endif //LUNATIC_UTILS_H

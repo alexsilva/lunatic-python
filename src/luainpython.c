@@ -435,6 +435,22 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     return ret;
 }
 
+/* Function that allows you to add a global variable in the lua interpreter */
+PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
+    const char *name = NULL;
+    PyObject *pyObject = NULL;
+
+    if (!PyArg_ParseTuple(args, "sO", &name, &pyObject))
+        return NULL;
+
+    push_pyobject_container(self->L, pyObject, PyObjectByIndex(pyObject));
+    Py_INCREF(pyObject); // lua ref
+
+    lua_setglobal(self->L, (char *) name);
+    Py_RETURN_NONE;
+}
+
+
 PyObject *Interpreter_execute(InterpreterObject *self, PyObject *args) {
     return Lua_run(self, args, 0);
 }
@@ -515,6 +531,8 @@ static PyMethodDef Interpreter_methods[] = {
             "execute arbitrary expressions of the interpreter."},
     {"eval",    (PyCFunction) Interpreter_eval,    METH_VARARGS,
             "evaluates the expression and return its value."},
+    {"setglobal", (PyCFunction) Lua_setglobal,    METH_VARARGS,
+            "add a global value in the interpreter state."},
     {"globals", (PyCFunction) Interpreter_globals, METH_NOARGS,
             "returns the list of global variables."},
     {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
