@@ -219,6 +219,22 @@ assert(dict[sys] and dict[os])
 local string = python.import("string")
 assert(string.split("1", ",")[0] == "1")
 
+-- Test the conversion of a table with many items
+local random = python.import("random")
+local tbl = {}
+local index = 1
+local limit = 50000
+while (index < limit + 1) do
+    tbl[index] = random.randrange(2000, 3000)
+    index = index + 1
+end
+python.execute([[
+def check_kwargs_long(**kwargs):
+    assert len(kwargs['table']) == ]] .. tostring(limit) ..[[,'python: list size error!'
+]])
+
+python.eval("check_kwargs_long")(pykwargs{table = tbl})
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
