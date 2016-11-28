@@ -159,7 +159,7 @@ void py_readfile(lua_State *L) {
                 lua_error(L, "read number not implemented!");
                 continue;  /* number is already pushed; avoid the "pushstring" */
             case 1:  /* line */
-                lua_error(L, "read line not implemented!");
+                success = read_pattern(L, pyFile, "[^\n]*{\n}", &lastreadchar);
                 break;
             case 2: case 3:  /* file */
                 success = read_file(L, pyFile, &lastreadchar); /* always success */
