@@ -20,7 +20,9 @@ set(SOURCES
     src/utils.c
     src/lshared.h
     src/constants.h
-    src/lshared.c)
+    src/lshared.c
+    src/auxiliary.c
+    src/auxiliary.h)
 
 if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)

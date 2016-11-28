@@ -32,6 +32,7 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "constants.h"
+#include "auxiliary.h"
 
 
 static void py_object_call(lua_State *L) {
@@ -547,6 +548,7 @@ static struct luaL_reg py_lib[] = {
     {"slice",                             pyobject_slice},
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
+    {"readfile",                          py_readfile},
     {NULL, NULL}
 };
 
