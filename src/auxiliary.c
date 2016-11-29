@@ -189,9 +189,12 @@ void py_readfile(lua_State *L) {
         return; // warning
     } else {
         pyFile = get_pobject(L, luaObject);
-        if (!PyFile_Check(pyFile)) {
-            lua_error(L, "is not a file object!");
+        PyObject *pyObjectRead = PyObject_GetAttrString(pyFile, "read");
+        if (!pyObjectRead || !PyCallable_Check(pyObjectRead)) {
+            Py_XDECREF(pyObjectRead);
+            lua_raise_error(L, "\"%s\" is not a file object!", pyFile);
         }
+        Py_DECREF(pyObjectRead);
     }
     static char *options[] = {"*n", "*l", "*a", ".*", "*w", NULL};
     int arg = 2;
