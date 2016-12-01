@@ -479,10 +479,9 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
 
     int ret = lua_dofile(self->L, (char *) command);
     if (ret) {
-        char *format = "require file (%s)";
-        char buff[buffsize_calc(2, format, command)];
-        sprintf(buff, format, command);
-        python_new_error(PyExc_ImportError, &buff[0]);
+        if (!PyErr_GivenExceptionMatches(PyErr_Occurred(), PyExc_SystemExit)) {
+            python_new_error(PyExc_ImportError, (char *) command);
+        }
         return NULL;
     }
     lua_endblock(self->L);
