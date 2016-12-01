@@ -107,9 +107,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
 
 static void LuaObject_dealloc(LuaObject *self) {
     if (self->interpreter) { // blocked in init ?
-        lua_beginblock(self->interpreter->L);
         lua_unref(self->interpreter->L, self->ref);
-        lua_endblock(self->interpreter->L);
         if (!self->interpreter->isPyType) {
             self->interpreter->L = NULL;
             free(self->interpreter);
