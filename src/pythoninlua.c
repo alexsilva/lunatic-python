@@ -347,7 +347,7 @@ static void py_locals(lua_State *L) {
         py_globals(L);
         return;
     }
-    Py_INCREF(locals);
+    //Py_INCREF(locals);
     push_pyobject_container(L, locals, 1);
 }
 
