@@ -523,6 +523,13 @@ static void Interpreter_dealloc(InterpreterObject *self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+#ifdef CGILUA_ENV
+static PyObject *Interpreter_ungbreak(InterpreterObject *self) {
+    self->L->gbreak = 0;
+    return PyInt_FromLong(self->L->gbreak);
+}
+#endif
+
 static PyMethodDef Interpreter_methods[] = {
     {"execute", (PyCFunction) Interpreter_execute, METH_VARARGS,
             "execute arbitrary expressions of the interpreter."},
@@ -534,6 +541,10 @@ static PyMethodDef Interpreter_methods[] = {
             "returns the list of global variables."},
     {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
             "loads and executes the script."},
+#ifdef CGILUA_ENV
+    {"ungbreak", (PyCFunction) Interpreter_ungbreak,  METH_VARARGS,
+            "ungbreak exit lock"},
+#endif
     {NULL,         NULL}
 };
 
