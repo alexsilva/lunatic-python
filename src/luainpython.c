@@ -68,7 +68,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
     if (lua_callfunction(self->interpreter->L, lobj)) {
         char *name;  // get function name
         lua_getobjname(self->interpreter->L, lobj, &name);
-        name = name ? name : "...";
+        name = name ? name : "?";
         char *format = "call function lua (%s)";
         char buff[buffsize_calc(2, format, name)];
         sprintf(buff, format, name);
@@ -89,7 +89,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             PyErr_SetString(PyExc_RuntimeError, "failed to create return tuple");
             return NULL;
         }
-        for (index = 0; index != nargs; index++) {
+        for (index = 0; index < nargs; index++) {
             arg = lua_interpreter_stack_convert(self->interpreter, index + 1);
             if (!arg) {
                 PyErr_Format(PyExc_TypeError, "failed to convert return #%d", index);
