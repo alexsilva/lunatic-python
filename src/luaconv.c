@@ -19,7 +19,7 @@
 #include "constants.h"
 
 
-PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
+PyObject *LuaObject_New(InterpreterObject *interpreter, lua_Object lobj) {
     LuaObject *obj = PyObject_New(LuaObject, &LuaObject_Type);
     if (obj) {
         lua_pushobject(interpreter->L, lobj);
@@ -40,13 +40,8 @@ PyObject *LuaObject_PyNew(InterpreterObject *interpreter, lua_Object lobj) {
             obj->interpreter->isPyType = false;  // fake type
 #pragma clang diagnostic pop
         }
-
     }
     return (PyObject*) obj;
-}
-
-PyObject *LuaObject_New(InterpreterObject *interpreter, int n) {
-    return LuaObject_PyNew(interpreter, lua_getparam(interpreter->L, n));
 }
 
 /**
@@ -338,7 +333,7 @@ static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyOb
     lua_beginblock(interpreter->L);
     if (!python_getnumber(interpreter->L, PY_API_IS_EMBEDDED) && // Lua inside Python
         !python_getnumber(interpreter->L, PY_LUA_TABLE_CONVERT)){
-        *ret = LuaObject_PyNew(interpreter, lobj);
+        *ret = LuaObject_New(interpreter, lobj);
     } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
         *ret = ltable_convert_tuple(interpreter->L, lobj);
     } else {
@@ -355,7 +350,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
         } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { //  Python inside Lua
             *ret = (PyObject *) void_ptr;
         } else {
-            *ret = LuaObject_PyNew(interpreter, lobj);
+            *ret = LuaObject_New(interpreter, lobj);
         }
     }  else {
         Py_INCREF(Py_None);
@@ -381,7 +376,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
         case LUA_T_CLOSURE: // lua_isfunction
         case LUA_T_PROTO:
         case LUA_T_CPROTO:
-            ret = LuaObject_PyNew(interpreter, lobj);
+            ret = LuaObject_New(interpreter, lobj);
             break;
         case LUA_T_USERDATA:
             luserdata_convert(interpreter, lobj, &ret);
