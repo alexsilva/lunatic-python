@@ -151,7 +151,7 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         char *error = "%s \"%s\" not found";
         char *name = pobj->asindx ? "index" : "attribute";
         char *mkey = get_pyobject_str(key);
-        char *skey = mkey ? mkey : "...";
+        char *skey = mkey ? mkey : "?";
         char buff[buffsize_calc(3, error, name, skey)];
         sprintf(buff, error, name, skey);
         free(mkey); // free pointer!

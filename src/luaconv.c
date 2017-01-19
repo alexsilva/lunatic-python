@@ -225,6 +225,27 @@ void py_args_array(lua_State *L) {
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
 }
 
+
+// raise key error in lua
+static void raise_key_error(lua_State *L, char *format,
+                            lua_Object lkey) {
+    char *mkey;
+    int is_object = is_object_container(L, lkey);
+    if (is_object) {
+        mkey = get_pyobject_str(get_pobject(L, lkey));
+    } else {
+        lua_pushobject(L, lkey);
+        lua_call(L, "tostring");
+        mkey = lua_getstring(L, lua_getparam(L, 1));
+    }
+    char *skey = mkey ? mkey : "?";
+    char buff[buffsize_calc(2, format, skey)];
+    sprintf(buff, format, skey);
+    if (is_object) free(mkey);
+    lua_new_error(L, &buff[0]);
+}
+
+
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     PyObject *dict = PyDict_New();
@@ -232,32 +253,21 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
     int stackpos;
+    lua_Object lkey;
     while (index > 0) {
         stackpos = 1;
-        key = lua_stack_convert(L, stackpos);
+        lkey = lua_getparam(L, stackpos);
+        key = lua_object_convert(L, lkey);
         if (!key) {
             Py_DECREF(dict);
-            // Todo: key is null
-            char *mkey = get_pyobject_str(key);
-            char *skey = mkey ? mkey : "...";
-            char *format = "failed to convert key \"%s\"";
-            char buff[buffsize_calc(2, format, skey)];
-            sprintf(buff, format, skey);
-            free(mkey); // free pointer!
-            lua_new_error(L, &buff[0]);
+            raise_key_error(L, "failed to convert key \"%s\"", lkey);
         }
         stackpos = 2;
         value = lua_stack_convert(L, stackpos);
         if (!value) {
-            char *mkey = get_pyobject_str(key);
-            char *skey = mkey ? mkey : "?";
-            char *format = "failed to convert value of key \"%s\"";
-            char buff[buffsize_calc(2, format, skey)];
-            sprintf(buff, format, skey);
-            free(mkey); // free pointer!
             Py_DECREF(key);
             Py_DECREF(dict);
-            lua_new_error(L, &buff[0]);
+            raise_key_error(L, "failed to convert value of key \"%s\"", lkey);
         }
         if (PyDict_SetItem(dict, key, value) != 0) {
             Py_DECREF(key);
