@@ -146,7 +146,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
+        if (is_byref(L)) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;
@@ -155,7 +155,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = CONVERTED;
         }
     } else if (PyUnicode_Check(o)) {
-        if (python_getnumber(L, PY_OBJECT_BY_REFERENCE)) {
+        if (is_byref(L)) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;

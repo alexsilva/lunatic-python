@@ -83,5 +83,5 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 #endif //LUNATIC_UTILS_H
 
-#define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE);
-#define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value);
+#define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
+#define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
