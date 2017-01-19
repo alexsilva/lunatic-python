@@ -516,6 +516,14 @@ static void python_is_embedded(lua_State *L) {
     }
 }
 
+// Increment a python reference
+static void python_inc_ref(lua_State *L) {
+    lua_Object lobj = lua_getparam(L, 1);
+    Py_INCREF(get_py_object(L, lobj)->object);
+    lua_pushobject(L, lobj);
+}
+
+
 static struct luaL_reg py_lib[] = {
     {"execute",                           py_execute}, // run arbitrary expressions in the interpreter.
     {"eval",                              py_eval},  // assesses the value of a variable and returns its reference.
@@ -549,6 +557,7 @@ static struct luaL_reg py_lib[] = {
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
     {"readfile",                          py_readfile},
+    {"incref",                            python_inc_ref},
     {NULL, NULL}
 };
 
