@@ -384,16 +384,18 @@ static void py_get_version(lua_State *L) {
 
 /* Turn off the conversion of object */
 static void py_byref(lua_State *L) {
-    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 1);
+    int stacked = is_byref(L);
+    if (!stacked) set_byref(L, 1);
     py_object_index_get(L);
-    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
+    if (!stacked) set_byref(L, 0);
 }
 
 /* Turn off the conversion of object */
 static void py_byrefc(lua_State *L) {
-    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 1);
+    int stacked = is_byref(L);
+    if (!stacked) set_byref(L, 1);
     py_object_call(L);
-    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
+    if (!stacked) set_byref(L, 0);
 }
 
 /* Returns the number of registration of the events tag */
