@@ -123,11 +123,7 @@ void pyobj2table(lua_State *L) {
 }
 
 static Conversion xpush_pyobject_container(lua_State *L, PyObject *obj) {
-    bool asindx = false;
-    if (PyObject_IsListInstance(obj) || PyObject_IsTupleInstance(obj) ||
-        PyObject_IsDictInstance(obj))
-        asindx = true;
-    return push_pyobject_container(L, obj, asindx);
+    return push_pyobject_container(L, obj, check_pyobject_index(obj));
 }
 
 Conversion py_convert(lua_State *L, PyObject *o) {

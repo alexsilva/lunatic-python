@@ -431,7 +431,7 @@ PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "sO", &name, &pyObject))
         return NULL;
 
-    push_pyobject_container(self->L, pyObject, PyObjectByIndex(pyObject));
+    push_pyobject_container(self->L, pyObject, check_pyobject_index(pyObject));
     Py_INCREF(pyObject); // lua ref
 
     lua_setglobal(self->L, (char *) name);
