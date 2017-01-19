@@ -96,7 +96,7 @@ static void py_object_call(lua_State *L) {
     }
 }
 
-static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int valuen) {
+static int set_py_object_index(lua_State *L, py_object *pobj, int keyn, int valuen) {
     lua_Object lkey = lua_getparam(L, keyn);
     PyObject *key = lua_stack_convert(L, keyn, lkey);
     if (!key) luaL_argerror(L, 1, "failed to convert key");
@@ -104,40 +104,34 @@ static int _p_object_newindex_set(lua_State *L, py_object *pobj, int keyn, int v
     if (!lua_isnil(L, lval)) {
         PyObject *value = lua_stack_convert(L, valuen, lval);
         if (!value) {
-            if (!is_object_container(L, lkey)) Py_DECREF(key);
-            luaL_argerror(L, 1, "failed to convert value");
+            Py_DECREF(key); luaL_argerror(L, 1, "failed to convert value");
         }
         // setitem (obj[0] = 1) if int else setattr(obj.val = 1)
         if (pobj->asindx) {
             if (PyObject_SetItem(pobj->object, key, value) == -1) {
-                if (!is_object_container(L, lkey)) Py_DECREF(key);
-                if (!is_object_container(L, lval)) Py_DECREF(value);
+                Py_DECREF(key); Py_DECREF(value);
                 lua_new_error(L, "failed to set item");
             }
         } else if (PyObject_SetAttr(pobj->object, key, value) == -1) {
-            if (!is_object_container(L, lkey)) Py_DECREF(key);
-            if (!is_object_container(L, lval)) Py_DECREF(value);
+            Py_DECREF(key); Py_DECREF(value);
             lua_new_error(L, "failed to set attribute");
         }
-        if (!is_object_container(L, lval))
-            Py_DECREF(value);
+        Py_DECREF(value);
     } else {
         if (PyObject_DelItem(pobj->object, key) == -1) {
-            if (!is_object_container(L, lkey)) Py_DECREF(key);
-            lua_new_error(L, "failed to delete item");
+            Py_DECREF(key); lua_new_error(L, "failed to delete item");
         }
     }
-    if (!is_object_container(L, lkey))
-        Py_DECREF(key);
+    Py_DECREF(key);
     return 0;
 }
 
-static void py_object_newindex_set(lua_State *L) {
+static void py_object_index_set(lua_State *L) {
     py_object *pobj = get_py_object(L, lua_getparam(L, 1));
     if (lua_gettop(L) < 2) {
         lua_error(L, "invalid arguments");
     }
-    _p_object_newindex_set(L, pobj, 2, 3);
+    set_py_object_index(L, pobj, 2, 3);
 }
 
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
@@ -163,16 +157,14 @@ static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
         char buff[buffsize_calc(3, error, name, skey)];
         sprintf(buff, error, name, skey);
         free(mkey); // free pointer!
-        if (!is_object_container(L, lobj))
-            Py_DECREF(key);
+        Py_DECREF(key);
         lua_new_error(L, buff);
     }
-    if (!is_object_container(L, lobj))
-        Py_DECREF(key);
+    Py_DECREF(key);
     return ret;
 }
 
-static void py_object_index(lua_State *L) {
+static void py_object_index_get(lua_State *L) {
     get_py_object_index(L, get_py_object(L, lua_getparam(L, 1)), 2);
 }
 
@@ -395,7 +387,7 @@ static void py_get_version(lua_State *L) {
 /* Turn off the conversion of object */
 static void py_byref(lua_State *L) {
     python_setnumber(L, PY_OBJECT_BY_REFERENCE, 1);
-    py_object_index(L);
+    py_object_index_get(L);
     python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
 }
 
@@ -516,13 +508,6 @@ static void python_is_embedded(lua_State *L) {
     }
 }
 
-// Increment a python reference
-static void python_inc_ref(lua_State *L) {
-    lua_Object lobj = lua_getparam(L, 1);
-    Py_INCREF(get_py_object(L, lobj)->object);
-    lua_pushobject(L, lobj);
-}
-
 
 static struct luaL_reg py_lib[] = {
     {"execute",                           py_execute}, // run arbitrary expressions in the interpreter.
@@ -557,14 +542,13 @@ static struct luaL_reg py_lib[] = {
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
     {"readfile",                          py_readfile},
-    {"incref",                            python_inc_ref},
     {NULL, NULL}
 };
 
 static struct luaL_reg lua_tag_methods[] = {
     {"function", py_object_call},
-    {"gettable", py_object_index},
-    {"settable", py_object_newindex_set},
+    {"gettable", py_object_index_get},
+    {"settable", py_object_index_set},
     {"gc",       py_object_gc},
     {NULL, NULL}
 };

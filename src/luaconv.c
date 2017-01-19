@@ -121,8 +121,6 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
         }
-        if (is_object_container(L, larg))
-            Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
             Py_DECREF(tuple);
@@ -156,8 +154,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
             lua_new_error(L, &buff[0]);
         }
         if (PyList_Append(list, arg) != 0) {
-            if (!is_object_container(L, larg))
-                Py_DECREF(arg);
+            Py_DECREF(arg);
             Py_DECREF(list);
             lua_new_error(L, "failed to set item in list");
         }
@@ -186,8 +183,6 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
         }
-        if (is_object_container(L, larg))
-            Py_INCREF(arg);  // “steals” a reference (arg is still valid in the Lua)
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
             Py_DECREF(tuple);
@@ -250,6 +245,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         key = lua_stack_convert(L, stackpos, lkey);
         if (!key) {
             Py_DECREF(dict);
+            // Todo: key is null
             char *mkey = get_pyobject_str(key);
             char *skey = mkey ? mkey : "...";
             char *format = "failed to convert key \"%s\"";
@@ -262,27 +258,24 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         lvalue = lua_getparam(L, stackpos);
         value = lua_stack_convert(L, stackpos, lvalue);
         if (!value) {
-            if (!is_object_container(L, lkey))
-                Py_DECREF(key);
-            Py_DECREF(dict);
             char *mkey = get_pyobject_str(key);
-            char *skey = mkey ? mkey : "...";
+            char *skey = mkey ? mkey : "?";
             char *format = "failed to convert value of key \"%s\"";
             char buff[buffsize_calc(2, format, skey)];
             sprintf(buff, format, skey);
             free(mkey); // free pointer!
+            Py_DECREF(key);
+            Py_DECREF(dict);
             lua_new_error(L, &buff[0]);
         }
         if (PyDict_SetItem(dict, key, value) != 0) {
-            if (!is_object_container(L, lkey)) Py_DECREF(key);
-            if (!is_object_container(L, lvalue)) Py_DECREF(value);
+            Py_DECREF(key);
+            Py_DECREF(value);
             Py_DECREF(dict);
             lua_new_error(L, "failed to set item in dict");
         } else {
-            // The key has no external references (will be deleted with the dict)
-            if (!is_object_container(L, lkey))   Py_DECREF(key);
-            // The value has no external references (will be deleted with the dict)
-            if (!is_object_container(L, lvalue)) Py_DECREF(value);
+            Py_DECREF(key);
+            Py_DECREF(value);
         }
         index = lua_next(L, ltable, index);
     }
@@ -347,6 +340,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
     if (void_ptr) {
         if (is_object_container(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
+            Py_INCREF(*ret); // new ref
         } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { //  Python inside Lua
             *ret = (PyObject *) void_ptr;
         } else {
