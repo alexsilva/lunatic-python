@@ -221,6 +221,25 @@ def fn_kwargs(arg):
 ]])
 python.eval("fn_kwargs")({sys=sys, string=string, re=re, list=list, pattern=pattern})
 
+local X = builtins.type("X", builtins.tuple(), python.dict{lang = "lua"})
+
+-- Complex use of references
+python.byrefc(builtins.map, function(s)
+        assert(python.tag() == tag(s), "str|2: invalid ref!")
+        assert(% builtins.len(s) == 1, "str|2 len error!")
+    end,
+    python.byrefc(builtins.map, function(s)
+            assert(python.tag() == tag(s), "str|1: invalid ref!")
+            assert(% builtins.len(s) == 1, "str|1 len error!")
+            local value  = python.byrefc(% builtins.unicode, s, python.get_unicode_encoding())
+            local lang = python.byref(% X, "lang")
+            assert(python.tag() == tag(lang), "lang invalid ref!")
+            return python.byrefc(% builtins.unicode.upper, value)
+        end,
+        builtins.str.split("a,b,c,d,e,d,f,g", ","))
+)
+assert(python._object_by_reference == 0, "object_by_reference state error!")
+
 -- special case
 local dict = builtins.dict()
 dict[os] = "os module"
