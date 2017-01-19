@@ -109,11 +109,9 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     set_table_nil(L, ltable, "n"); // remove "n"
     int nextindex = lua_next(L, ltable, 0);
     int index = 0, stackpos = 2;
-    lua_Object larg;
     PyObject *arg;
     while (nextindex > 0) {
-        larg = lua_getparam(L, stackpos);
-        arg = lua_stack_convert(L, stackpos, larg);
+        arg = lua_stack_convert(L, stackpos);
         if (!arg) {
             Py_DECREF(tuple);
             char *format = "failed to convert argument #%d";
@@ -141,11 +139,9 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
     set_table_nil(L, ltable, "n"); // remove "n"
     int nextindex = lua_next(L, ltable, 0);
     int index = 0, stackpos = 2;
-    lua_Object larg;
     PyObject *arg;
     while (nextindex > 0) {
-        larg = lua_getparam(L, stackpos);
-        arg = lua_stack_convert(L, stackpos, larg);
+        arg = lua_stack_convert(L, stackpos);
         if (!arg) {
             Py_DECREF(list);
             char *format = "failed to convert argument #%d";
@@ -171,11 +167,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     if (!tuple) lua_new_error(L, "#2 failed to create arguments tuple");
     int index, pos;
     PyObject *arg;
-    lua_Object larg;
     for (index = 0; index < nargs; index++) {
         pos = index + stackpos + 1;
-        larg = lua_getparam(L, pos);
-        arg = lua_stack_convert(L, pos, larg);
+        arg = lua_stack_convert(L, pos);
         if (!arg) {
             Py_DECREF(tuple);
             char *format = "failed to convert argument #%d";
@@ -237,12 +231,10 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     if (!dict) lua_new_error(L, "failed to create key words arguments dict");
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
-    lua_Object lkey, lvalue;
     int stackpos;
     while (index > 0) {
         stackpos = 1;
-        lkey = lua_getparam(L, stackpos);
-        key = lua_stack_convert(L, stackpos, lkey);
+        key = lua_stack_convert(L, stackpos);
         if (!key) {
             Py_DECREF(dict);
             // Todo: key is null
@@ -255,8 +247,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
             lua_new_error(L, &buff[0]);
         }
         stackpos = 2;
-        lvalue = lua_getparam(L, stackpos);
-        value = lua_stack_convert(L, stackpos, lvalue);
+        value = lua_stack_convert(L, stackpos);
         if (!value) {
             char *mkey = get_pyobject_str(key);
             char *skey = mkey ? mkey : "?";
@@ -352,10 +343,9 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
     }
 }
 
-PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int stackpos,
+PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
                                          lua_Object lobj) {
     PyObject *ret = NULL;
-    if (lobj == LUA_NOOBJECT) lobj = lua_getparam(interpreter->L, stackpos);
     TObject *o = lapi_address(interpreter->L, lobj);
     switch (ttype(o)) { // Lua 3.2 source code builtin.c
         case LUA_T_NUMBER:
@@ -385,19 +375,17 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter, int sta
     return ret;
 }
 
-PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj) {
+PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter, int stackpos) {
+    return lua_interpreter_object_convert(interpreter, lua_getparam(interpreter->L, stackpos));
+}
+
+PyObject *lua_object_convert(lua_State *L, lua_Object lobj) {
     InterpreterObject interpreter;
     interpreter.isPyType = false;
     interpreter.L = L;
-    return lua_interpreter_object_convert(&interpreter, stackpos, lobj);
+    return lua_interpreter_object_convert(&interpreter, lobj);
 }
 
-PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter,
-                                         int stackpos) {
-    return lua_interpreter_object_convert(interpreter, stackpos,
-                                          lua_getparam(interpreter->L, stackpos));
-}
-
-PyObject *lua_convert(lua_State *L, int stackpos) {
-    return lua_stack_convert(L, stackpos, lua_getparam(L, stackpos));
+PyObject *lua_stack_convert(lua_State *L, int stackpos) {
+    return lua_object_convert(L, lua_getparam(L, stackpos));
 }

@@ -32,10 +32,10 @@ void py_args_array(lua_State *L);
 void py_kwargs(lua_State *L);
 void py_args(lua_State *L);
 
-PyObject *lua_convert(lua_State *L, int stackpos);
-PyObject *lua_stack_convert(lua_State *L, int stackpos, lua_Object lobj);
+PyObject *lua_object_convert(lua_State *L, lua_Object lobj);
+PyObject *lua_stack_convert(lua_State *L, int stackpos);
 PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
-                                         int stackpos, lua_Object lobj);
+                                         lua_Object lobj);
 PyObject *lua_interpreter_stack_convert(InterpreterObject *interpreter,
                                         int stackpos);
 #endif //LUNATIC_LUACONV_H

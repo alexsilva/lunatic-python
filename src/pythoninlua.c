@@ -97,12 +97,11 @@ static void py_object_call(lua_State *L) {
 }
 
 static int set_py_object_index(lua_State *L, py_object *pobj, int keyn, int valuen) {
-    lua_Object lkey = lua_getparam(L, keyn);
-    PyObject *key = lua_stack_convert(L, keyn, lkey);
+    PyObject *key = lua_stack_convert(L, keyn);
     if (!key) luaL_argerror(L, 1, "failed to convert key");
     lua_Object lval = lua_getparam(L, valuen);
     if (!lua_isnil(L, lval)) {
-        PyObject *value = lua_stack_convert(L, valuen, lval);
+        PyObject *value = lua_object_convert(L, lval);
         if (!value) {
             Py_DECREF(key); luaL_argerror(L, 1, "failed to convert value");
         }
@@ -135,8 +134,7 @@ static void py_object_index_set(lua_State *L) {
 }
 
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
-    lua_Object lobj = lua_getparam(L, keyn);
-    PyObject *key = lua_stack_convert(L, keyn, lobj);
+    PyObject *key = lua_stack_convert(L, keyn);
     Conversion ret = UNCHANGED;
     PyObject *item;
     if (!key) luaL_argerror(L, 1, "failed to convert key");

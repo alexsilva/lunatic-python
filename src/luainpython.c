@@ -133,7 +133,7 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     lua_pushobject(self->interpreter->L, ltable); // push table
     if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
         lua_Object lobj = lua_gettable(self->interpreter->L);
-        ret = lua_interpreter_object_convert(self->interpreter, 0, lobj); // convert
+        ret = lua_interpreter_object_convert(self->interpreter, lobj); // convert
     } else {
         PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
     }
