@@ -173,7 +173,7 @@ end
 local dict = python.eval("{'a': 'a value'}")
 local keys = python.asattr(dict).keys()
 
-assert(python.str(keys) == "['a']", "dict repr object error")
+assert(python.repr(keys) == "['a']", "dict repr object error")
 assert(builtins.len(keys) == 1, "dict size no match")
 assert(keys[0] == 'a', "dict key no match")
 
