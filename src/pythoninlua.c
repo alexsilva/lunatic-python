@@ -175,21 +175,18 @@ static void py_object_gc(lua_State *L) {
     }
 }
 
-static void py_object_tostring(lua_State *L) {
+// Represents a python object.
+static void py_object_repr(lua_State *L) {
     PyObject *obj = get_pobject(L, lua_getparam(L, 1));
-    if (PyString_Check(obj) || PyUnicode_Check(obj)) {
-        py_convert(L, obj);
+    PyObject *repr = PyObject_Str(obj);
+    if (!repr) {
+        char buf[256];
+        snprintf(buf, 256, "python object: %p", obj);
+        lua_pushstring(L, buf);
+        PyErr_Clear();
     } else {
-        PyObject *repr = PyObject_Str(obj);
-        if (!repr) {
-            char buf[256];
-            snprintf(buf, 256, "python object: %p", obj);
-            lua_pushstring(L, buf);
-            PyErr_Clear();
-        } else {
-            py_convert(L, repr);
-            Py_DECREF(repr);
-        }
+        py_convert(L, repr);
+        Py_DECREF(repr);
     }
 }
 
@@ -514,7 +511,7 @@ static struct luaL_reg py_lib[] = {
     {"eval",                              py_eval},  // assesses the value of a variable and returns its reference.
     {"asindex",                           py_asindx}, // change the mode of access to attributes of an object for indexes.
     {"asattr",                            py_asattr}, // changes the way to access the attributes of an object for attributes.
-    {"str",                               py_object_tostring}, // represents the object as a string (str(o)).
+    {"repr",                              py_object_repr}, // represents the object as a string (str(o)).
     {"locals",                            py_locals}, // returns the local scope variables dictionary.
     {"globals",                           py_globals}, // returns the global scope variables dictionary.
     {"builtins",                          py_builtins}, // returns the dictionary embedded objects.
