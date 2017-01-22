@@ -124,8 +124,8 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     if (lua_isnil(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return NULL;
-    }
-    if (!lua_istable(self->interpreter->L, ltable) && !lua_isuserdata(self->interpreter->L, ltable)) {
+    } else if (!lua_istable(self->interpreter->L, ltable) &&
+               !lua_isuserdata(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_RuntimeError, "not an indexable value");
         return NULL;
     }
@@ -148,8 +148,8 @@ static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
     if (lua_isnil(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_RuntimeError, "lost reference");
         return ret;
-    }
-    if (!lua_istable(self->interpreter->L, ltable)) {
+    } else if (!lua_istable(self->interpreter->L, ltable) &&
+               !lua_isuserdata(self->interpreter->L, ltable)) {
         PyErr_SetString(PyExc_TypeError, "Lua object is not a table");
         return ret;
     }
@@ -229,7 +229,10 @@ static PyObject *LuaObjectIter_next(luaiterobject *li) {
     lua_State *L = li->luaobject->interpreter->L;
     lua_beginblock(L);
     lua_Object ltable = lua_getref(L, li->luaobject->ref);
-    if (!lua_istable(L, ltable)) {
+    if (lua_isnil(L, ltable)) {
+        PyErr_SetString(PyExc_RuntimeError, "lost reference");
+        return NULL;
+    } else if (!lua_istable(L, ltable) && !lua_isuserdata(L, ltable)) {
         PyErr_SetString(PyExc_TypeError, "Lua object is not iterable!");
         return NULL;
     }
