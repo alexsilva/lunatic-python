@@ -232,7 +232,7 @@ python.byrefc(builtins.map, function(s)
             assert(python.tag() == tag(s), "str|1: invalid ref!")
             assert(% builtins.len(s) == 1, "str|1 len error!")
             local value  = python.byrefc(% builtins.unicode, s, python.get_unicode_encoding())
-            local lang = python.byref(% X, "lang")
+            local lang = % X.lang
             assert(python.tag() == tag(lang), "lang invalid ref!")
             return python.byrefc(% builtins.unicode.upper, value)
         end,
