@@ -22,7 +22,8 @@ print(format("python ext <%s> is embedded in lua <%s>", python.get_version(), to
 local builtins = python.builtins()
 local os = python.import("os")
 
-local popen = builtins.open(os.path.join(os.getcwd(), 'popen.txt'), "w+")
+local filepath = os.path.join(os.getcwd(), 'popen.txt')
+local popen = builtins.open(filepath, "w+")
 
 popen.write("11111111111 assdfasdfasdf x a b c dddddd")
 popen.flush()
@@ -33,6 +34,10 @@ a, b, c = python.readfile(popen, "*w", "*w", ".*")
 print("value: ["..a.."]")
 print("value: ["..b.."]")
 print("value: ["..c.."]")
+
+-- clean
+popen.close()
+os.remove(filepath)
 
 assert(tag(builtins) == python.tag() and tag(os) == python.tag(), "invalid tag!")
 
