@@ -517,9 +517,9 @@ static void Interpreter_dealloc(InterpreterObject *self) {
 }
 
 #ifdef CGILUA_ENV
-static PyObject *Interpreter_ungbreak(InterpreterObject *self) {
-    self->L->gbreak = 0;
-    return PyInt_FromLong(self->L->gbreak);
+static PyObject *Interpreter_unlock_state(InterpreterObject *self) {
+    self->L->lockedState = 0;
+    return PyInt_FromLong(self->L->lockedState);
 }
 #endif
 
@@ -535,8 +535,8 @@ static PyMethodDef Interpreter_methods[] = {
     {"require", (PyCFunction) Interpreter_dofile,  METH_VARARGS,
             "loads and executes the script."},
 #ifdef CGILUA_ENV
-    {"ungbreak", (PyCFunction) Interpreter_ungbreak,  METH_VARARGS,
-            "ungbreak exit lock"},
+    {"unlock_state", (PyCFunction) Interpreter_unlock_state,  METH_VARARGS,
+            "unlocks the interpreter state"},
 #endif
     {NULL,         NULL}
 };
