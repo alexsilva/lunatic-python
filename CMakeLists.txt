@@ -50,22 +50,20 @@ else ()
     set_target_properties(lua PROPERTIES PREFIX "")
 endif()
 
-# =====================
-set_target_properties(python PROPERTIES
-        COMPILE_FLAGS "-m32"
-        LINK_FLAGS    "-m32")
-
-set_target_properties(lua PROPERTIES
-        COMPILE_FLAGS "-m32"
-        LINK_FLAGS    "-m32")
-# =====================
+set_target_properties(python PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+set_target_properties(lua PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
 if (UNIX)
     set(LINK_LIBRARY python2.7)
     target_link_libraries(python ${LINK_LIBRARY})
     target_link_libraries(lua ${LINK_LIBRARY})
 else()
-    set(LINK_LIBRARY python27 lua32ng lualib32ng)
+    set(LINK_LIBRARY python27)
+    if (WSGI_ENVIRON)
+        list(APPEND LINK_LIBRARY lua32ngw lualib32ngw)
+    else()
+        list(APPEND LINK_LIBRARY lua32ng lualib32ng)
+    endif()
     target_link_libraries(python ${LINK_LIBRARY})
     target_link_libraries(lua ${LINK_LIBRARY})
 endif ()
