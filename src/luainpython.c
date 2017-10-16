@@ -98,9 +98,11 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             }
             PyTuple_SetItem(ret, index, arg);
         }
-    } else {
+    } else if (!PyErr_Occurred()) {
         Py_INCREF(Py_None);
         ret = Py_None;
+    } else {
+        ret = NULL;
     }
     return ret;
 }
@@ -503,9 +505,15 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     lua_strlibopen(self->L);
     lua_mathlibopen(self->L);
 #endif
-    self->isPyType = true;
-    luaopen_python(self->L);
-    return 0;
+    if (self->L) {
+        PyErr_Clear(); // clean state
+        self->isPyType = true;
+        luaopen_python(self->L);
+        return 0;
+    } else {
+        PySys_WriteStderr("%s", "startup failed");
+        return -1;
+    }
 };
 
 static void Interpreter_dealloc(InterpreterObject *self) {
