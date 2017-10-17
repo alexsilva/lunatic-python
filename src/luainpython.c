@@ -471,9 +471,9 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
 
     if (!PyArg_ParseTuple(args, "s", &command))
         return NULL;
-
+    PyErr_Clear(); // clean state
     int ret = lua_dofile(self->L, (char *) command);
-    if (ret) {
+    if (ret || PyErr_Occurred()) {
         if (!PyErr_GivenExceptionMatches(PyErr_Occurred(), PyExc_SystemExit)) {
             python_new_error(PyExc_ImportError, (char *) command);
         }
@@ -508,8 +508,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     if (self->L) {
         PyErr_Clear(); // clean state
         self->isPyType = true;
-        luaopen_python(self->L);
-        return 0;
+        return luaopen_python(self->L);
     } else {
         PySys_WriteStderr("%s", "startup failed");
         return -1;

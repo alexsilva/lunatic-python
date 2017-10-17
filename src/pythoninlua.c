@@ -563,11 +563,10 @@ LUA_API int luaopen_python(lua_State *L) {
 
     STACK stack;
     STACK_RECORD record;
+    record.next = NULL;
     stack = stack_push(&stack, record);
-
     if (!stack) {
-        //Todo: check this
-        lua_new_error(L, "stack out of memory");
+        PyErr_SetString(PyExc_MemoryError, "out of memory");
         return -1;
     }
     set_table_userdata(L, python, PY_ERRORHANDLER_STACK, stack);
