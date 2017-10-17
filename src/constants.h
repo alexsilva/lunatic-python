@@ -14,6 +14,7 @@
 #define PY_OBJECT_BY_REFERENCE "_object_by_reference"
 #define PY_LUA_TABLE_CONVERT "_lua_table_convert"
 #define PY_API_IS_EMBEDDED "_api_is_embedded"
+#define PY_ERRORHANDLER_STACK  "_errorHandlerStack"
 
 // globals Lua
 #define PY_ARGS_ARRAY_FUNC "pyargs_array"

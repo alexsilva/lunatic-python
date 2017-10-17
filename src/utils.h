@@ -1,6 +1,9 @@
 //
 // Created by alex on 27/09/2015.
 //
+struct JmpError {
+    jmp_buf buff;
+};
 
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
@@ -61,6 +64,8 @@ char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
 int python_getnumber(lua_State *L, char *name);
 char *python_getstring(lua_State *L, char *name);
+void *python_getuserdata(lua_State *L, char *name);
+int python_try(lua_State *L); void python_catch(lua_State *L);
 void python_setstring(lua_State *L, char *name, char *value);
 void python_setnumber(lua_State *L, char *name, int value);
 int lua_tablesize(lua_State *L, lua_Object ltable);
@@ -85,3 +90,5 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 #define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
 #define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
+#define try(L) if (python_try(L)) {
+#define catch(L) } python_catch(L);
