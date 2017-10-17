@@ -149,39 +149,52 @@ void python_new_error(PyObject *exception, char *message) {
 }
 
 
+/* lua inside python only */
 int python_try(lua_State *L) {
-    STACK *stack;
-    STACK_RECORD record;
+    if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
+        STACK *stack;
+        STACK_RECORD record;
 
-    stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
 
-    record.next = NULL;
-    stack_push(stack, record);
+        record.next = NULL;
+        stack_push(stack, record);
 
-    STACK_RECORD *cstack = stack_next(stack);
+        STACK_RECORD *cstack = stack_next(stack);
 
-    if (setjmp(cstack->buff) == 0) {
+        return !setjmp(cstack->buff);  // switch(0|1)
+    } else {
         return 1;
     }
-    return 0;
 }
 
+/* lua inside python only */
 void python_catch(lua_State *L) {
-    STACK *stack;
+    if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
+        STACK *stack;
 
-    stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
 
-    STACK_RECORD record = stack_pop(stack);
+        STACK_RECORD record = stack_pop(stack);
+    }
 }
 
 /* lua inside python (access python objects) */
-void lua_virtual_error(lua_State *L, char *message) {
+static void lua_virtual_error(lua_State *L, char *message) {
     STACK *stack;
     stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
     python_new_error(PyExc_ImportError, message);
     lua_call(L, "lockstate"); // stop operations
     STACK_RECORD *cstack = stack_next(stack);
     longjmp(cstack->buff, 1); // go to end procedure call
+}
+
+static void call_lua_error(lua_State *L, char *message) {
+    if (python_getnumber(L, PY_API_IS_EMBEDDED)) {
+        lua_error(L, message);
+    } else {
+        lua_virtual_error(L, message);
+    }
 }
 
 /* python inside lua */
@@ -199,18 +212,15 @@ void lua_new_error(lua_State *L, char *message) {
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
     }
-    if (!error) {
-        lua_virtual_error(L, message);
-        //lua_error(L, message);
-        return;
+    if (error) {
+        char *format = "%s (%s)";
+        char buff[buffsize_calc(3, format, message, error)];
+        sprintf(buff, format, message, error);
+        free(error); // free pointer!
+        call_lua_error(L, &buff[0]);
+    } else {
+        call_lua_error(L, message);
     }
-    char *format = "%s (%s)";
-    char buff[buffsize_calc(3, format, message, error)];
-    sprintf(buff, format, message, error);
-    free(error); // free pointer!
-
-    lua_virtual_error(L, &buff[0]);
-    //lua_error(L, &buff[0]);
 }
 
 /**
