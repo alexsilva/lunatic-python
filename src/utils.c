@@ -31,6 +31,10 @@ void *python_getuserdata(lua_State *L, char *name) {
     return lua_getuserdata(L, lua_rawgettable(L));
 }
 
+void python_setuserdata(lua_State *L, char *name, void *pointer) {
+    insert_table(L, lua_getglobal(L, PY_API_NAME), name, pointer, userdata);
+}
+
 /* Returns the table value stored in the API */
 lua_Object python_gettable(lua_State *L, char *name) {
     lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
@@ -152,16 +156,17 @@ void python_new_error(PyObject *exception, char *message) {
 /* lua inside python only */
 int python_try(lua_State *L) {
     if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
-        STACK *stack;
+        STACK stack;
         STACK_RECORD record;
-
-        stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-
         record.next = NULL;
-        stack_push(stack, record);
 
-        STACK_RECORD *cstack = stack_next(stack);
+        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        stack_push(&stack, record);
 
+        // update
+        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
+
+        STACK_RECORD *cstack = stack_next(&stack);
         return !setjmp(cstack->buff);  // switch(0|1)
     } else {
         return 1;
@@ -171,21 +176,24 @@ int python_try(lua_State *L) {
 /* lua inside python only */
 void python_catch(lua_State *L) {
     if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
-        STACK *stack;
+        STACK stack;
 
-        stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
 
-        STACK_RECORD record = stack_pop(stack);
-    }
+        stack_pop(&stack);
+
+        // update
+        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
+}
 }
 
 /* lua inside python (access python objects) */
 static void lua_virtual_error(lua_State *L, char *message) {
-    STACK *stack;
-    stack = (STACK *) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+    STACK stack;
+    stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
     python_new_error(PyExc_ImportError, message);
     lua_call(L, "lockstate"); // stop operations
-    STACK_RECORD *cstack = stack_next(stack);
+    STACK_RECORD *cstack = stack_next(&stack);
     longjmp(cstack->buff, 1); // go to end procedure call
 }
 

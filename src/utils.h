@@ -8,6 +8,16 @@ struct JmpError {
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
 
+/* A generic macro to insert a value in a Lua table. */
+#define insert_table(L, table, index, value, type) \
+  { \
+    lua_pushobject( L, table ); \
+    lua_pushstring( L, index ); \
+    lua_push##type( L, value ); \
+    lua_settable( L );    \
+  }
+
+
 /* set userdata */
 #define set_table_userdata(L, ltable, name, udata)\
     lua_pushobject(L, ltable);\

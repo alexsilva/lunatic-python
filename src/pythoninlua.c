@@ -550,26 +550,32 @@ static struct luaL_reg lua_tag_methods[] = {
     {NULL, NULL}
 };
 
+/* clean resources */
+static void python_gc_function(lua_State *L) {
+    lua_Object python = lua_getresult(L, 1);
+    if (lua_istable(L, python)) {
+        STACK stack = python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        while (!stack_empty(&stack)){
+            stack_pop(&stack);
+        }
+    }
+}
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
     lua_Object python = lua_createtable(L);
+
+    int pyntag = lua_newtag(L);
+    lua_pushcfunction(L, python_gc_function);
+    lua_settagmethod(L, pyntag, "gc");
+    lua_pushobject(L, python);
+    lua_settag(L, pyntag);
 
     set_table_string(L, python, PY_UNICODE_ENCODING, "utf8");
     set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, "strict");
     set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
     set_table_number(L, python, PY_API_IS_EMBEDDED, 0);  // If Python is inside Lua
     set_table_number(L, python, PY_LUA_TABLE_CONVERT, 0); // table convert ?
-
-    STACK stack;
-    STACK_RECORD record;
-    record.next = NULL;
-    stack = stack_push(&stack, record);
-    if (!stack) {
-        PyErr_SetString(PyExc_MemoryError, "out of memory");
-        return -1;
-    }
-    set_table_userdata(L, python, PY_ERRORHANDLER_STACK, stack);
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
