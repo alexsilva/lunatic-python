@@ -155,7 +155,7 @@ void python_new_error(PyObject *exception, char *message) {
 
 /* lua inside python only */
 int python_try(lua_State *L) {
-    if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
+    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
         STACK stack;
         STACK_RECORD record;
         record.next = NULL;
@@ -175,7 +175,7 @@ int python_try(lua_State *L) {
 
 /* lua inside python only */
 void python_catch(lua_State *L) {
-    if (!python_getnumber(L, PY_API_IS_EMBEDDED)) {
+    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
         STACK stack;
 
         stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
@@ -198,10 +198,10 @@ static void lua_virtual_error(lua_State *L, char *message) {
 }
 
 static void call_lua_error(lua_State *L, char *message) {
-    if (python_getnumber(L, PY_API_IS_EMBEDDED)) {
-        lua_error(L, message);
-    } else {
+    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
         lua_virtual_error(L, message);
+    } else {
+        lua_error(L, message);
     }
 }
 

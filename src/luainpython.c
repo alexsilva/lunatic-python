@@ -28,6 +28,7 @@
 #include "pyconv.h"
 #include "utils.h"
 #include "lshared.h"
+#include "constants.h"
 
 #if defined(_WIN32)
 #include "lapi.h"
@@ -415,14 +416,18 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         if (eval) free(buf);
         return NULL;
     }
-    if (eval) free(buf);
-    int nargs = lua_gettop(self->L);
-    if (nargs > 0) {
-        ret = lua_interpreter_stack_convert(self, 1);
-    }
-    if (!ret) {
-        Py_INCREF(Py_None);
-        ret = Py_None;
+    if (!PyErr_Occurred()) {
+        if (eval) free(buf);
+        int nargs = lua_gettop(self->L);
+        if (nargs > 0) {
+            ret = lua_interpreter_stack_convert(self, 1);
+        }
+        if (!ret) {
+            Py_INCREF(Py_None);
+            ret = Py_None;
+        }
+    } else {
+        ret = NULL;
     }
     lua_endblock(self->L);
     return ret;
@@ -508,7 +513,10 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
     if (self->L) {
         PyErr_Clear(); // clean state
         self->isPyType = true;
-        return luaopen_python(self->L);
+        int ret = luaopen_python(self->L);
+        if (ret == 0)
+            python_setnumber(self->L, LUA_INSIDE_PYTHON, 1);
+        return ret;
     } else {
         PySys_WriteStderr("%s", "startup failed");
         return -1;

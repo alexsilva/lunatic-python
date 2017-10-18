@@ -16,6 +16,8 @@
 #define PY_API_IS_EMBEDDED "_api_is_embedded"
 #define PY_ERRORHANDLER_STACK  "_errorHandlerStack"
 
+#define LUA_INSIDE_PYTHON "_lua_interpretrer_embedded"
+
 // globals Lua
 #define PY_ARGS_ARRAY_FUNC "pyargs_array"
 #define PY_KWARGS_FUNC "pykwargs"
