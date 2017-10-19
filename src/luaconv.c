@@ -1,11 +1,12 @@
 //
 // Created by alex on 26/09/2015.
 //
+extern "C"
+{
 #include <Python.h>
-
 #include <lua.h>
 #include <lauxlib.h>
-
+}
 #if defined(_WIN32)
 #include "lapi.h"
 #else
@@ -32,8 +33,8 @@ PyObject *LuaObject_New(InterpreterObject *interpreter, lua_Object lobj) {
             obj->interpreter = interpreter;
         } else {
             lua_State *L = interpreter->L;
-            obj->interpreter = malloc(sizeof(InterpreterObject));
-            if (!obj->interpreter) lua_error(L, "failed to allocate memory for the interpreter!");
+            obj->interpreter = (InterpreterObject *) malloc(sizeof(InterpreterObject));
+            if (!obj->interpreter) lua_error(L, ptrchar "failed to allocate memory for the interpreter!");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
             obj->interpreter->L = L;
@@ -105,8 +106,8 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
 PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
     int nargs = lua_tablesize(L, ltable);
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "#4 failed to create arguments tuple");
-    set_table_nil(L, ltable, "n"); // remove "n"
+    if (!tuple) lua_new_error(L, ptrchar "#4 failed to create arguments tuple");
+    set_table_nil(L, ltable, ptrchar "n"); // remove "n"
     int nextindex = lua_next(L, ltable, 0);
     int index = 0, stackpos = 2;
     PyObject *arg;
@@ -114,7 +115,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
         arg = lua_stack_convert(L, stackpos);
         if (!arg) {
             Py_DECREF(tuple);
-            char *format = "failed to convert argument #%d";
+            const char *format = "failed to convert argument #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
@@ -122,7 +123,7 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
             Py_DECREF(tuple);
-            lua_new_error(L, "failed to set item in tuple");
+            lua_new_error(L, ptrchar "failed to set item in tuple");
         }
         nextindex = lua_next(L, ltable, nextindex);
         index++;
@@ -135,8 +136,8 @@ PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
  **/
 PyObject *ltable2list(lua_State *L, lua_Object ltable) {
     PyObject *list = PyList_New(0);
-    if (!list) lua_new_error(L, "failed to create list");
-    set_table_nil(L, ltable, "n"); // remove "n"
+    if (!list) lua_new_error(L, ptrchar "failed to create list");
+    set_table_nil(L, ltable, ptrchar "n"); // remove "n"
     int nextindex = lua_next(L, ltable, 0);
     int index = 0, stackpos = 2;
     PyObject *arg;
@@ -144,7 +145,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
         arg = lua_stack_convert(L, stackpos);
         if (!arg) {
             Py_DECREF(list);
-            char *format = "failed to convert argument #%d";
+            const char *format = "failed to convert argument #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
@@ -152,7 +153,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
         if (PyList_Append(list, arg) != 0) {
             Py_DECREF(arg);
             Py_DECREF(list);
-            lua_new_error(L, "failed to set item in list");
+            lua_new_error(L, ptrchar "failed to set item in list");
         }
         nextindex = lua_next(L, ltable, nextindex);
         index++;
@@ -164,7 +165,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "#2 failed to create arguments tuple");
+    if (!tuple) lua_new_error(L, ptrchar "#2 failed to create arguments tuple");
     int index, pos;
     PyObject *arg;
     for (index = 0; index < nargs; index++) {
@@ -172,7 +173,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         arg = lua_stack_convert(L, pos);
         if (!arg) {
             Py_DECREF(tuple);
-            char *format = "failed to convert argument #%d";
+            const char *format = "failed to convert argument #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
@@ -180,7 +181,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
             Py_XDECREF(arg);
             Py_DECREF(tuple);
-            lua_new_error(L, "failed to set item in tuple");
+            lua_new_error(L, ptrchar "failed to set item in tuple");
         }
     }
     return tuple;
@@ -190,7 +191,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 void py_args(lua_State *L) {
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
     PyObject *tuple = get_py_tuple(L, 0);
-    py_object *pobj = py_object_container(L, tuple, 1);
+    py_object *pobj = py_object_container(L, tuple, true);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
@@ -208,7 +209,7 @@ void py_args_array(lua_State *L) {
             obj = PyList_AsTuple(obj);
         } else if (!PyObject_IsTupleInstance(obj)) { // invalid type
             const char *repr = obj->ob_type->tp_name ? obj->ob_type->tp_name : "?";
-            char *format = "object type \"%s\" can not be converted to args!";
+            const char *format = "object type \"%s\" can not be converted to args!";
             char buff[buffsize_calc(2, format, repr)];
             sprintf(buff, format, repr);
             lua_new_error(L, &buff[0]);
@@ -216,10 +217,10 @@ void py_args_array(lua_State *L) {
     } else if (lua_istable(L, lobj)){
         obj = ltable_convert_tuple(L, lobj);
     } else {
-        lua_new_error(L, "table, list or tuple expected as argument");
+        lua_new_error(L, ptrchar "table, list or tuple expected as argument");
         return;
     }
-    py_object *pobj = py_object_container(L, obj, 1);
+    py_object *pobj = py_object_container(L, obj, true);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
@@ -235,10 +236,10 @@ static void raise_key_error(lua_State *L, char *format,
         mkey = get_pyobject_str(get_pobject(L, lkey));
     } else {
         lua_pushobject(L, lkey);
-        lua_call(L, "tostring");
+        lua_call(L, ptrchar "tostring");
         mkey = lua_getstring(L, lua_getparam(L, 1));
     }
-    char *skey = mkey ? mkey : "?";
+    auto *skey = const_cast<char *>(mkey ? mkey : "?");
     char buff[buffsize_calc(2, format, skey)];
     sprintf(buff, format, skey);
     if (is_object) free(mkey);
@@ -249,7 +250,7 @@ static void raise_key_error(lua_State *L, char *format,
 /* convert to kwargs python: fn(**kwargs) */
 PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     PyObject *dict = PyDict_New();
-    if (!dict) lua_new_error(L, "failed to create key words arguments dict");
+    if (!dict) lua_new_error(L, ptrchar "failed to create key words arguments dict");
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
     int stackpos;
@@ -260,20 +261,20 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
         key = lua_object_convert(L, lkey);
         if (!key) {
             Py_DECREF(dict);
-            raise_key_error(L, "failed to convert key \"%s\"", lkey);
+            raise_key_error(L, ptrchar "failed to convert key \"%s\"", lkey);
         }
         stackpos = 2;
         value = lua_stack_convert(L, stackpos);
         if (!value) {
             Py_DECREF(key);
             Py_DECREF(dict);
-            raise_key_error(L, "failed to convert value of key \"%s\"", lkey);
+            raise_key_error(L, ptrchar  "failed to convert value of key \"%s\"", lkey);
         }
         if (PyDict_SetItem(dict, key, value) != 0) {
             Py_DECREF(key);
             Py_DECREF(value);
             Py_DECREF(dict);
-            lua_new_error(L, "failed to set item in dict");
+            lua_new_error(L, ptrchar "failed to set item in dict");
         } else {
             Py_DECREF(key);
             Py_DECREF(value);
@@ -286,7 +287,7 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 void py_kwargs(lua_State *L) {
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
     PyObject *dict = get_py_dict(L, luaL_tablearg(L, 1));
-    py_object *pobj = py_object_container(L, dict, 1);
+    py_object *pobj = py_object_container(L, dict, true);
     pobj->iskwargs = true;
     lua_pushusertag(L, pobj, python_api_tag(L));
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
@@ -297,7 +298,7 @@ void py_kwargs(lua_State *L) {
 **/
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_object_container(L, userdata))
-        lua_error(L, "container for invalid pyobject!");
+        lua_error(L, ptrchar "container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
 }
 
@@ -337,7 +338,7 @@ static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyOb
 }
 
 static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
-    void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata NULL ?
+    void *void_ptr = lua_getuserdata(interpreter->L, lobj); // userdata nullptr ?
     if (void_ptr) {
         if (is_object_container(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
@@ -355,7 +356,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
 
 PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
                                          lua_Object lobj) {
-    PyObject *ret = NULL;
+    PyObject *ret = nullptr;
     TObject *o = lapi_address(interpreter->L, lobj);
     switch (ttype(o)) { // Lua 3.2 source code builtin.c
         case LUA_T_NUMBER:
@@ -380,7 +381,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
             ret = Py_None;
             break;
         default:
-            lua_error(interpreter->L, "unknown type!");
+            lua_error(interpreter->L, ptrchar "unknown type!");
     }
     return ret;
 }

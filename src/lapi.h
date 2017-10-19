@@ -4,12 +4,13 @@
 
 #ifndef LUNATIC_LAPI_H
 #define LUNATIC_LAPI_H
-
+extern "C"
+{
 #include <lua.h>
 #include "lshared.h"
 
 int lapi_next(lua_State *L, lua_Object o, int i);
 
 #define lua_next(state, obj, index) lapi_next(state, obj, index);
-
+}
 #endif //LUNATIC_LAPI_H

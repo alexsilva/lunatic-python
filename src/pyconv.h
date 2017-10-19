@@ -4,9 +4,11 @@
 
 #ifndef LUNATIC_PYCONV_H
 #define LUNATIC_PYCONV_H
-
+extern "C"
+{
 #include "Python.h"
 #include "lua.h"
+}
 #include "luainpython.h"
 #include "luaconv.h"
 

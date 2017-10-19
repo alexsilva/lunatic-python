@@ -1,14 +1,13 @@
 //
 // Created by alex on 28/09/2015.
 //
-
-#include <stdarg.h>
-#include <string.h>
+extern "C"
+{
 #include <lua.h>
 #include <Python.h>
+}
 #include "utils.h"
 #include "constants.h"
-#include "stack.h"
 
 /* Returns the numeric value stored in API */
 int python_getnumber(lua_State *L, char *name) {
@@ -62,15 +61,15 @@ int python_api_tag(lua_State *L) {
 /* Returns the number of elements in a table */
 int lua_tablesize(lua_State *L, lua_Object ltable) {
     lua_pushobject(L, ltable);
-    lua_call(L, "getn");
+    lua_call(L, ptrchar "getn");
     return (int) lua_getnumber(L, lua_getresult(L, 1));
 }
 
 #ifndef strdup
 char *strdup(const char * s) {
     size_t len = strlen(s) + 1;
-    char *p = malloc(len);
-    return p ? memcpy(p, s, len) : NULL;
+    auto *p = (char *) malloc(len);
+    return static_cast<char *>(p ? memcpy(p, s, len) : nullptr);
 }
 #endif
 
@@ -81,13 +80,13 @@ static char *tostring(PyObject *obj) {
         str = PyString_AsString(pObjStr);
         if (str && strlen(str) == 0) {
             Py_DECREF(pObjStr);
-            return NULL;
+            return nullptr;
         }
         str = strdup(str);
         Py_DECREF(pObjStr);
     } else {
         PyErr_Clear();
-        str = NULL;
+        str = nullptr;
     }
     return str;
 }
@@ -95,13 +94,13 @@ static char *tostring(PyObject *obj) {
 #define ATTRNAME "__name__"
 
 char *get_pyobject_str(PyObject *obj) {
-    if (!obj) return NULL;
+    if (!obj) return nullptr;
     char *str;
     if (PyCallable_Check(obj) && PyObject_HasAttrString(obj, ATTRNAME)) {
         PyObject *pObjStr = PyObject_GetAttrString(obj, ATTRNAME);  // function name
         if (!pObjStr) {
             PyErr_Clear();
-            return NULL;
+            return nullptr;
         }
         str = tostring(pObjStr);
         Py_DECREF(pObjStr);
@@ -130,7 +129,7 @@ int buffsize_calc(int nargs, ...) {
 void python_new_error(PyObject *exception, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = NULL;
+    char *error = nullptr;
     if (pvalue || ptype || ptraceback) {
         error = get_pyobject_str(pvalue);
         if (!error) {
@@ -145,56 +144,20 @@ void python_new_error(PyObject *exception, char *message) {
         PyErr_SetString(exception, message);
         return;
     }
-    char *format = "%s\n%s";
+    const char *format = "%s\n%s";
     char buff[buffsize_calc(3, format, message, error)];
     sprintf(buff, format, message, error);
     free(error); // free pointer!
     PyErr_SetString(exception, &buff[0]);
 }
 
-
-/* lua inside python only */
-int python_try(lua_State *L) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
-        STACK stack;
-        STACK_RECORD record;
-        record.next = NULL;
-
-        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-        stack_push(&stack, record);
-
-        // update
-        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
-
-        STACK_RECORD *cstack = stack_next(&stack);
-        return !setjmp(cstack->buff);  // switch(0|1)
-    } else {
-        return 1;
-    }
-}
-
-/* lua inside python only */
-void python_catch(lua_State *L) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
-        STACK stack;
-
-        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-
-        stack_pop(&stack);
-
-        // update
-        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
-}
-}
-
 /* lua inside python (access python objects) */
 static void lua_virtual_error(lua_State *L, char *message) {
-    STACK stack;
-    stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
     python_new_error(PyExc_ImportError, message);
-    lua_call(L, "lockstate"); // stop operations
-    STACK_RECORD *cstack = stack_next(&stack);
-    longjmp(cstack->buff, 1); // go to end procedure call
+    lua_call(L, ptrchar "lockstate"); // stop operations
+
+    // todo: throw
+    throw message;
 }
 
 static void call_lua_error(lua_State *L, char *message) {
@@ -209,7 +172,7 @@ static void call_lua_error(lua_State *L, char *message) {
 void lua_new_error(lua_State *L, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = NULL;
+    char *error = nullptr;
     if (pvalue || ptype || ptraceback) {
         error = get_pyobject_str(pvalue);
         if (!error) {
@@ -221,7 +184,7 @@ void lua_new_error(lua_State *L, char *message) {
         Py_XDECREF(ptraceback);
     }
     if (error) {
-        char *format = "%s (%s)";
+        const char *format = "%s (%s)";
         char buff[buffsize_calc(3, format, message, error)];
         sprintf(buff, format, message, error);
         free(error); // free pointer!
@@ -237,7 +200,7 @@ void lua_new_error(lua_State *L, char *message) {
 void lua_raise_error(lua_State *L, char *format,
                      PyObject *obj) {
     char *pstr = get_pyobject_str(obj);
-    char *str = pstr ? pstr : "?";
+    auto *str = const_cast<char *>(pstr ? pstr : "?");
     char buff[buffsize_calc(2, format, str)];
     sprintf(buff, format, str);
     free(pstr); // free pointer!

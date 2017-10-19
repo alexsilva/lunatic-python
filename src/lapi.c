@@ -3,6 +3,9 @@
 //
 // Functions api that unfortunately were not found in the cgilua.
 
+#include "utils.h"
+extern "C"
+{
 #include "lapi.h"
 #include <ldo.h>
 #include <lmem.h>
@@ -11,6 +14,7 @@
 #define STACK_LIMIT  INT_MAX  /* arbitrary limit */
 #endif
 #define STACK_UNIT    128
+}
 
 /*
 ** generic allocation routine.
@@ -18,14 +22,14 @@
 void *luaM_realloc(lua_State *L, void *block, unsigned long size) {
     size_t s = (size_t) size;
     if (s != size)
-        lua_error(L, "memory allocation error: block too big");
+        lua_error(L, ptrchar "memory allocation error: block too big");
     if (size == 0) {
-        free(block);  /* block may be NULL, that is OK for free */
-        return NULL;
+        free(block);  /* block may be nullptr, that is OK for free */
+        return nullptr;
     }
     block = realloc(block, s);
-    if (block == NULL)
-        lua_error(L, memEM);
+    if (block == nullptr)
+        lua_error(L, ptrchar memEM);
     return block;
 }
 
@@ -40,9 +44,9 @@ void luaD_checkstack(lua_State *L, int n) {
         S->top = S->stack + top;
         if (stacksize >= STACK_LIMIT) {  /* stack overflow? */
             if (lua_stackedfunction(L, 100) == LUA_NOOBJECT)  /* 100 funcs on stack? */
-                lua_error(L, "Lua2C - C2Lua overflow"); /* doesn't look like a rec. loop */
+                lua_error(L, ptrchar "Lua2C - C2Lua overflow"); /* doesn't look like a rec. loop */
             else
-                lua_error(L, "stack size overflow");
+                lua_error(L, ptrchar "stack size overflow");
         }
     }
 }
@@ -76,7 +80,7 @@ static int lapi_raw_next(lua_State *L, Hash *t, int i) {
 int lapi_next(lua_State *L, lua_Object o, int i) {
     TObject *t = lapi_address(L, o);
     if (ttype(t) != LUA_T_ARRAY)
-        lua_error(L, "API error - object is not a table in `lua_next'");
+        lua_error(L, ptrchar "API error - object is not a table in `lua_next'");
     i = lapi_raw_next(L, avalue(t), i);
     lapi_top2L(L, (i == 0) ? 0 : 2);
     return i;

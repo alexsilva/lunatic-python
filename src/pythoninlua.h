@@ -24,10 +24,11 @@
 #define PYTHONINLUA_H
 
 // Extension version python
-#define PY_EXT_VERSION "2.4.0"
-
-#include <stdbool.h>
+#define PY_EXT_VERSION (ptrchar "2.4.0")
+extern "C"
+{
 #include <lua.h>
+}
 
 #if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)

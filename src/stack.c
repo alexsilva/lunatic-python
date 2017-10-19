@@ -9,7 +9,7 @@
 #include "stack.h"
 
 void stack_init(STACK *p) {
-    *p = NULL;
+    *p = nullptr;
 }
 
 STACK stack_push(STACK *stack, STACK_RECORD stack_record) {
@@ -37,5 +37,5 @@ STACK_RECORD stack_pop(STACK *stack) {
 }
 
 int stack_empty(STACK *stack) {
-    return *stack == NULL;
+    return *stack == nullptr;
 }

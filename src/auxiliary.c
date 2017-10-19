@@ -6,12 +6,14 @@
 ** We cannot lookahead without need, because this can lock stdin.
 ** This flag signals when we need to read a next char.
 */
-
+extern "C"
+{
 #include <Python.h>
 
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+}
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
@@ -25,13 +27,13 @@ char *luaI_classend(lua_State *L, char *p) {
     switch (*p++) {
         case ESC:
             if (*p == '\0')
-                luaL_verror(L, "incorrect pattern (lua_State *L, ends with `%c')", ESC);
+                luaL_verror(L, ptrchar "incorrect pattern (lua_State *L, ends with `%c')", ESC);
             return p + 1;
         case '[':
             if (*p == '^') p++;
             if (*p == ']') p++;
             p = strchr(p, ']');
-            if (!p) lua_error(L, "incorrect pattern (lua_State *L, missing `]')");
+            if (!p) lua_error(L, ptrchar "incorrect pattern (lua_State *L, missing `]')");
             return p + 1;
         default:
             return p;
@@ -40,7 +42,7 @@ char *luaI_classend(lua_State *L, char *p) {
 
 /* Reads a single byte from file */
 static int _read_single_char(PyObject *o) {
-    PyObject *callresult = PyObject_CallMethod(o, "read", "i", 1);
+    PyObject *callresult = PyObject_CallMethod(o, ptrchar "read", ptrchar "i", 1);
     char *str = PyString_AsString(callresult);
     int result = strcmp(str, "") == 0 ? EOF : *str;
     Py_DECREF(callresult);
@@ -69,7 +71,7 @@ static int read_pattern(lua_State *L, PyObject *o, char *p, int *lastreadchar) {
                 p++;
                 continue;
             case '}':
-                if (!inskip) lua_error(L, "unbalanced braces in read pattern");
+                if (!inskip) lua_error(L, ptrchar "unbalanced braces in read pattern");
                 inskip--;
                 p++;
                 continue;
@@ -114,7 +116,7 @@ static int read_pattern(lua_State *L, PyObject *o, char *p, int *lastreadchar) {
 
 /* Reads all remaining content from the file */
 static int read_file(lua_State *L, PyObject *o, int *lastreadchar) {
-    PyObject *callresult = PyObject_CallMethod(o, "read", NULL);
+    PyObject *callresult = PyObject_CallMethod(o, ptrchar "read", nullptr);
     if (callresult) {
         PyObject *result = callresult;
         if (*lastreadchar != 0) {
@@ -122,21 +124,21 @@ static int read_file(lua_State *L, PyObject *o, int *lastreadchar) {
             char v[] = {(char) *lastreadchar, '\0'};
             result = PyString_FromString(v);
             PyString_Concat(&result, callresult);
-            if (!result) lua_raise_error(L, "concatenating part of string of \"%s\"", o);
+            if (!result) lua_raise_error(L, ptrchar "concatenating part of string of \"%s\"", o);
             Py_DECREF(callresult);
             *lastreadchar = 0;
         }
         if (py_convert(L, result) == CONVERTED)
             Py_DECREF(result);
     } else {
-        lua_raise_error(L, "call function python read of \"%s\"", o);
+        lua_raise_error(L, ptrchar "call function python read of \"%s\"", o);
     }
     return 1;
 }
 
 /*private*/
 static void raise_number_error(lua_State *L, char *number) {
-    char *format = "converting number \"%s\" failed!";
+    const char *format = "converting number \"%s\" failed!";
     char buff[buffsize_calc(2, format, number)];
     sprintf(buff, format, number);
     lua_new_error(L, &buff[0]);
@@ -154,7 +156,7 @@ void remove_spaces(char* source) {
 }
 
 static int read_number(lua_State *L, PyObject *o, int *lastreadchar) {
-    int success = read_pattern(L, o, "%s*%d*%.?%d*", lastreadchar);
+    int success = read_pattern(L, o, ptrchar "%s*%d*%.?%d*", lastreadchar);
     int length = luaL_getsize(L);
     if (!success && length == 0) {
         return 0;  /* read fails */
@@ -169,7 +171,7 @@ static int read_number(lua_State *L, PyObject *o, int *lastreadchar) {
     }
     PyObject *number = PyString_FromString(numbuff);
     if (!number) raise_number_error(L, &numbuff[0]);
-    PyObject *result = PyFloat_FromString(number, NULL);
+    PyObject *result = PyFloat_FromString(number, nullptr);
     Py_DECREF(number);
     if (result) {
         if (py_convert(L, result) == CONVERTED)
@@ -185,20 +187,20 @@ void py_readfile(lua_State *L) {
     lua_Object luaObject = lua_getparam(L, 1);
     PyObject *pyFile;
     if (!is_object_container(L, luaObject)) {
-        lua_error(L, "is not a file object!");
+        lua_error(L, ptrchar "is not a file object!");
         return; // warning
     } else {
         pyFile = get_pobject(L, luaObject);
         PyObject *pyObjectRead = PyObject_GetAttrString(pyFile, "read");
         if (!pyObjectRead || !PyCallable_Check(pyObjectRead)) {
             Py_XDECREF(pyObjectRead);
-            lua_raise_error(L, "\"%s\" is not a file object!", pyFile);
+            lua_raise_error(L, ptrchar "\"%s\" is not a file object!", pyFile);
         }
         Py_DECREF(pyObjectRead);
     }
-    static char *options[] = {"*n", "*l", "*a", ".*", "*w", NULL};
+    static char *options[] = {ptrchar "*n", ptrchar "*l", ptrchar "*a", ptrchar ".*", ptrchar "*w", nullptr};
     int arg = 2;
-    char *p = luaL_opt_string(L, arg++, "*l");
+    char *p = luaL_opt_string(L, arg++, ptrchar "*l");
     int lastreadchar = 0;
     do { /* repeat for each part */
         int l = 0, success = 0;
@@ -208,13 +210,13 @@ void py_readfile(lua_State *L) {
                 if (!read_number(L, pyFile, &lastreadchar)) return;
                 continue;  /* number is already pushed; avoid the "pushstring" */
             case 1:  /* line */
-                success = read_pattern(L, pyFile, "[^\n]*{\n}", &lastreadchar);
+                success = read_pattern(L, pyFile, ptrchar "[^\n]*{\n}", &lastreadchar);
                 break;
             case 2: case 3:  /* file */
                 read_file(L, pyFile, &lastreadchar);
                 continue; /* already pushed; avoid the "pushstring" */
             case 4:  /* word */
-                success = read_pattern(L, pyFile, "{%s*}%S+", &lastreadchar);
+                success = read_pattern(L, pyFile, ptrchar "{%s*}%S+", &lastreadchar);
                 break;
             default:
                 success = read_pattern(L, pyFile, p, &lastreadchar);
@@ -222,5 +224,5 @@ void py_readfile(lua_State *L) {
         l = luaL_getsize(L);
         if (!success && l == 0) return;  /* read fails */
         lua_pushlstring(L, luaL_buffer(L), l);
-    } while ((p = luaL_opt_string(L, arg++, NULL)) != NULL);
+    } while ((p = luaL_opt_string(L, arg++, nullptr)) != nullptr);
 }

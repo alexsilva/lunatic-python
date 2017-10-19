@@ -16,21 +16,16 @@ set(SOURCES
     src/pythoninlua.c
     src/luaconv.c
     src/pyconv.c
-    src/utils.h
     src/utils.c
-    src/lshared.h
-    src/constants.h
     src/lshared.c
     src/auxiliary.c
-    src/auxiliary.h
-    src/stack.c
-    src/stack.h)
-
-SET_SOURCE_FILES_PROPERTIES( ${SOURCES} PROPERTIES LANGUAGE CXX)
+    src/stack.c)
 
 if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)
 endif()
+
+SET_SOURCE_FILES_PROPERTIES( ${SOURCES} PROPERTIES LANGUAGE CXX)
 
 add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})

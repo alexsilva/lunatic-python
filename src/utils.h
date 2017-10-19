@@ -1,12 +1,15 @@
 //
 // Created by alex on 27/09/2015.
 //
-struct JmpError {
-    jmp_buf buff;
-};
 
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
+extern "C"
+{
+#include "lua.h"
+#include "Python.h"
+}
+#define ptrchar (char*)
 
 /* A generic macro to insert a value in a Lua table. */
 #define insert_table(L, table, index, value, type) \
@@ -89,7 +92,7 @@ int PyObject_IsListInstance(PyObject *obj);
 int PyObject_IsTupleInstance(PyObject *obj);
 int PyObject_IsDictInstance(PyObject *obj);
 
-#define isvalidstatus(res) ((res != UNCHANGED))
+#define isvalidstatus(res) (res != UNCHANGED)
 
 #define check_pyobject_index(pyObject) \
     (PyObject_IsListInstance(pyObject) || \
@@ -100,5 +103,3 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 #define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
 #define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
-#define try(L) if (python_try(L)) {
-#define catch(L) } python_catch(L);

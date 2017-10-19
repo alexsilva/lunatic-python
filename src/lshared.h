@@ -4,7 +4,8 @@
 
 #ifndef LUNATIC_LSHARED_H
 #define LUNATIC_LSHARED_H
-
+extern "C"
+{
 #include <lua.h>
 #include "ltable.h"
 
@@ -16,5 +17,5 @@ int lraw_next(lua_State *L, lua_Object lobj, int index, Node **n);
 #define lua_getstr(o) (svalue(o))
 #define lua_getnum(o) (nvalue(o))
 #define lua_gettype(o) (ttype(o))
-
+}
 #endif //LUNATIC_LSHARED_H

@@ -9,7 +9,7 @@
 /* python string bytes */
 void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str) {
     PyString_AsStringAndSize(obj, &str->buff, &str->size);
-    if (!str->buff) lua_new_error(L, "converting string");
+    if (!str->buff) lua_new_error(L, ptrchar "converting string");
 }
 
 /* python string unicode as string bytes */
@@ -17,7 +17,7 @@ PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String
     char *encoding = python_getstring(L, PY_UNICODE_ENCODING);
     char *errorhandler = python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER);
     PyObject *pyStr = PyUnicode_AsEncodedString(obj, encoding, errorhandler);
-    if (!pyStr) lua_new_error(L, "converting unicode string");
+    if (!pyStr) lua_new_error(L, ptrchar "converting unicode string");
     get_pyobject_string_buffer(L, pyStr, str);
     return pyStr;
 }
@@ -26,8 +26,8 @@ PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String
 #pragma ide diagnostic ignored "OCDFAInspection"
 /**/
 py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
-    py_object *pobj = malloc(sizeof(py_object));
-    if (!pobj) lua_error(L, "failed to allocate memory for container");
+    auto *pobj = (py_object *) malloc(sizeof(py_object));
+    if (!pobj) lua_error(L, ptrchar "failed to allocate memory for container");
     pobj->asindx = asindx;
     pobj->object = obj;
     pobj->isargs = false;
@@ -46,19 +46,19 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
     lua_Object ltable = lua_createtable(L);
     if (PyObject_IsDictInstance(obj)) {
         PyObject *iterator = PyObject_GetIter(obj); // iterator keys
-        if (!iterator) lua_new_error(L, "failed to create the dictionary iterator");
+        if (!iterator) lua_new_error(L, ptrchar "failed to create the dictionary iterator");
         PyObject *key, *value;
         while ((key = PyIter_Next(iterator))) {
             value = PyObject_GetItem(obj, key);
             if (!value) {
                 Py_DECREF(iterator); Py_DECREF(key);
-                lua_raise_error(L, "failed to convert the key value %s", key);
+                lua_raise_error(L, ptrchar "failed to convert the key value %s", key);
             }
             if (PyObject_IsDictInstance(value) || PyObject_IsListInstance(value) ||
                 PyObject_IsTupleInstance(value)) {
                 if (py_object_raw(L, value, ltable, key) == LUA_NOOBJECT) {
                     Py_DECREF(key); Py_DECREF(value); Py_DECREF(iterator);
-                    lua_raise_error(L, "raw type not supported \"%s\"", value);
+                    lua_raise_error(L, ptrchar "raw type not supported \"%s\"", value);
                 } else {
                     Py_DECREF(value);
                 }
@@ -71,7 +71,7 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
         }
         Py_DECREF(iterator);
         if (PyErr_Occurred()) {
-            lua_raise_error(L, "failure iterating dictionary: %s", obj);
+            lua_raise_error(L, ptrchar "failure iterating dictionary: %s", obj);
         }
     } else if (PyObject_IsListInstance(obj) || PyObject_IsTupleInstance(obj)) {
         Py_ssize_t index, size = PyObject_Size(obj);
@@ -85,7 +85,7 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
                 ikey = PyInt_FromSsize_t(index + 1);
                 if (py_object_raw(L, value, ltable, ikey) == LUA_NOOBJECT) {
                     Py_DECREF(ikey); Py_DECREF(value);
-                    lua_raise_error(L, "raw type not supported \"%s\"", value);
+                    lua_raise_error(L, ptrchar "raw type not supported \"%s\"", value);
                 } else {
                     Py_DECREF(value);
                 }
@@ -113,9 +113,9 @@ void pyobj2table(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_object_container(L, lobj)) {
         py_object *obj = get_py_object(L, lobj);
-        lua_Object retval = py_object_raw(L, obj->object, 0, NULL);
+        lua_Object retval = py_object_raw(L, obj->object, 0, nullptr);
         if (retval == LUA_NOOBJECT)
-            lua_raise_error(L, "raw type not supported \"%s\"", obj->object);
+            lua_raise_error(L, ptrchar "raw type not supported \"%s\"", obj->object);
         lua_pushobject(L, retval);
     } else {
         lua_pushobject(L, lobj);
