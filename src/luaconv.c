@@ -34,7 +34,7 @@ PyObject *LuaObject_New(InterpreterObject *interpreter, lua_Object lobj) {
         } else {
             lua_State *L = interpreter->L;
             obj->interpreter = (InterpreterObject *) malloc(sizeof(InterpreterObject));
-            if (!obj->interpreter) lua_error(L, ptrchar "failed to allocate memory for the interpreter!");
+            if (!obj->interpreter) lua_new_error(L, ptrchar "failed to allocate memory for the interpreter!");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
             obj->interpreter->L = L;
@@ -298,7 +298,7 @@ void py_kwargs(lua_State *L) {
 **/
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_object_container(L, userdata))
-        lua_error(L, ptrchar "container for invalid pyobject!");
+        lua_new_error(L, ptrchar "container for invalid pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
 }
 
@@ -381,7 +381,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
             ret = Py_None;
             break;
         default:
-            lua_error(interpreter->L, ptrchar "unknown type!");
+            lua_new_error(interpreter->L, ptrchar "unknown type!");
     }
     return ret;
 }

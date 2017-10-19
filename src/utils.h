@@ -72,6 +72,7 @@ extern "C"
 
 int buffsize_calc(int nargs, ...);
 void lua_new_error(lua_State *L, char *message);
+void lua_new_argerror (lua_State *L, int numarg, char *extramsg);
 void lua_raise_error(lua_State *L, char *format, PyObject *obj);
 char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
@@ -92,7 +93,7 @@ int PyObject_IsListInstance(PyObject *obj);
 int PyObject_IsTupleInstance(PyObject *obj);
 int PyObject_IsDictInstance(PyObject *obj);
 
-#define isvalidstatus(res) (res != UNCHANGED)
+#define isvalidstatus(res) ((res) != UNCHANGED)
 
 #define check_pyobject_index(pyObject) \
     (PyObject_IsListInstance(pyObject) || \
@@ -103,3 +104,5 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 #define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
 #define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
+#define begintry { try {
+#define endcatch } catch (int e) {} catch (...) {} }

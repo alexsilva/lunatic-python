@@ -27,7 +27,7 @@ PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String
 /**/
 py_object *py_object_container(lua_State *L, PyObject *obj, bool asindx) {
     auto *pobj = (py_object *) malloc(sizeof(py_object));
-    if (!pobj) lua_error(L, ptrchar "failed to allocate memory for container");
+    if (!pobj) lua_new_error(L, ptrchar "failed to allocate memory for container");
     pobj->asindx = asindx;
     pobj->object = obj;
     pobj->isargs = false;

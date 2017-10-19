@@ -155,9 +155,7 @@ void python_new_error(PyObject *exception, char *message) {
 static void lua_virtual_error(lua_State *L, char *message) {
     python_new_error(PyExc_ImportError, message);
     lua_call(L, ptrchar "lockstate"); // stop operations
-
-    // todo: throw
-    throw message;
+    throw EXIT_FAILURE;
 }
 
 static void call_lua_error(lua_State *L, char *message) {
@@ -166,6 +164,23 @@ static void call_lua_error(lua_State *L, char *message) {
     } else {
         lua_error(L, message);
     }
+}
+
+void lua_new_argerror (lua_State *L, int numarg, char *extramsg) {
+    lua_Function f = lua_stackedfunction(L, 0);
+    char *funcname;
+    lua_getobjname(L, f, &funcname);
+    numarg -= lua_nups(L, f);
+    if (funcname == nullptr)
+        funcname = ptrchar "?";
+    char buff[500];
+    if (extramsg == nullptr)
+        sprintf(buff, "bad argument #%d to function `%.50s'",
+                numarg, funcname);
+    else
+        sprintf(buff, "bad argument #%d to function `%.50s' (%.100s)",
+                numarg, funcname, extramsg);
+    lua_new_error(L, buff);
 }
 
 /* python inside lua */
