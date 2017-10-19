@@ -22,13 +22,12 @@
 */
 #ifndef PYTHONINLUA_H
 #define PYTHONINLUA_H
-
-// Extension version python
-#define PY_EXT_VERSION (ptrchar "2.4.0")
 extern "C"
 {
 #include <lua.h>
-}
+
+// Extension version python
+#define PY_EXT_VERSION (ptrchar "2.4.0")
 
 #if defined(_WIN32) //  Microsoft
 #define LUA_API __declspec(dllexport)
@@ -37,5 +36,5 @@ extern "C"
 #endif
 
 LUA_API int luaopen_python(lua_State *L);
-
+}
 #endif

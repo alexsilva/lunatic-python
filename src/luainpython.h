@@ -22,10 +22,9 @@
 */
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
-
-#define LUA_EXT_VERSION "2.2.0"
-
-#include <stdbool.h>
+extern "C"
+{
+#define LUA_EXT_VERSION (ptrchar "2.2.0")
 
 typedef struct {
     PyObject_HEAD
@@ -39,5 +38,5 @@ extern PyTypeObject LuaObject_Type;
 #define PyInit_lua initlua
 #endif
 PyMODINIT_FUNC PyInit_lua(void);
-
+}
 #endif
