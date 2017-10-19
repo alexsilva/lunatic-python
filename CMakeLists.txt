@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.3.0)
+cmake_minimum_required(VERSION 3.8)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_CXX_STANDARD 11)
 
 project(Lunatic)
 
@@ -25,6 +25,8 @@ set(SOURCES
     src/auxiliary.h
     src/stack.c
     src/stack.h)
+
+SET_SOURCE_FILES_PROPERTIES( ${SOURCES} PROPERTIES LANGUAGE CXX)
 
 if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)
