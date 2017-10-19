@@ -153,7 +153,9 @@ void python_new_error(PyObject *exception, char *message) {
 
 /* lua inside python (access python objects) */
 static void lua_virtual_error(lua_State *L, char *message) {
-    python_new_error(PyExc_ImportError, message);
+    python_new_error(PyExc_Exception, message);
+    lua_pushstring(L, message);
+    lua_call(L, ptrchar "_ERRORMESSAGE");
     lua_call(L, ptrchar "lockstate"); // stop operations
     throw EXIT_FAILURE;
 }
