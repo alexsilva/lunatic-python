@@ -6,6 +6,8 @@ extern "C"
 #include <lua.h>
 #include <Python.h>
 }
+
+#include <cgilua.h>
 #include "utils.h"
 #include "constants.h"
 
@@ -154,8 +156,7 @@ void python_new_error(PyObject *exception, char *message) {
 /* lua inside python (access python objects) */
 static void lua_virtual_error(lua_State *L, char *message) {
     python_new_error(PyExc_Exception, message);
-    //lua_pushstring(L, message);
-    //lua_call(L, ptrchar "_ERRORMESSAGE");
+    lua_errorfallback(L, message);
     lua_call(L, ptrchar "lockstate"); // stop operations
     throw EXIT_FAILURE;
 }
