@@ -298,7 +298,7 @@ void py_kwargs(lua_State *L) {
 **/
 py_object *get_py_object(lua_State *L, lua_Object userdata) {
     if (!is_object_container(L, userdata))
-        lua_new_error(L, ptrchar "container for invalid pyobject!");
+        lua_new_error(L, ptrchar "invalid container to pyobject!");
     return ((py_object *) lua_getuserdata(L, userdata));
 }
 
