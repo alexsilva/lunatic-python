@@ -208,7 +208,9 @@ static int py_run(lua_State *L, int eval) {
         len = strlen(s) + 1;
         buffer = (char *) malloc(len + 1);
         if (!buffer) {
+            // todo: error
             lua_error(L, ptrchar "Failed allocating buffer for execution");
+            return 0; // disable warnings.
         }
         strcpy(buffer, s);
         buffer[len - 1] = '\n';
@@ -559,7 +561,7 @@ static struct luaL_reg lua_tag_methods[] = {
 static void python_gc_function(lua_State *L) {
     lua_Object python = lua_getresult(L, 1);
     if (lua_istable(L, python)) {
-        STACK stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
+        auto stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
         while (!stack_empty(&stack)){
             stack_pop(&stack);
         }
@@ -614,15 +616,15 @@ LUA_API int luaopen_python(lua_State *L) {
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_TRUE, py_object_container(L, pyObject, 0), ntag);
+    set_table_usertag(L, python, PY_TRUE, py_object_container(L, pyObject, true), ntag);
 
     pyObject = Py_False;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_FALSE, py_object_container(L, pyObject, 0), ntag);
+    set_table_usertag(L, python, PY_FALSE, py_object_container(L, pyObject, true), ntag);
 
     pyObject = Py_None;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_NONE, py_object_container(L, pyObject, 0), ntag);
+    set_table_usertag(L, python, PY_NONE, py_object_container(L, pyObject, true), ntag);
     return 0;
 }
 
