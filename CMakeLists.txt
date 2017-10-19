@@ -57,7 +57,7 @@ if (UNIX)
     target_link_libraries(python ${LINK_LIBRARY})
     target_link_libraries(lua ${LINK_LIBRARY})
 else()
-    target_link_libraries(python python27 lua32ng lualib32ng)
+    target_link_libraries(python python27 lua32ngw lualib32ngw)
     target_link_libraries(lua python27 lua32ngw lualib32ngw)
 endif ()
 
