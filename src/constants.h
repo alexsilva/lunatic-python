@@ -8,7 +8,6 @@
 #define PY_API_NAME (ptrchar "python")
 
 // Object wrap names
-#define PY_LUA_TABLE_CONVERT (ptrchar "_lua_table_convert")
 #define PY_ERRORHANDLER_STACK  (ptrchar "_errorHandlerStack")
 
 #define LUA_INSIDE_PYTHON (ptrchar "_lua_interpretrer_embedded")

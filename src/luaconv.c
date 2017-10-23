@@ -189,17 +189,19 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
 
 /* Converts the list of arguments in the stack for python args: fn(*args) */
 void py_args(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     PyObject *tuple = get_py_tuple(L, 0);
     py_object *pobj = py_object_container(L, tuple, true);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 }
 
 /* Convert a table or a tuple for python args: fn(*args) */
 void py_args_array(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     lua_Object lobj = lua_getparam(L, 1);
     PyObject *obj;
     if (is_object_container(L, lobj)) {
@@ -223,7 +225,7 @@ void py_args_array(lua_State *L) {
     py_object *pobj = py_object_container(L, obj, true);
     lua_pushusertag(L, pobj, python_api_tag(L));
     pobj->isargs = true;
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 }
 
 
@@ -285,12 +287,13 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
 }
 
 void py_kwargs(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     PyObject *dict = get_py_dict(L, luaL_tablearg(L, 1));
     py_object *pobj = py_object_container(L, dict, true);
     pobj->iskwargs = true;
     lua_pushusertag(L, pobj, python_api_tag(L));
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 }
 
 /**

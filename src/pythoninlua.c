@@ -88,9 +88,10 @@ begintry
         if (PyDict_Check(args)) lua_new_argerror(L, 2, ptrchar "object dict expected kwargs{a=1,...}");
 
     } else if (nargs > 0) {
-        python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+        Python *python = get_python(L);
+        python->lua.tableconvert = true;
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
-        python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+        python->lua.tableconvert = false;
         isargs = false;
     } else {
         args = PyTuple_New(0);
@@ -483,25 +484,28 @@ endcatch
 /* Convert a Lua table into a Python dictionary */
 static void table2dict(lua_State *L)
 begintry
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     push_pyobject_container(L, get_py_dict(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 endcatch
 
 /* Convert a Lua table to a python tuple */
 static void table2tuple(lua_State *L)
 begintry
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     push_pyobject_container(L, ltable_convert_tuple(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 endcatch
 
 /* Convert a Lua table to a python list */
 static void table2list(lua_State *L)
 begintry
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua.tableconvert = true;
     push_pyobject_container(L, ltable2list(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua.tableconvert = false;
 endcatch
 
 /* Split lists and tuples slices o[start:end] */
