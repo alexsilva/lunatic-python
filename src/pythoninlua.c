@@ -40,7 +40,7 @@ extern "C"
 
 
 Python::Python(lua_State *L) {
-    lua.tag = lua_newtag(L);
+    lua.set_tag(lua_newtag(L));
     object_ref = false;
     embedded = false;
     stack  = nullptr;
@@ -640,7 +640,7 @@ LUA_API int luaopen_python(lua_State *L) {
     index = 0;
     while (lua_tag_methods[index].name) {
         lua_pushcfunction(L, lua_tag_methods[index].func);
-        lua_settagmethod(L, python->lua.tag, lua_tag_methods[index].name);
+        lua_settagmethod(L, python->lua.get_tag(), lua_tag_methods[index].name);
         index++;
     }
 

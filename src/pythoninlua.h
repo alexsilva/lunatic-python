@@ -51,16 +51,19 @@ public:
     Lua() = default;
     bool tconvert = false; /* table convert */
     bool embedded = false;
+    int get_tag() { return this->tag; }
+    void set_tag(int tag) { this->tag = tag; }
+protected:
     int tag = -1; /* api tag */
 };
 
 class Python {
 public:
     explicit Python(lua_State *L);
-    Lua lua;
     PyUnicode unicode;
     bool object_ref;
     bool embedded;
     STACK stack;
+    Lua lua;
 };
 #endif
