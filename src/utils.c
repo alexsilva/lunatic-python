@@ -63,7 +63,7 @@ Python *get_python(lua_State *L) {
  * Tag event base
  **/
 int python_api_tag(lua_State *L) {
-    return python_getnumber(L, PY_API_TAG);
+    return get_python(L)->lua.get_tag();
 }
 
 /* Returns the number of elements in a table */

@@ -422,7 +422,7 @@ endcatch
 /* Returns the number of registration of the events tag */
 static void py_get_tag(lua_State *L)
 begintry
-    lua_pushnumber(L, python_getnumber(L, PY_API_TAG));
+    lua_pushnumber(L, get_python(L)->lua.get_tag());
 endcatch
 
 /* allows the setting error control string in unicode string conversion */
