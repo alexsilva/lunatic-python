@@ -13,7 +13,6 @@
 #define PY_UNICODE_ENCODING_ERRORHANDLER (ptrchar "_unicode_encoding_errorhandler")
 #define PY_OBJECT_BY_REFERENCE (ptrchar "_object_by_reference")
 #define PY_LUA_TABLE_CONVERT (ptrchar "_lua_table_convert")
-#define PY_API_IS_EMBEDDED (ptrchar "_api_is_embedded")
 #define PY_ERRORHANDLER_STACK  (ptrchar "_errorHandlerStack")
 
 #define LUA_INSIDE_PYTHON (ptrchar "_lua_interpretrer_embedded")

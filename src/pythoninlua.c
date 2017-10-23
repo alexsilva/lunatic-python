@@ -530,7 +530,7 @@ static void python_system_init(lua_State *L);
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L)
 begintry
-    if (Py_IsInitialized() && python_getnumber(L, PY_API_IS_EMBEDDED))
+    if (Py_IsInitialized() && get_python(L)->embedded)
         Py_Finalize();
 endcatch
 
@@ -538,7 +538,7 @@ endcatch
 /* Indicates if Python interpreter was embedded in the Lua */
 static void python_is_embedded(lua_State *L)
 begintry
-    if (python_getnumber(L, PY_API_IS_EMBEDDED)) {
+    if (get_python(L)->embedded) {
         lua_pushnumber(L, 1);
     } else {
         lua_pushnil(L);
@@ -672,7 +672,8 @@ LUA_API int luaopen_python(lua_State *L) {
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
-        python_setnumber(L, PY_API_IS_EMBEDDED, 1); // If python is inside Lua
+        // If python is inside Lua
+        get_python(L)->embedded = true;
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {

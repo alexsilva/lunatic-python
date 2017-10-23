@@ -9,6 +9,8 @@ extern "C"
 #include "lua.h"
 #include "Python.h"
 }
+#include "pythoninlua.h"
+
 #define ptrchar (char*)
 
 /* A generic macro to insert a value in a Lua table. */
@@ -82,6 +84,7 @@ void *python_getuserdata(lua_State *L, char *name);
 int python_try(lua_State *L); void python_catch(lua_State *L);
 void python_setstring(lua_State *L, char *name, char *value);
 void python_setnumber(lua_State *L, char *name, int value);
+Python *get_python(lua_State *L);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
 

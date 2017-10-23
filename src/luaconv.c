@@ -326,8 +326,8 @@ static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     lua_beginblock(interpreter->L);
-    if (!python_getnumber(interpreter->L, PY_API_IS_EMBEDDED) && // Lua inside Python
-        !python_getnumber(interpreter->L, PY_LUA_TABLE_CONVERT)){
+    Python *python = get_python(interpreter->L);
+    if (python->lua.embedded && !python->lua.tableconvert) {
         *ret = LuaObject_New(interpreter, lobj);
     } else if (is_indexed_array(interpreter->L, lobj)) { //  Python inside Lua
         *ret = ltable_convert_tuple(interpreter->L, lobj);
@@ -343,7 +343,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
         if (is_object_container(interpreter->L, lobj)) {
             *ret = get_pobject(interpreter->L, lobj);
             Py_INCREF(*ret); // new ref
-        } else if (python_getnumber(interpreter->L, PY_API_IS_EMBEDDED)) { //  Python inside Lua
+        } else if (get_python(interpreter->L)->embedded) { //  Python inside Lua
             *ret = (PyObject *) void_ptr;
         } else {
             *ret = LuaObject_New(interpreter, lobj);

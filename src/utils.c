@@ -53,6 +53,12 @@ void python_setnumber(lua_State *L, char *name, int value) {
     set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
 }
 
+Python *get_python(lua_State *L) {
+    auto *python = (Python *) lua_getuserdata(L, lua_getglobal(L, PY_API_NAME));
+    if (!python) lua_new_error(L, ptrchar "python ref not found!");
+    return python;
+}
+
 /**
  * Tag event base
  **/

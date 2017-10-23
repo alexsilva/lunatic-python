@@ -49,7 +49,7 @@ public:
 class Lua {
 public:
     Lua() = default;
-    bool tconvert = false; /* table convert */
+    bool tableconvert = false; /* table convert */
     bool embedded = false;
     int get_tag() { return this->tag; }
     void set_tag(int tag) { this->tag = tag; }
