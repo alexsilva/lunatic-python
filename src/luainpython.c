@@ -521,7 +521,7 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
         self->isPyType = true;
         int ret = luaopen_python(self->L);
         if (ret == 0)
-            python_setnumber(self->L, LUA_INSIDE_PYTHON, 1);
+            get_python(self->L)->lua.embedded = true;
         return ret;
     } else {
         PySys_WriteStderr("%s", "startup failed");

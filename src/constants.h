@@ -7,11 +7,6 @@
 // Global Lua sets exposes most api functions
 #define PY_API_NAME (ptrchar "python")
 
-// Object wrap names
-#define PY_ERRORHANDLER_STACK  (ptrchar "_errorHandlerStack")
-
-#define LUA_INSIDE_PYTHON (ptrchar "_lua_interpretrer_embedded")
-
 // globals Lua
 #define PY_ARGS_ARRAY_FUNC (ptrchar "pyargs_array")
 #define PY_KWARGS_FUNC (ptrchar "pykwargs")

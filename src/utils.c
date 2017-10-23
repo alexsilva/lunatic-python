@@ -168,7 +168,7 @@ static void lua_virtual_error(lua_State *L, char *message) {
 }
 
 static void call_lua_error(lua_State *L, char *message) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
+    if (get_python(L)->lua.embedded) {
         lua_virtual_error(L, message);
     } else {
         lua_error(L, message);
