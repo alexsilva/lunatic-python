@@ -29,14 +29,22 @@ extern "C"
 }
 
 #include <iostream>
+#include <unordered_map>
 #include "pythoninlua.h"
-
 #include "luaconv.h"
 #include "pyconv.h"
 #include "utils.h"
 #include "constants.h"
 #include "auxiliary.h"
 #include "stack.h"
+
+
+Python::Python(lua_State *L) {
+    lua.tag = lua_newtag(L);
+    object_ref = false;
+    embedded = false;
+    stack  = nullptr;
+}
 
 
 static void py_object_call(lua_State *L)
@@ -455,7 +463,7 @@ endcatch
 /* Allows the setting error control string in unicode string conversion */
 static void py_set_unicode_encoding_errorhandler(lua_State *L)
 begintry
-     _set_unicode_encoding_errorhandler(L, 1); 
+     _set_unicode_encoding_errorhandler(L, 1);
 endcatch
 
 /* Returns the encoding used in the string conversion */
@@ -537,41 +545,40 @@ begintry
     }
 endcatch
 
-
-static struct luaL_reg py_lib[] = {
-    {ptrchar"execute",                           py_execute}, // run arbitrary expressions in the interpreter.
-    {ptrchar"eval",                              py_eval},  // assesses the value of a variable and returns its reference.
-    {ptrchar"asindex",                           py_asindx}, // change the mode of access to attributes of an object for indexes.
-    {ptrchar"asattr",                            py_asattr}, // changes the way to access the attributes of an object for attributes.
-    {ptrchar"repr",                              py_object_repr}, // represents the object as a string (str(o)).
-    {ptrchar"locals",                            py_locals}, // returns the local scope variables dictionary.
-    {ptrchar"globals",                           py_globals}, // returns the global scope variables dictionary.
-    {ptrchar"builtins",                          py_builtins}, // returns the dictionary embedded objects.
-    {ptrchar"import",                            py_import}, // importing a module by its name (import("os")).
-    {ptrchar"system_init",                       python_system_init}, // initializes the interpreter in the location.
-    {ptrchar"system_exit",                       python_system_exit}, // terminates the interpreter (when embedded).
-    {ptrchar"args",                              py_args},
-    {ptrchar"kwargs",                            py_kwargs},
-    {ptrchar"args_array",                        py_args_array},
-    {ptrchar"is_embedded",                       python_is_embedded}, // report of the python interpreter was embedded in the Lua
-    {ptrchar"get_version",                       py_get_version}, // return release of the extension.
-    {ptrchar"set_unicode_encoding",              py_set_unicode_encoding},
-    {ptrchar"get_unicode_encoding",              py_get_unicode_encoding},
-    {ptrchar"get_unicode_encoding_errorhandler", py_get_unicode_encoding_errorhandler},
-    {ptrchar"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
-    {ptrchar"byref",                             py_byref}, // returns the result reference (no conversion).
-    {ptrchar"byrefc",                            py_byrefc}, // returns the result reference (no conversion).
-    {ptrchar"tag",                               py_get_tag}, // returns the container tag objects python.
-    {ptrchar"dict",                              table2dict}, // returns a converted table to dictionary.
-    {ptrchar"tuple",                             table2tuple}, // returns a converted table to tuple.
-    {ptrchar"list",                              table2list}, // returns a converted table to list.
-    {ptrchar"table",                             pyobj2table}, // convert dict, list or tuple for a table.
-    {ptrchar"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
-    {ptrchar"slice",                             pyobject_slice},
-    {ptrchar"asargs",                            py_asargs},
-    {ptrchar"askwargs",                          py_askwargs},
-    {ptrchar"readfile",                          py_readfile},
-    {nullptr, nullptr}
+// mapa de funções
+static std::unordered_map<std::string, lua_CFunction> python_api_func {
+    {"execute",                           py_execute}, // run arbitrary expressions in the interpreter.
+    {"eval",                              py_eval},  // assesses the value of a variable and returns its reference.
+    {"asindex",                           py_asindx}, // change the mode of access to attributes of an object for indexes.
+    {"asattr",                            py_asattr}, // changes the way to access the attributes of an object for attributes.
+    {"repr",                              py_object_repr}, // represents the object as a string (str(o)).
+    {"locals",                            py_locals}, // returns the local scope variables dictionary.
+    {"globals",                           py_globals}, // returns the global scope variables dictionary.
+    {"builtins",                          py_builtins}, // returns the dictionary embedded objects.
+    {"import",                            py_import}, // importing a module by its name (import("os")).
+    {"system_init",                       python_system_init}, // initializes the interpreter in the location.
+    {"system_exit",                       python_system_exit}, // terminates the interpreter (when embedded).
+    {"args",                              py_args},
+    {"kwargs",                            py_kwargs},
+    {"args_array",                        py_args_array},
+    {"is_embedded",                       python_is_embedded}, // report of the python interpreter was embedded in the Lua
+    {"get_version",                       py_get_version}, // return release of the extension.
+    {"set_unicode_encoding",              py_set_unicode_encoding},
+    {"get_unicode_encoding",              py_get_unicode_encoding},
+    {"get_unicode_encoding_errorhandler", py_get_unicode_encoding_errorhandler},
+    {"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
+    {"byref",                             py_byref}, // returns the result reference (no conversion).
+    {"byrefc",                            py_byrefc}, // returns the result reference (no conversion).
+    {"tag",                               py_get_tag}, // returns the container tag objects python.
+    {"dict",                              table2dict}, // returns a converted table to dictionary.
+    {"tuple",                             table2tuple}, // returns a converted table to tuple.
+    {"list",                              table2list}, // returns a converted table to list.
+    {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
+    {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
+    {"slice",                             pyobject_slice},
+    {"asargs",                            py_asargs},
+    {"askwargs",                          py_askwargs},
+    {"readfile",                          py_readfile}
 };
 
 static struct luaL_reg lua_tag_methods[] = {
@@ -582,32 +589,60 @@ static struct luaL_reg lua_tag_methods[] = {
     {nullptr, nullptr}
 };
 
-/* clean resources */
-static void python_gc_function(lua_State *L) {
-    lua_Object python = lua_getresult(L, 1);
-    if (lua_istable(L, python)) {
-        auto stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-        while (!stack_empty(&stack)){
-            stack_pop(&stack);
-        }
+
+/* api functions call python */
+static void python_gettable_function(lua_State *L) {
+    const char *func_name = luaL_check_string(L, 2);
+    if (python_api_func.find(func_name) != python_api_func.end()) {
+        lua_pushcclosure(L, python_api_func[func_name], 0);
+    } else {
+        lua_new_argerror(L, 1, (char *) (std::string("call expression not a function: ") + std::string(func_name)).data());
     }
 }
 
+/* clean resources */
+static void python_gc_function(lua_State *L) {
+    auto python = (Python *)lua_getuserdata(L, lua_getresult(L, 1));
+    if (!python) {
+        delete python;
+    }
+}
+
+static struct luaL_reg python_tag_methods[] = {
+    //{ptrchar"function", py_object_call},
+    {ptrchar"gettable", python_gettable_function},
+    //{ptrchar"settable", py_object_index_set},
+    {ptrchar"gc",       python_gc_function},
+    {nullptr, nullptr}
+};
+
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    lua_Object python = lua_createtable(L);
+    auto *python = new Python(L);
+    int index, ntag;
 
-    int pyntag = lua_newtag(L);
-    lua_pushcfunction(L, python_gc_function);
-    lua_settagmethod(L, pyntag, ptrchar "gc");
-    lua_pushobject(L, python);
-    lua_settag(L, pyntag);
+    // python tag methods
+    ntag = lua_newtag(L);
+    index = 0;
+    while (python_tag_methods[index].name) {
+        lua_pushcfunction(L, python_tag_methods[index].func);
+        lua_settagmethod(L, ntag, python_tag_methods[index].name);
+        index++;
+    }
+    // set global
+    lua_pushuserdata(L, python);
+    lua_setglobal(L, PY_API_NAME);  // api python
+    // set tag
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+    lua_settag(L, ntag);
 
-    set_table_string(L, python, PY_UNICODE_ENCODING, ptrchar "utf8");
-    set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, ptrchar "strict");
-    set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
-    set_table_number(L, python, PY_API_IS_EMBEDDED, 0);  // If Python is inside Lua
-    set_table_number(L, python, PY_LUA_TABLE_CONVERT, 0); // table convert ?
+    // python api tags
+    index = 0;
+    while (lua_tag_methods[index].name) {
+        lua_pushcfunction(L, lua_tag_methods[index].func);
+        lua_settagmethod(L, python->lua.tag, lua_tag_methods[index].name);
+        index++;
+    }
 
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
@@ -617,39 +652,19 @@ LUA_API int luaopen_python(lua_State *L) {
 
     lua_pushcfunction(L, py_args_array);
     lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
-
-    lua_pushobject(L, python);
-    lua_setglobal(L, PY_API_NAME);  // api python
-
-    int index = 0;
-    while (py_lib[index].name) {
-        set_table_fn(L, python, py_lib[index].name, py_lib[index].func);
-        index++;
-    }
-
-    // register all tag methods
-    int ntag = lua_newtag(L);
-    index = 0;
-    while (lua_tag_methods[index].name) {
-        lua_pushcfunction(L, lua_tag_methods[index].func);
-        lua_settagmethod(L, ntag, lua_tag_methods[index].name);
-        index++;
-    }
-
-    // tag event
-    set_table_number(L, python, PY_API_TAG, ntag);
-
-    PyObject *pyObject = Py_True;
-    Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_TRUE, py_object_container(L, pyObject, true), ntag);
-
-    pyObject = Py_False;
-    Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_FALSE, py_object_container(L, pyObject, true), ntag);
-
-    pyObject = Py_None;
-    Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_NONE, py_object_container(L, pyObject, true), ntag);
+//
+//    lua_Object lobj = lua_getglobal(L, PY_API_NAME);
+//    PyObject *pyObject = Py_True;
+//    Py_INCREF(pyObject);
+//    set_table_usertag(L, lobj, PY_TRUE, py_object_container(L, pyObject, true), ntag);
+//
+//    pyObject = Py_False;
+//    Py_INCREF(pyObject);
+//    set_table_usertag(L, lobj, PY_FALSE, py_object_container(L, pyObject, true), ntag);
+//
+//    pyObject = Py_None;
+//    Py_INCREF(pyObject);
+//    set_table_usertag(L, lobj, PY_NONE, py_object_container(L, pyObject, true), ntag);
     return 0;
 }
 
