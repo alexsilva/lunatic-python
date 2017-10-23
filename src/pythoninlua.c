@@ -449,14 +449,14 @@ begintry
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
-        python_setstring(L, PY_UNICODE_ENCODING_ERRORHANDLER, handler);
+        get_python(L)->unicode.errorhandler = handler;
     }
 endcatch
 
 /* function that allows changing the default encoding */
 static void py_set_unicode_encoding(lua_State *L)
 begintry
-    python_setstring(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
+    get_python(L)->unicode.encoding = luaL_check_string(L, 1);
     _set_unicode_encoding_errorhandler(L, 2);
 endcatch
 
@@ -469,13 +469,13 @@ endcatch
 /* Returns the encoding used in the string conversion */
 static void py_get_unicode_encoding(lua_State *L)
 begintry
-     lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING)); 
+     lua_pushstring(L, ptrchar get_python(L)->unicode.encoding);
 endcatch
 
 /* Returns the string of errors controller */
 static void py_get_unicode_encoding_errorhandler(lua_State *L)
 begintry
-     lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER)); 
+     lua_pushstring(L, ptrchar get_python(L)->unicode.errorhandler);
 endcatch
 
 /* Convert a Lua table into a Python dictionary */
