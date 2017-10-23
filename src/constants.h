@@ -8,7 +8,6 @@
 #define PY_API_NAME (ptrchar "python")
 
 // Object wrap names
-#define PY_OBJECT_BY_REFERENCE (ptrchar "_object_by_reference")
 #define PY_LUA_TABLE_CONVERT (ptrchar "_lua_table_convert")
 #define PY_ERRORHANDLER_STACK  (ptrchar "_errorHandlerStack")
 
