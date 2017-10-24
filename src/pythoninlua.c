@@ -39,14 +39,6 @@ extern "C"
 #include "stack.h"
 
 
-Python::Python(lua_State *L) {
-    lua.set_tag(lua_newtag(L));
-    object_ref = false;
-    embedded = false;
-    stack  = nullptr;
-}
-
-
 static void py_object_call(lua_State *L)
 begintry
     py_object *pobj = get_py_object(L, lua_getparam(L, 1));
@@ -598,34 +590,47 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* api functions call python */
 static void python_gettable_function(lua_State *L) {
-    const char *func_name = luaL_check_string(L, 2);
-    if (python_api_func.find(func_name) != python_api_func.end()) {
-        lua_pushcclosure(L, python_api_func[func_name], 0);
+    const char *name = luaL_check_string(L, 2);
+    if (python_api_func.find(name) != python_api_func.end()) {
+        lua_pushcclosure(L, python_api_func[name], 0);
     } else {
-        lua_new_argerror(L, 1, (char *) (std::string("call expression not a function: ") + std::string(func_name)).data());
+        lua_Object lua_object = get_python(L)->lua.get(L, name);
+        if (lua_object == LUA_NOOBJECT) {
+            std::string msg = std::string("call expression not a function: ") + std::string(name);
+            lua_new_argerror(L, 1, (char *) msg.data());
+        } else {
+            lua_pushobject(L, lua_object);
+        }
     }
+}
+
+static void python_settable_function(lua_State *L) {
+    const char *name = luaL_check_string(L, 2);
+    lua_Object lua_object = lua_getresult(L, 3);
+    get_python(L)->lua.set(L, name, lua_object);
 }
 
 /* clean resources */
 static void python_gc_function(lua_State *L) {
     auto python = (Python *)lua_getuserdata(L, lua_getresult(L, 1));
-    if (!python) {
+    if (python) {
+        lua_unref(L, python->lua.get_ref());
         delete python;
     }
 }
 
 static struct luaL_reg python_tag_methods[] = {
-    //{ptrchar"function", py_object_call},
+    //{ptrchar"function", python_call_function},
     {ptrchar"gettable", python_gettable_function},
-    //{ptrchar"settable", py_object_index_set},
+    {ptrchar"settable", python_settable_function},
     {ptrchar"gc",       python_gc_function},
     {nullptr, nullptr}
 };
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    auto *python = new Python(L);
     int index, ntag;
+    auto *python = new Python(L);
 
     // python tag methods
     ntag = lua_newtag(L);
@@ -635,12 +640,8 @@ LUA_API int luaopen_python(lua_State *L) {
         lua_settagmethod(L, ntag, python_tag_methods[index].name);
         index++;
     }
-    // set global
-    lua_pushuserdata(L, python);
-    lua_setglobal(L, PY_API_NAME);  // api python
-    // set tag
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_settag(L, ntag);
+    lua_pushusertag(L, python, ntag);  // set tag
+    lua_setglobal(L, PY_API_NAME);  // api python (global)
 
     // python api tags
     index = 0;
@@ -658,19 +659,18 @@ LUA_API int luaopen_python(lua_State *L) {
 
     lua_pushcfunction(L, py_args_array);
     lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
-//
-//    lua_Object lobj = lua_getglobal(L, PY_API_NAME);
-//    PyObject *pyObject = Py_True;
-//    Py_INCREF(pyObject);
-//    set_table_usertag(L, lobj, PY_TRUE, py_object_container(L, pyObject, true), ntag);
-//
-//    pyObject = Py_False;
-//    Py_INCREF(pyObject);
-//    set_table_usertag(L, lobj, PY_FALSE, py_object_container(L, pyObject, true), ntag);
-//
-//    pyObject = Py_None;
-//    Py_INCREF(pyObject);
-//    set_table_usertag(L, lobj, PY_NONE, py_object_container(L, pyObject, true), ntag);
+
+    PyObject *pyObject = Py_True;
+    Py_INCREF(pyObject);
+    python->lua.set_api(L, PY_TRUE, py_object_container(L, pyObject, true));
+
+    pyObject = Py_False;
+    Py_INCREF(pyObject);
+    python->lua.set_api(L, PY_FALSE, py_object_container(L, pyObject, true));
+
+    pyObject = Py_None;
+    Py_INCREF(pyObject);
+    python->lua.set_api(L, PY_NONE, py_object_container(L, pyObject, true));
     return 0;
 }
 

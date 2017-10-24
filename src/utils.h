@@ -9,7 +9,7 @@ extern "C"
 #include "lua.h"
 #include "Python.h"
 }
-#include "pythoninlua.h"
+#include "stack.h"
 
 #define ptrchar (char*)
 
@@ -80,7 +80,6 @@ char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
-Python *get_python(lua_State *L);
 
 #ifndef strdup
 char *strdup(const char *s);
@@ -97,7 +96,74 @@ int PyObject_IsDictInstance(PyObject *obj);
      PyObject_IsTupleInstance(pyObject) || \
      PyObject_IsDictInstance(pyObject))
 
-#endif //LUNATIC_UTILS_H
-
 #define begintry { try {
 #define endcatch } catch (int e) {} catch (...) {} }
+
+
+class PyUnicode {
+public:
+    const char *encoding = "UTF-8";
+    const char *errorhandler =  "strict";
+};
+
+class Lua {
+public:
+    explicit Lua(lua_State *L){
+        tag = lua_newtag(L);
+        ref = new_data(L);
+    }
+    bool tableconvert = false;           /* table convert */
+    bool embedded     = false;           /* is embedded   */
+    lua_Object get_datatable(lua_State *L) {
+        lua_Object lua_object = lua_getref(L, ref);
+        if (!lua_istable(L, lua_object)) {
+            lua_new_error(L, ptrchar "lost reference!");
+        }
+        return lua_object;
+    }
+    lua_Object get(lua_State *L, const char *name) {  /* table of data */
+        lua_pushobject(L, get_datatable(L));
+        lua_pushstring(L, (char *) name);
+        return lua_rawgettable(L);
+    }
+    void set_api(lua_State *L, const char *name, void *udata) {
+        lua_pushobject(L, get_datatable(L));
+        lua_pushstring(L, (char*) name);
+        lua_pushusertag(L, udata, tag);
+        lua_rawsettable(L);
+    }
+    void set(lua_State *L, const char *name, lua_Object lua_object) {
+        lua_pushobject(L, get_datatable(L));
+        lua_pushstring(L, (char*) name);
+        lua_pushobject(L, lua_object);
+        lua_rawsettable(L);
+    }
+    int get_tag() {
+        return this->tag;
+    }
+    int get_ref() {
+        return this->ref;
+    }
+protected:
+    int ref; /* data section  */
+    int tag; /* api tag */
+private:
+    int new_data(lua_State *L) {
+        lua_pushobject(L, lua_createtable(L));
+        return lua_ref(L, 1);
+    }
+};
+
+class Python {
+public:
+    explicit Python(lua_State *L);
+    PyUnicode unicode;
+    bool object_ref;
+    bool embedded;
+    STACK stack;
+    Lua lua;
+};
+
+
+Python *get_python(lua_State *L);
+#endif //LUNATIC_UTILS_H

@@ -4,17 +4,13 @@
 
 #ifndef PUBLIQUE2_7BETA_PYTHON_STACK_H
 #define PUBLIQUE2_7BETA_PYTHON_STACK_H
-
-#include <setjmp.h>
-
 /* ED4: stack.h */
 
 
-typedef struct sr STACK_RECORD;
+typedef struct stackrecord STACK_RECORD;
 
-struct sr {
+struct stackrecord {
     STACK_RECORD *next;
-    jmp_buf buff;
 };
 
 typedef STACK_RECORD *STACK;
