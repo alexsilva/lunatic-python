@@ -96,8 +96,8 @@ int PyObject_IsDictInstance(PyObject *obj);
      PyObject_IsTupleInstance(pyObject) || \
      PyObject_IsDictInstance(pyObject))
 
-#define begintry { try {
-#define endcatch } catch (int e) {} catch (...) {} }
+#define mtry try {
+#define mcatch } catch (int e) {} catch (...) {}
 
 
 class PyUnicode {
