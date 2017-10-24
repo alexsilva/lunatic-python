@@ -589,20 +589,15 @@ static struct luaL_reg lua_tag_methods[] = {
 
 
 /* api functions call python */
-static void python_gettable_function(lua_State *L) {
+static void python_gettable_function(lua_State *L)
+begintry
     const char *name = luaL_check_string(L, 2);
     if (python_api_func.find(name) != python_api_func.end()) {
         lua_pushcclosure(L, python_api_func[name], 0);
     } else {
-        lua_Object lua_object = get_python(L)->lua.get(L, name);
-        if (lua_object == LUA_NOOBJECT) {
-            std::string msg = std::string("call expression not a function: ") + std::string(name);
-            lua_new_argerror(L, 1, (char *) msg.data());
-        } else {
-            lua_pushobject(L, lua_object);
-        }
+        lua_pushobject(L, get_python(L)->lua.get(L, name));
     }
-}
+endcatch
 
 static void python_settable_function(lua_State *L) {
     const char *name = luaL_check_string(L, 2);

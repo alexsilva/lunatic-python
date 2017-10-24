@@ -97,30 +97,37 @@ int buffsize_calc(int nargs, ...) {
     return size + 1;
 }
 
-/* lua inside python (interface python) */
-void python_new_error(PyObject *exception, char *message) {
+
+char *python_error_message() {
+    char *msg = nullptr;
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = nullptr;
     if (pvalue || ptype || ptraceback) {
-        error = get_pyobject_str(pvalue);
-        if (!error) {
-            error = get_pyobject_str(ptype);
-            if (!error) error = get_pyobject_str(ptraceback);
+        msg = get_pyobject_str(pvalue);
+        if (!msg) {
+            msg = get_pyobject_str(ptype);
+            if (!msg)
+                msg = get_pyobject_str(ptraceback);
         }
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
     }
-    if (!error) {
+    return msg;
+}
+
+/* lua inside python (interface python) */
+void python_new_error(PyObject *exception, char *message) {
+    char *error = PyErr_Occurred() ? python_error_message() : nullptr;
+    if (error) {
+        const char *format = "%s\n%s";
+        char buff[buffsize_calc(3, format, message, error)];
+        sprintf(buff, format, message, error);
+        free(error); // free pointer!
+        PyErr_SetString(exception, &buff[0]);
+    } else {
         PyErr_SetString(exception, message);
-        return;
     }
-    const char *format = "%s\n%s";
-    char buff[buffsize_calc(3, format, message, error)];
-    sprintf(buff, format, message, error);
-    free(error); // free pointer!
-    PyErr_SetString(exception, &buff[0]);
 }
 
 /* lua inside python (access python objects) */
@@ -158,19 +165,7 @@ void lua_new_argerror (lua_State *L, int numarg, char *extramsg) {
 
 /* python inside lua */
 void lua_new_error(lua_State *L, char *message) {
-    PyObject *ptype, *pvalue, *ptraceback;
-    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = nullptr;
-    if (pvalue || ptype || ptraceback) {
-        error = get_pyobject_str(pvalue);
-        if (!error) {
-            error = get_pyobject_str(ptype);
-            if (!error) error = get_pyobject_str(ptraceback);
-        }
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
-    }
+    char *error = PyErr_Occurred() ? python_error_message() : nullptr;
     if (error) {
         const char *format = "%s (%s)";
         char buff[buffsize_calc(3, format, message, error)];
