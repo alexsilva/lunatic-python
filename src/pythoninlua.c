@@ -523,6 +523,11 @@ begintry
     }
 endcatch
 
+static void table2python(lua_State *L)
+begintry
+    pyobj2table(L);
+endcatch
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -571,8 +576,8 @@ static std::unordered_map<std::string, lua_CFunction> python_api_func {
     {"dict",                              table2dict}, // returns a converted table to dictionary.
     {"tuple",                             table2tuple}, // returns a converted table to tuple.
     {"list",                              table2list}, // returns a converted table to list.
-    {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
-    {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
+    {"table",                             table2python}, // convert dict, list or tuple for a table.
+    {"raw",                               table2python}, // convert dict, list or tuple for a table.
     {"slice",                             pyobject_slice},
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
