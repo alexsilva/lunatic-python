@@ -107,8 +107,18 @@ public:
         strcpy(errorhandler, ptrchar "strict");
     }
     ~PyUnicode(){}
-    char encoding[255]{};
-    char errorhandler[255]{};
+    const char* get_encoding() { return encoding; }
+    const char* get_errorhandler() { return errorhandler; }
+    void set_encoding(const char* encoding) {
+        strncpy(this->encoding, encoding, buffsize);
+    }
+    void set_errorhandler(const char* errorhandler) {
+        strncpy(this->errorhandler, errorhandler, buffsize);
+    }
+private:
+    static const size_t buffsize = 16;
+    char encoding[buffsize]{};
+    char errorhandler[buffsize]{};
 };
 
 class Lua {

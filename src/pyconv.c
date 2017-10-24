@@ -15,7 +15,7 @@ void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str) {
 /* python string unicode as string bytes */
 PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String *str) {
     PyUnicode *unicode = get_python(L)->unicode;
-    PyObject *pyStr = PyUnicode_AsEncodedString(obj, unicode->encoding, unicode->errorhandler);
+    PyObject *pyStr = PyUnicode_AsEncodedString(obj, unicode->get_encoding(), unicode->get_errorhandler());
     if (!pyStr) lua_new_error(L, ptrchar "converting unicode string");
     get_pyobject_string_buffer(L, pyStr, str);
     return pyStr;
