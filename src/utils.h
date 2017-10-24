@@ -78,15 +78,9 @@ void lua_new_argerror (lua_State *L, int numarg, char *extramsg);
 void lua_raise_error(lua_State *L, char *format, PyObject *obj);
 char *get_pyobject_str(PyObject *obj);
 void python_new_error(PyObject *exception, char *message);
-int python_getnumber(lua_State *L, char *name);
-char *python_getstring(lua_State *L, char *name);
-void *python_getuserdata(lua_State *L, char *name);
-int python_try(lua_State *L); void python_catch(lua_State *L);
-void python_setstring(lua_State *L, char *name, char *value);
-void python_setnumber(lua_State *L, char *name, int value);
-Python *get_python(lua_State *L);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
+Python *get_python(lua_State *L);
 
 #ifndef strdup
 char *strdup(const char *s);

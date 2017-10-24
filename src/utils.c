@@ -11,48 +11,6 @@ extern "C"
 #include "utils.h"
 #include "constants.h"
 
-/* Returns the numeric value stored in API */
-int python_getnumber(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return (int) lua_getnumber(L, lua_rawgettable(L));
-}
-
-/* Returns the string value stored in the API */
-char *python_getstring(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return lua_getstring(L, lua_rawgettable(L));
-}
-
-/* Returns the string value stored in the API */
-void *python_getuserdata(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return lua_getuserdata(L, lua_rawgettable(L));
-}
-
-void python_setuserdata(lua_State *L, char *name, void *pointer) {
-    insert_table(L, lua_getglobal(L, PY_API_NAME), name, pointer, userdata);
-}
-
-/* Returns the table value stored in the API */
-lua_Object python_gettable(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return lua_rawgettable(L);
-}
-
-/* Stores the value in the given key in the API python */
-void python_setstring(lua_State *L, char *name, char *value) {
-    set_table_string(L, lua_getglobal(L, PY_API_NAME), name, value);
-}
-
-/* Stores the value in the given key in the API python */
-void python_setnumber(lua_State *L, char *name, int value) {
-    set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
-}
-
 Python *get_python(lua_State *L) {
     auto *python = (Python *) lua_getuserdata(L, lua_getglobal(L, PY_API_NAME));
     if (!python) lua_new_error(L, ptrchar "python ref not found!");
