@@ -12,9 +12,14 @@ extern "C"
 #include "constants.h"
 
 Python::Python(lua_State *L) : lua(L) {
+    unicode = new PyUnicode;
     object_ref = false;
     embedded = false;
     stack  = nullptr;
+}
+
+Python::~Python() {
+    delete unicode;
 }
 
 Python *get_python(lua_State *L) {

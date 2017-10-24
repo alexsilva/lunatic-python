@@ -102,8 +102,13 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 class PyUnicode {
 public:
-    const char *encoding = "UTF-8";
-    const char *errorhandler =  "strict";
+    PyUnicode() {
+        strcpy(encoding, ptrchar "UTF8");
+        strcpy(errorhandler, ptrchar "strict");
+    }
+    ~PyUnicode(){}
+    char encoding[255]{};
+    char errorhandler[255]{};
 };
 
 class Lua {
@@ -157,7 +162,8 @@ private:
 class Python {
 public:
     explicit Python(lua_State *L);
-    PyUnicode unicode;
+    ~Python();
+    PyUnicode *unicode;
     bool object_ref;
     bool embedded;
     STACK stack;
