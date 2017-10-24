@@ -97,7 +97,7 @@ int PyObject_IsDictInstance(PyObject *obj);
      PyObject_IsDictInstance(pyObject))
 
 #define mtry try {
-#define mcatch } catch (int e) {} catch (...) {}
+#define mcatch } catch (int e) {} catch (...) {printf("(C) unhandled exception\n");}
 
 
 class PyUnicode {
