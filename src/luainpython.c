@@ -82,6 +82,8 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
         python_new_error(PyExc_RuntimeError, &buff[0]);
         return nullptr;
     }
+    if (PyErr_Occurred()) /* internal error */
+        return nullptr;
     PyObject *ret;
     nargs = lua_gettop(self->interpreter->L);
     if (nargs == 1) {
@@ -105,11 +107,9 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
             }
             PyTuple_SetItem(ret, index, arg);
         }
-    } else if (!PyErr_Occurred()) {
+    } else {
         Py_INCREF(Py_None);
         ret = Py_None;
-    } else {
-        ret = nullptr;
     }
     return ret;
 }
