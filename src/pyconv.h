@@ -22,10 +22,11 @@ typedef struct {
     bool indexed;
 } LuaObject;
 
-typedef struct STRING {
-    char *buff;
-    int size;
-} String;
+class String {
+public:
+    char *buff = nullptr;
+    int size = 0;
+};
 
 typedef enum {
     UNCHANGED = 0,
