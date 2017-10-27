@@ -103,10 +103,9 @@ int PyObject_IsDictInstance(PyObject *obj);
 class PyUnicode {
 public:
     PyUnicode() {
-        strcpy(encoding, ptrchar "UTF8");
-        strcpy(errorhandler, ptrchar "strict");
+        this->set_encoding(ptrchar "UTF8");
+        this->set_errorhandler(ptrchar "strict");
     }
-    ~PyUnicode(){}
     const char* get_encoding() { return encoding; }
     const char* get_errorhandler() { return errorhandler; }
     void set_encoding(const char* encoding) {
