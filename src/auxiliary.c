@@ -33,7 +33,7 @@ char *luaI_classend(lua_State *L, char *p) {
             if (*p == '^') p++;
             if (*p == ']') p++;
             p = strchr(p, ']');
-            if (!p) lua_error(L, ptrchar "incorrect pattern (lua_State *L, missing `]')");
+            if (!p) lua_new_error(L, ptrchar "incorrect pattern (lua_State *L, missing `]')");
             return p + 1;
         default:
             return p;
@@ -71,7 +71,7 @@ static int read_pattern(lua_State *L, PyObject *o, char *p, int *lastreadchar) {
                 p++;
                 continue;
             case '}':
-                if (!inskip) lua_error(L, ptrchar "unbalanced braces in read pattern");
+                if (!inskip) lua_new_error(L, ptrchar "unbalanced braces in read pattern");
                 inskip--;
                 p++;
                 continue;
@@ -187,7 +187,7 @@ void py_readfile(lua_State *L) {
     lua_Object luaObject = lua_getparam(L, 1);
     PyObject *pyFile;
     if (!is_object_container(L, luaObject)) {
-        lua_error(L, ptrchar "is not a file object!");
+        lua_new_error(L, ptrchar "is not a file object!");
         return; // warning
     } else {
         pyFile = get_pobject(L, luaObject);
