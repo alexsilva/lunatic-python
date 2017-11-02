@@ -20,7 +20,7 @@ extern "C"
 ** generic allocation routine.
 */
 void *luaM_realloc(lua_State *L, void *block, unsigned long size) {
-    size_t s = (size_t) size;
+    auto s = (size_t) size;
     if (s != size)
         lua_error(L, ptrchar "memory allocation error: block too big");
     if (size == 0) {
@@ -37,8 +37,8 @@ void *luaM_realloc(lua_State *L, void *block, unsigned long size) {
 void luaD_checkstack(lua_State *L, int n) {
     struct Stack *S = &L->stack;
     if (S->last - S->top <= n) {
-        StkId top = S->top - S->stack;
-        int stacksize = (S->last - S->stack) + STACK_UNIT + n;
+        auto top = static_cast<StkId>(S->top - S->stack);
+        auto stacksize = static_cast<int>((S->last - S->stack) + STACK_UNIT + n);
         luaM_reallocvector(L, S->stack, stacksize, TObject);
         S->last = S->stack + (stacksize - 1);
         S->top = S->stack + top;
@@ -59,7 +59,7 @@ static void lapi_pushobject(lua_State *L, TObject *o) {
 
 static void lapi_top2L(lua_State *L, int n) {
     /* Put the 'n' elements on the top as the Lua2C contents */
-    L->Cstack.base = (L->stack.top - L->stack.stack);  /* new base */
+    L->Cstack.base = static_cast<StkId>(L->stack.top - L->stack.stack);  /* new base */
     L->Cstack.lua2C = L->Cstack.base - n;  /* position of the new results */
     L->Cstack.num = n;  /* number of results */
 }
