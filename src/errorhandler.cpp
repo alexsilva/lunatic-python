@@ -64,7 +64,7 @@ static int traceback_buffer(lua_State *L, string *stack) {
         if (*chunkname == '@') {
             stack->append(chunkname + 1);
         } else if (*chunkname == '(') {
-            string_append("C code", stack, 0);
+            stack->append("C code");
         } else {
             string_append(" string \"%.60s\"", stack, 1, chunkname);
         }
