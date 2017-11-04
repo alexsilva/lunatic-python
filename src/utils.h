@@ -13,6 +13,13 @@ extern "C"
 
 #define ptrchar (char*)
 
+#if python_COMPAT
+#define lua_traceback_error(L) (0)
+#define lua_traceback_value(L) ("")
+#define lua_traceback_append(L, s)
+#endif
+
+
 /* A generic macro to insert a value in a Lua table. */
 #define insert_table(L, table, index, value, type) \
   { \
@@ -77,7 +84,7 @@ void lua_new_error(lua_State *L, char *message);
 void lua_new_argerror (lua_State *L, int numarg, char *extramsg);
 void lua_raise_error(lua_State *L, char *format, PyObject *obj);
 char *get_pyobject_str(PyObject *obj);
-void python_new_error(PyObject *exception, char *message);
+void python_new_error(lua_State *L, PyObject *exception, char *message);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
 

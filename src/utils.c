@@ -1,13 +1,8 @@
 //
 // Created by alex on 28/09/2015.
 //
-extern "C"
-{
 #include <lua.h>
 #include <Python.h>
-}
-
-#include <cgilua.h>
 #include "utils.h"
 #include "constants.h"
 
@@ -122,32 +117,25 @@ char *python_error_message() {
 }
 
 /* lua inside python (interface python) */
-void python_new_error(PyObject *exception, char *message) {
+void python_new_error(lua_State *L, PyObject *exception, char *message) {
     char *error = PyErr_Occurred() ? python_error_message() : nullptr;
+    bool lua_embedded = get_python(L)->lua.embedded;
     if (error) {
-        const char *format = "%s\n%s";
-        char buff[buffsize_calc(3, format, message, error)];
-        sprintf(buff, format, message, error);
-        free(error); // free pointer!
-        PyErr_SetString(exception, &buff[0]);
+        if (lua_embedded) {
+            PyErr_SetString(exception, lua_traceback_value(L));
+        } else {
+            const char *format = "%s\n%s";
+            char buff[buffsize_calc(3, format, message, error)];
+            sprintf(buff, format, message, error);
+            PyErr_SetString(exception, message);
+            free(error); // free pointer!
+        }
     } else {
-        PyErr_SetString(exception, message);
-    }
-}
-
-/* lua inside python (access python objects) */
-static void lua_virtual_error(lua_State *L, char *message) {
-    python_new_error(PyExc_Exception, message);
-    lua_errorfallback(L, message);
-    lua_call(L, ptrchar "lockstate"); // stop operations
-    throw EXIT_FAILURE;
-}
-
-static void call_lua_error(lua_State *L, char *message) {
-    if (get_python(L)->lua.embedded) {
-        lua_virtual_error(L, message);
-    } else {
-        lua_error(L, message);
+        if (lua_embedded) {
+            PyErr_SetString(exception, lua_traceback_value(L));
+        } else {
+            PyErr_SetString(exception, message);
+        }
     }
 }
 
@@ -176,9 +164,9 @@ void lua_new_error(lua_State *L, char *message) {
         char buff[buffsize_calc(3, format, message, error)];
         sprintf(buff, format, message, error);
         free(error); // free pointer!
-        call_lua_error(L, &buff[0]);
+        lua_error(L, &buff[0]);
     } else {
-        call_lua_error(L, message);
+        lua_error(L, message);
     }
 }
 

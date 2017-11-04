@@ -19,7 +19,8 @@ set(SOURCES
     src/utils.c
     src/lshared.c
     src/auxiliary.c
-    src/stack.c)
+    src/stack.c
+    src/errorhandler.cpp)
 
 if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)
@@ -37,11 +38,13 @@ if (CGILUA_ENV)
     if (UNIX) # LINUX
         find_package(lua REQUIRED)
         link_directories(lua_DIR)
-        set(LIBRARIES ${LIBRARIES} ${lua_DIR}/Release/liblua.a)
+        set(LIBRARIES ${LIBRARIES} ${lua_DIR}/${CMAKE_BUILD_TYPE}/liblua.a)
     endif()
     target_link_libraries(lua ${LIBRARIES})
     target_link_libraries(python ${LIBRARIES})
 endif()
+
+target_compile_definitions(python PUBLIC python_COMPAT)
 
 if (WIN32)
     set_target_properties(lua PROPERTIES PREFIX "" SUFFIX ".pyd")

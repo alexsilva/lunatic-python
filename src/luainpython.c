@@ -20,11 +20,8 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
-extern "C"
-{
 #include <Python.h>
 #include <lua.h>
-}
 #include "pythoninlua.h"
 #include "luainpython.h"
 #include "pyconv.h"
@@ -32,6 +29,7 @@ extern "C"
 #include "lshared.h"
 #include "constants.h"
 #include <iostream>
+#include "errorhandler.h"
 extern "C"
 {
 #if defined(_WIN32)
@@ -72,18 +70,19 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
                 return nullptr;
         }
     }
-    if (lua_callfunction(self->interpreter->L, lobj)) {
+    int status = lua_callfunction(self->interpreter->L, lobj);
+    if (status != 0 || lua_traceback_error(self->interpreter->L)) { /* internal error */
         char *name;  // get function name
         lua_getobjname(self->interpreter->L, lobj, &name);
         name = const_cast<char *>(name ? name : "?");
         const char *format = "call function lua (%s)";
         char buff[buffsize_calc(2, format, name)];
         sprintf(buff, format, name);
-        python_new_error(PyExc_RuntimeError, &buff[0]);
+        python_new_error(self->interpreter->L, PyExc_RuntimeError, &buff[0]);
+        return nullptr;
+    } else if (PyErr_Occurred()) { /* internal error */
         return nullptr;
     }
-    if (PyErr_Occurred()) /* internal error */
-        return nullptr;
     PyObject *ret;
     nargs = lua_gettop(self->interpreter->L);
     if (nargs == 1) {
@@ -414,11 +413,12 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         s = buf;
         len = strlen(prefix) + len;
     }
-    if (lua_dobuffer(self->L, s, len, ptrchar "<python>") != 0) {
+    int status = lua_dobuffer(self->L, s, len, ptrchar "<python>");
+    if (status != 0 || lua_traceback_error(self->L)) {
         const char *format = "eval code (%s)";
         char buff[buffsize_calc(2, format, s)];
         sprintf(buff, format, s);
-        python_new_error(PyExc_RuntimeError, &buff[0]);
+        python_new_error(self->L, PyExc_RuntimeError, &buff[0]);
         if (eval) free(buf);
         return nullptr;
     }
@@ -483,15 +483,13 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "s", &command))
         return nullptr;
     PyErr_Clear(); // clean state
-    int ret = lua_dofile(self->L, (char *) command);
-    if (ret || PyErr_Occurred()) {
-        if (!PyErr_GivenExceptionMatches(PyErr_Occurred(), PyExc_SystemExit)) {
-            python_new_error(PyExc_ImportError, (char *) command);
-        }
+    int status = lua_dofile(self->L, (char *) command);
+    if (status != 0 || lua_traceback_error(self->L) || PyErr_Occurred()) {
+        python_new_error(self->L, PyExc_ImportError, (char *) command);
         return nullptr;
     }
     lua_endblock(self->L);
-    return PyInt_FromLong(ret);
+    return PyInt_FromLong(status);
 }
 
 /*
@@ -522,6 +520,9 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
         int ret = luaopen_python(self->L);
         if (ret == 0)
             get_python(self->L)->lua.embedded = true;
+        // error handler
+        lua_pushcfunction(self->L, (lua_CFunction) lua_errorfallback);
+        lua_seterrormethod(self->L);
         return ret;
     } else {
         PySys_WriteStderr("%s", "startup failed");
