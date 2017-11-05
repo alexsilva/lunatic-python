@@ -562,6 +562,19 @@ static struct luaL_reg lua_tag_methods[] = {
     {nullptr, nullptr}
 };
 
+static void python_call_function(lua_State *L) {
+    Python *python = get_python(L);
+    lua_Object ltable = lua_createtable(L);
+    for (auto &api : python_api_func) {
+        lua_pushobject( L, ltable );
+        lua_pushstring(L, const_cast<char *>(api.first.c_str()));
+        lua_pushcclosure( L, api.second, 0);
+        lua_rawsettable( L );
+    }
+    lua_Object tb = python->lua.get_datatable(L);
+    insert_table(L, ltable, ptrchar "extra", tb, object);
+    lua_pushobject(L, ltable);
+}
 
 /* api functions call python */
 static void python_gettable_function(lua_State *L) {
@@ -589,7 +602,7 @@ static void python_gc_function(lua_State *L) {
 }
 
 static struct luaL_reg python_tag_methods[] = {
-    //{ptrchar"function", python_call_function},
+    {ptrchar"function", python_call_function},
     {ptrchar"gettable", python_gettable_function},
     {ptrchar"settable", python_settable_function},
     {ptrchar"gc",       python_gc_function},
