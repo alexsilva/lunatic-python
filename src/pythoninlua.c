@@ -534,7 +534,6 @@ static std::unordered_map<std::string, lua_CFunction> python_api_func {
     {"system_exit",                       python_system_exit}, // terminates the interpreter (when embedded).
     {"args",                              py_args},
     {"kwargs",                            py_kwargs},
-    {"args_array",                        py_args_array},
     {"is_embedded",                       python_is_embedded}, // report of the python interpreter was embedded in the Lua
     {"get_version",                       py_get_version}, // return release of the extension.
     {"set_unicode_encoding",              py_set_unicode_encoding},
@@ -626,9 +625,6 @@ LUA_API int luaopen_python(lua_State *L) {
 
     lua_pushcfunction(L, py_kwargs);
     lua_setglobal(L, PY_KWARGS_FUNC);
-
-    lua_pushcfunction(L, py_args_array);
-    lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
 
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);

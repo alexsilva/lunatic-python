@@ -96,9 +96,6 @@ globals.TestFunc4(pykwargs{a=1, b=2, c=3})
 globals.TestFunc5(pyargs(1,2,3,4))
 globals.TestFunc6(pyargs(), pykwargs{})
 
--- test table -> tuple
-globals.TestFunc7(pyargs_array(globals.TestFunc7(pyargs_array{'a', 'b', 'c', 1, 2, 3})))
-
 -- lua callback teste
 function shorfn(a, b)
     return % builtins.cmp(a, b)
