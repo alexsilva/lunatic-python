@@ -5,6 +5,7 @@
 #include <Python.h>
 #include "utils.h"
 #include "constants.h"
+#include <string>
 
 Python::Python(lua_State *L) : lua(L) {
     unicode = new PyUnicode;
@@ -118,20 +119,27 @@ char *python_error_message() {
 
 /* lua inside python (interface python) */
 void python_new_error(lua_State *L, PyObject *exception, char *message) {
-    char *error = PyErr_Occurred() ? python_error_message() : nullptr;
+    char *py_error = PyErr_Occurred() ? python_error_message() : nullptr;
     bool lua_embedded = get_python(L)->lua.embedded;
-    if (error) {
+    if (py_error) {
         if (lua_embedded) {
+            std::string stack_info(message);
+            stack_info.append("\n");
+            stack_info.append(py_error);
+            lua_traceback_insert(L, 0, stack_info.c_str());
             PyErr_SetString(exception, lua_traceback_value(L));
         } else {
             const char *format = "%s\n%s";
-            char buff[buffsize_calc(3, format, message, error)];
-            sprintf(buff, format, message, error);
+            char buff[buffsize_calc(3, format, message, py_error)];
+            sprintf(buff, format, message, py_error);
             PyErr_SetString(exception, message);
-            free(error); // free pointer!
+            free(py_error); // free pointer!
         }
     } else {
         if (lua_embedded) {
+            std::string stack_info(message);
+            stack_info.append("\n");
+            lua_traceback_insert(L, 0, stack_info.c_str());
             PyErr_SetString(exception, lua_traceback_value(L));
         } else {
             PyErr_SetString(exception, message);

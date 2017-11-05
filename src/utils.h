@@ -17,6 +17,7 @@ extern "C"
 #define lua_traceback_error(L) (0)
 #define lua_traceback_value(L) ("")
 #define lua_traceback_append(L, s)
+#define lua_traceback_insert(L, pos, s)
 #endif
 
 
