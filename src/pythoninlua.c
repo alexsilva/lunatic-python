@@ -36,7 +36,6 @@ extern "C"
 #include "utils.h"
 #include "constants.h"
 #include "auxiliary.h"
-#include "stack.h"
 
 
 static void py_object_call(lua_State *L) {
@@ -567,13 +566,13 @@ static void python_call_function(lua_State *L) {
     Python *python = get_python(L);
     lua_Object ltable = lua_createtable(L);
     for (auto &api : python_api_func) {
-        lua_pushobject( L, ltable );
+        lua_pushobject(L, ltable);
         lua_pushstring(L, const_cast<char *>(api.first.c_str()));
-        lua_pushcclosure( L, api.second, 0);
-        lua_rawsettable( L );
+        lua_pushcclosure(L, api.second, 0);
+        lua_rawsettable(L);
     }
     lua_Object tb = python->lua.get_datatable(L);
-    insert_table(L, ltable, ptrchar "extra", tb, object);
+    insert_table(L, ltable, ptrchar "attached(not-api)", tb, object);
     lua_pushobject(L, ltable);
 }
 

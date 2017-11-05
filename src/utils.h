@@ -27,7 +27,7 @@ extern "C"
     lua_pushobject( L, table ); \
     lua_pushstring( L, index ); \
     lua_push##type( L, value ); \
-    lua_settable( L );    \
+    lua_rawsettable( L );    \
   }
 
 
