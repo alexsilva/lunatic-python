@@ -8,7 +8,6 @@
 #define PY_API_NAME (ptrchar "python")
 
 // globals Lua
-#define PY_ARGS_ARRAY_FUNC (ptrchar "pyargs_array")
 #define PY_KWARGS_FUNC (ptrchar "pykwargs")
 #define PY_ARGS_FUNC (ptrchar "pyargs")
 
