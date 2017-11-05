@@ -562,6 +562,7 @@ static struct luaL_reg lua_tag_methods[] = {
     {nullptr, nullptr}
 };
 
+/* Return of api names as table */
 static void python_call_function(lua_State *L) {
     Python *python = get_python(L);
     lua_Object ltable = lua_createtable(L);
