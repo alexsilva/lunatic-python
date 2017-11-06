@@ -397,6 +397,14 @@ static void py_byrefc(lua_State *L) {
     if (!stacked) python->object_ref = false;
 }
 
+static void py_state_restore(lua_State *L) {
+    Python *python = get_python(L);
+    if (python->lua.embedded) {
+        python->lua.tableconvert = 0;
+        python->object_ref = 0;
+    }
+}
+
 /* Returns the number of registration of the events tag */
 static void py_get_tag(lua_State *L) {
     lua_pushnumber(L, get_python(L)->lua.get_tag());
@@ -550,7 +558,8 @@ static std::unordered_map<std::string, lua_CFunction> python_api_func {
     {"slice",                             pyobject_slice},
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
-    {"readfile",                          py_readfile}
+    {"readfile",                          py_readfile},
+    {"restore",                           py_state_restore}
 };
 
 static struct luaL_reg lua_tag_methods[] = {
