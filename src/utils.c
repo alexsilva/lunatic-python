@@ -6,6 +6,8 @@
 #include "utils.h"
 #include "constants.h"
 #include <string>
+#include <frameobject.h>
+#include <sstream>
 
 Python::Python(lua_State *L) : lua(L) {
     unicode = new PyUnicode;
@@ -38,13 +40,6 @@ int lua_tablesize(lua_State *L, lua_Object ltable) {
     return (int) lua_getnumber(L, lua_getresult(L, 1));
 }
 
-#ifndef strdup
-char *strdup(const char * s) {
-    size_t len = strlen(s) + 1;
-    auto *p = (char *) malloc(len);
-    return static_cast<char *>(p ? memcpy(p, s, len) : nullptr);
-}
-#endif
 
 static char *tostring(PyObject *obj) {
     PyObject *pObjStr = PyObject_Str(obj);
@@ -98,47 +93,97 @@ int buffsize_calc(int nargs, ...) {
     return size + 1;
 }
 
+namespace patch {
+    template<typename T>
+    std::string to_string(const T &n) {
+        std::ostringstream stm;
+        stm << n;
+        return stm.str();
+    }
+}
 
-char *python_error_message() {
-    char *msg = nullptr;
+std::string get_line_separator(lua_State *L) {
+    return get_python(L)->lua.embedded ? "\n" : "<br>";
+}
+
+void python_traceback_append(lua_State *L, std::string *stack,
+                             PyTracebackObject *traceback) {
+    if (traceback != nullptr && traceback->tb_frame != nullptr) {
+        PyFrameObject *frame = traceback->tb_frame;
+        const char *format = nullptr;
+        const char *nline = get_line_separator(L).c_str();
+
+        stack->append("Python stack trace:");
+        stack->append(nline);
+
+        while (frame != nullptr) {
+            int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
+            const char *filename = PyString_AsString(frame->f_code->co_filename);
+            const char *funcname = PyString_AsString(frame->f_code->co_name);
+            std::string sline = patch::to_string(line);
+            const char *cline = sline.c_str();  // ungle
+
+            format = "    %s(%s): %s%s";
+            char buff[buffsize_calc(5, format, filename, cline, funcname, nline)];
+            sprintf(buff, format, filename, cline, funcname, nline);
+
+            stack->append(&buff[0]);
+            frame = frame->f_back;
+        }
+    }
+}
+
+void python_error_message(lua_State *L, std::string *msg) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
     if (pvalue || ptype || ptraceback) {
-        msg = get_pyobject_str(pvalue);
-        if (!msg) {
-            msg = get_pyobject_str(ptype);
-            if (!msg)
-                msg = get_pyobject_str(ptraceback);
+        const char *name;
+        name = get_pyobject_str(ptype);
+        if (name != nullptr) {
+            msg->append(name);
+            free((void *) name);
         }
+        name = get_pyobject_str(pvalue);
+        if (name != nullptr) {
+            msg->append(": ");
+            msg->append(name);
+            msg->append(get_line_separator(L));
+            free((void *) name);
+        }
+        python_traceback_append(L, msg, reinterpret_cast<PyTracebackObject *>(ptraceback));
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
     }
-    return msg;
 }
 
 /* lua inside python (interface python) */
 void python_new_error(lua_State *L, PyObject *exception, char *message) {
-    char *py_error = PyErr_Occurred() ? python_error_message() : nullptr;
+    std::string py_error;
+
+    if (PyErr_Occurred()) python_error_message(L, &py_error);
+
     bool lua_embedded = get_python(L)->lua.embedded;
-    if (py_error) {
+    std::string stack_info;
+
+    if (!py_error.empty()) {
         if (lua_embedded) {
-            std::string stack_info(message);
-            stack_info.append("\n");
+            stack_info.append(message);
+            stack_info.append(get_line_separator(L));
             stack_info.append(py_error);
             lua_traceback_insert(L, 0, stack_info.c_str());
             PyErr_SetString(exception, lua_traceback_value(L));
         } else {
-            const char *format = "%s\n%s";
-            char buff[buffsize_calc(3, format, message, py_error)];
-            sprintf(buff, format, message, py_error);
-            PyErr_SetString(exception, message);
-            free(py_error); // free pointer!
+            stack_info.append(message);
+            stack_info.append(get_line_separator(L));
+            stack_info.append(py_error);
+            PyErr_SetString(exception, stack_info.c_str());
         }
     } else {
         if (lua_embedded) {
-            std::string stack_info(message);
-            stack_info.append("\n");
+            stack_info.append(message);
+            stack_info.append(get_line_separator(L));
             lua_traceback_insert(L, 0, stack_info.c_str());
             PyErr_SetString(exception, lua_traceback_value(L));
         } else {
@@ -166,13 +211,13 @@ void lua_new_argerror (lua_State *L, int numarg, char *extramsg) {
 
 /* python inside lua */
 void lua_new_error(lua_State *L, char *message) {
-    char *error = PyErr_Occurred() ? python_error_message() : nullptr;
-    if (error) {
-        const char *format = "%s (%s)";
-        char buff[buffsize_calc(3, format, message, error)];
-        sprintf(buff, format, message, error);
-        free(error); // free pointer!
-        lua_error(L, &buff[0]);
+    std::string py_error;
+    if (PyErr_Occurred()) python_error_message(L, &py_error);
+    if (!py_error.empty()) {
+        std::string stack_info(message);
+        stack_info.append(get_line_separator(L));
+        stack_info.append(py_error);
+        lua_error(L, const_cast<char *>(stack_info.c_str()));
     } else {
         lua_error(L, message);
     }
