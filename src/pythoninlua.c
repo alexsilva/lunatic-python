@@ -488,6 +488,11 @@ static void pyobject_slice(lua_State *L) {
     }
 }
 
+static void py_state_restore(lua_State *L) {
+    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
+    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+}
+
 static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
@@ -539,6 +544,7 @@ static struct luaL_reg py_lib[] = {
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
     {"readfile",                          py_readfile},
+    {"restore",                           py_state_restore},
     {NULL, NULL}
 };
 
