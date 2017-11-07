@@ -100,5 +100,4 @@ int PyObject_IsDictInstance(PyObject *obj);
 
 #define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
 #define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
-#define try(L) if (python_try(L)) {
-#define catch(L) } python_catch(L);
+

@@ -152,41 +152,6 @@ void python_new_error(PyObject *exception, char *message) {
     PyErr_SetString(exception, &buff[0]);
 }
 
-
-/* lua inside python only */
-int python_try(lua_State *L) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
-        STACK stack;
-        STACK_RECORD record;
-        record.next = NULL;
-
-        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-        stack_push(&stack, record);
-
-        // update
-        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
-
-        STACK_RECORD *cstack = stack_next(&stack);
-        return !setjmp(cstack->buff);  // switch(0|1)
-    } else {
-        return 1;
-    }
-}
-
-/* lua inside python only */
-void python_catch(lua_State *L) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
-        STACK stack;
-
-        stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-
-        stack_pop(&stack);
-
-        // update
-        python_setuserdata(L, PY_ERRORHANDLER_STACK, stack);
-}
-}
-
 /* lua inside python (access python objects) */
 static void lua_virtual_error(lua_State *L, char *message) {
     STACK stack;
