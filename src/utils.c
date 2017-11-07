@@ -9,6 +9,7 @@
 #include "utils.h"
 #include "constants.h"
 #include "stack.h"
+#include "lexception.h"
 
 /* Returns the numeric value stored in API */
 int python_getnumber(lua_State *L, char *name) {
@@ -127,7 +128,7 @@ int buffsize_calc(int nargs, ...) {
 }
 
 /* lua inside python (interface python) */
-void python_new_error(PyObject *exception, char *message) {
+void python_new_error(lua_State *L, PyObject *exception, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     char *error = NULL;
@@ -142,14 +143,16 @@ void python_new_error(PyObject *exception, char *message) {
         Py_XDECREF(ptraceback);
     }
     if (!error) {
-        PyErr_SetString(exception, message);
+        lua_error_fallback(L, exception, message);
+        //PyErr_SetString(exception, message);
         return;
     }
     char *format = "%s\n%s";
     char buff[buffsize_calc(3, format, message, error)];
     sprintf(buff, format, message, error);
     free(error); // free pointer!
-    PyErr_SetString(exception, &buff[0]);
+    //PyErr_SetString(exception, &buff[0]);
+    lua_error_fallback(L, exception, &buff[0]);
 }
 
 /* python inside lua */

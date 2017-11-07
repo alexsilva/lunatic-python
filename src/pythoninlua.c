@@ -491,6 +491,7 @@ static void pyobject_slice(lua_State *L) {
 static void py_state_restore(lua_State *L) {
     python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
     python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    if (PyErr_Occurred()) PyErr_Clear();
 }
 
 static void python_system_init(lua_State *L);

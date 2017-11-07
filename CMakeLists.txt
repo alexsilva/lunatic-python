@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3.0)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 
 project(Lunatic)
 
@@ -24,14 +24,16 @@ set(SOURCES
     src/auxiliary.c
     src/auxiliary.h
     src/stack.c
-    src/stack.h)
+    src/stack.h
+    src/lexception.c
+    src/lexception.h)
 
 if (WIN32)
     set(SOURCES ${SOURCES} src/lapi.c)
 endif()
 
 add_library(python MODULE ${SOURCES})
-add_library(lua MODULE ${SOURCES})
+add_library(lua MODULE ${SOURCES} src/lexception.h)
 
 if (CGILUA_ENV)
     add_definitions(-DCGILUA_ENV=ON)

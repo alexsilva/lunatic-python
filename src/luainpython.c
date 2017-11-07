@@ -66,14 +66,15 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
                 return NULL;
         }
     }
-    if (lua_callfunction(self->interpreter->L, lobj)) {
+    if (lua_callfunction(self->interpreter->L, lobj) != 0 ||
+            self->interpreter->L->traceback->error == 1) {
         char *name;  // get function name
         lua_getobjname(self->interpreter->L, lobj, &name);
         name = name ? name : "?";
         char *format = "call function lua (%s)";
         char buff[buffsize_calc(2, format, name)];
         sprintf(buff, format, name);
-        python_new_error(PyExc_RuntimeError, &buff[0]);
+        python_new_error(self->interpreter->L, PyExc_RuntimeError, &buff[0]);
         return NULL;
     }
     PyObject *ret;
@@ -408,11 +409,11 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         s = buf;
         len = strlen(prefix) + len;
     }
-    if (lua_dobuffer(self->L, s, len, "<python>") != 0) {
+    if (lua_dobuffer(self->L, s, len, "<python>") != 0 || self->L->traceback->error == 1) {
         char *format = "eval code (%s)";
         char buff[buffsize_calc(2, format, s)];
         sprintf(buff, format, s);
-        python_new_error(PyExc_RuntimeError, &buff[0]);
+        python_new_error(self->L, PyExc_RuntimeError, &buff[0]);
         if (eval) free(buf);
         return NULL;
     }
@@ -478,10 +479,8 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
         return NULL;
     PyErr_Clear(); // clean state
     int ret = lua_dofile(self->L, (char *) command);
-    if (ret || PyErr_Occurred()) {
-        if (!PyErr_GivenExceptionMatches(PyErr_Occurred(), PyExc_SystemExit)) {
-            python_new_error(PyExc_ImportError, (char *) command);
-        }
+    if (ret || self->L->traceback->error == 1 || PyErr_Occurred()) {
+        python_new_error(self->L, PyExc_ImportError, (char *) command);
         return NULL;
     }
     lua_endblock(self->L);
