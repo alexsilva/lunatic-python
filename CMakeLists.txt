@@ -42,7 +42,7 @@ if (CGILUA_ENV)
     if (UNIX) # LINUX
         find_package(lua REQUIRED)
         link_directories(lua_DIR)
-        set(LIBRARIES ${LIBRARIES} ${lua_DIR}/Release/liblua.a)
+        set(LIBRARIES ${LIBRARIES} ${lua_DIR}/${CMAKE_BUILD_TYPE}/liblua.a)
     endif()
     target_link_libraries(lua ${LIBRARIES})
     target_link_libraries(python ${LIBRARIES})
