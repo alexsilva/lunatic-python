@@ -8,6 +8,12 @@ struct JmpError {
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
 
+#ifdef python_COMPAT
+#define lua_traceback_checkerror(L) (0)
+#define lua_traceback_message(L) ("")
+#endif
+
+
 /* A generic macro to insert a value in a Lua table. */
 #define insert_table(L, table, index, value, type) \
   { \

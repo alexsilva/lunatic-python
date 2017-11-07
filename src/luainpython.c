@@ -67,7 +67,7 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
         }
     }
     if (lua_callfunction(self->interpreter->L, lobj) != 0 ||
-            self->interpreter->L->traceback->error == 1) {
+            lua_traceback_checkerror(self->interpreter->L)) {
         char *name;  // get function name
         lua_getobjname(self->interpreter->L, lobj, &name);
         name = name ? name : "?";
@@ -409,7 +409,7 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
         s = buf;
         len = strlen(prefix) + len;
     }
-    if (lua_dobuffer(self->L, s, len, "<python>") != 0 || self->L->traceback->error == 1) {
+    if (lua_dobuffer(self->L, s, len, "<python>") != 0 || lua_traceback_checkerror(self->L)) {
         char *format = "eval code (%s)";
         char buff[buffsize_calc(2, format, s)];
         sprintf(buff, format, s);
@@ -479,7 +479,7 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
         return NULL;
     PyErr_Clear(); // clean state
     int ret = lua_dofile(self->L, (char *) command);
-    if (ret || self->L->traceback->error == 1 || PyErr_Occurred()) {
+    if (ret || lua_traceback_checkerror(self->L) || PyErr_Occurred()) {
         python_new_error(self->L, PyExc_ImportError, (char *) command);
         return NULL;
     }

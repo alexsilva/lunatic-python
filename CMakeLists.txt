@@ -48,6 +48,8 @@ if (CGILUA_ENV)
     target_link_libraries(python ${LIBRARIES})
 endif()
 
+target_compile_definitions(python PRIVATE python_COMPAT)
+
 if (WIN32)
     set_target_properties(lua PROPERTIES PREFIX "" SUFFIX ".pyd")
 else ()
