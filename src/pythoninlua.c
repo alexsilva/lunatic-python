@@ -558,13 +558,6 @@ static struct luaL_reg lua_tag_methods[] = {
 
 /* clean resources */
 static void python_gc_function(lua_State *L) {
-    lua_Object python = lua_getresult(L, 1);
-    if (lua_istable(L, python)) {
-        STACK stack = python_getuserdata(L, PY_ERRORHANDLER_STACK);
-        while (!stack_empty(&stack)){
-            stack_pop(&stack);
-        }
-    }
 }
 
 /* Register module */
