@@ -152,24 +152,6 @@ void python_new_error(PyObject *exception, char *message) {
     PyErr_SetString(exception, &buff[0]);
 }
 
-/* lua inside python (access python objects) */
-static void lua_virtual_error(lua_State *L, char *message) {
-    STACK stack;
-    stack = (STACK) python_getuserdata(L, PY_ERRORHANDLER_STACK);
-    python_new_error(PyExc_ImportError, message);
-    lua_call(L, "lockstate"); // stop operations
-    STACK_RECORD *cstack = stack_next(&stack);
-    longjmp(cstack->buff, 1); // go to end procedure call
-}
-
-static void call_lua_error(lua_State *L, char *message) {
-    if (python_getnumber(L, LUA_INSIDE_PYTHON)) {
-        lua_virtual_error(L, message);
-    } else {
-        lua_error(L, message);
-    }
-}
-
 /* python inside lua */
 void lua_new_error(lua_State *L, char *message) {
     PyObject *ptype, *pvalue, *ptraceback;
@@ -190,9 +172,9 @@ void lua_new_error(lua_State *L, char *message) {
         char buff[buffsize_calc(3, format, message, error)];
         sprintf(buff, format, message, error);
         free(error); // free pointer!
-        call_lua_error(L, &buff[0]);
+        lua_error(L, &buff[0]);
     } else {
-        call_lua_error(L, message);
+        lua_error(L, message);
     }
 }
 
