@@ -92,6 +92,7 @@ Python *get_python(lua_State *L) {
 }
 
 void python_free(lua_State *L, Python *python) {
+    lua_unref(L, python->lua->tableref);
     free(python);
     free(python->unicode);
     free(python->lua);
