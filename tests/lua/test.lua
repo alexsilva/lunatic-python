@@ -243,7 +243,6 @@ python.byrefc(builtins.map, function(s)
         end,
         builtins.str.split("a,b,c,d,e,d,f,g", ","))
 )
-assert(python._object_by_reference == 0, "object_by_reference state error!")
 
 -- special case
 local dict = builtins.dict()
