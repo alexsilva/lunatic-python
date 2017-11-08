@@ -24,7 +24,7 @@
 #define PYTHONINLUA_H
 
 // Extension version python
-#define PY_EXT_VERSION "2.4.0"
+#define PY_EXT_VERSION "3.0.0"
 
 #include <stdbool.h>
 #include <lua.h>

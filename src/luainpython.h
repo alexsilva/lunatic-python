@@ -23,7 +23,7 @@
 #ifndef LUAINPYTHON_H
 #define LUAINPYTHON_H
 
-#define LUA_EXT_VERSION "2.2.0"
+#define LUA_EXT_VERSION "3.0.0"
 
 #include <stdbool.h>
 
