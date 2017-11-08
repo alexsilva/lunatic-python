@@ -76,9 +76,10 @@ static void py_object_call(lua_State *L) {
         if (PyDict_Check(args)) luaL_argerror(L, 2, "object dict expected kwargs{a=1,...}");
 
     } else if (nargs > 0) {
-        python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+        Python *python = get_python(L);
+        python->lua->tableconvert = true;
         args = get_py_tuple(L, 1); // arbitrary args fn(1,2,'a')
-        python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+        python->lua->tableconvert = false;
         isargs = false;
     } else {
         args = PyTuple_New(0);
@@ -397,7 +398,7 @@ static void py_byrefc(lua_State *L) {
 
 /* Returns the number of registration of the events tag */
 static void py_get_tag(lua_State *L) {
-    lua_pushnumber(L, python_getnumber(L, PY_API_TAG));
+    lua_pushnumber(L, python_api_tag(L));
 }
 
 /* allows the setting error control string in unicode string conversion */
@@ -420,13 +421,13 @@ static void _set_unicode_encoding_errorhandler(lua_State *L, int stackpos) {
                              "choices are: \"strict\", \"replace\", \"ignore\"");
             }
         }
-        python_setstring(L, PY_UNICODE_ENCODING_ERRORHANDLER, handler);
+        python_unicode_set_errorhandler(get_python(L)->unicode, handler);
     }
 }
 
 /* function that allows changing the default encoding */
 static void py_set_unicode_encoding(lua_State *L) {
-    python_setstring(L, PY_UNICODE_ENCODING, luaL_check_string(L, 1));
+    python_unicode_set_encoding(get_python(L)->unicode, luaL_check_string(L, 1));
     _set_unicode_encoding_errorhandler(L, 2);
 }
 
@@ -437,33 +438,36 @@ static void py_set_unicode_encoding_errorhandler(lua_State *L) {
 
 /* Returns the encoding used in the string conversion */
 static void py_get_unicode_encoding(lua_State *L) {
-     lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING)); 
+     lua_pushstring(L, get_python(L)->unicode->encoding);
 }
 
 /* Returns the string of errors controller */
 static void py_get_unicode_encoding_errorhandler(lua_State *L) {
-     lua_pushstring(L, python_getstring(L, PY_UNICODE_ENCODING_ERRORHANDLER)); 
+     lua_pushstring(L, get_python(L)->unicode->errorhandler);
 }
 
 /* Convert a Lua table into a Python dictionary */
 static void table2dict(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua->tableconvert = true;
     push_pyobject_container(L, get_py_dict(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua->tableconvert = false;
 }
 
 /* Convert a Lua table to a python tuple */
 static void table2tuple(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua->tableconvert = true;
     push_pyobject_container(L, ltable_convert_tuple(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua->tableconvert = false;
 }
 
 /* Convert a Lua table to a python list */
 static void table2list(lua_State *L) {
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 1);
+    Python *python = get_python(L);
+    python->lua->tableconvert = true;
     push_pyobject_container(L, ltable2list(L, luaL_tablearg(L, 1)), true);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    python->lua->tableconvert = false;
 }
 
 /* Split lists and tuples slices o[start:end] */
@@ -489,8 +493,9 @@ static void pyobject_slice(lua_State *L) {
 }
 
 static void py_state_restore(lua_State *L) {
-    python_setnumber(L, PY_OBJECT_BY_REFERENCE, 0);
-    python_setnumber(L, PY_LUA_TABLE_CONVERT, 0);
+    Python *python = get_python(L);
+    python->lua->tableconvert = false;
+    python->lua->byref = false;
     if (PyErr_Occurred()) PyErr_Clear();
 }
 
@@ -498,13 +503,13 @@ static void python_system_init(lua_State *L);
 
 /** Ends the Python interpreter, freeing resources*/
 static void python_system_exit(lua_State *L) {
-    if (Py_IsInitialized() && python_getnumber(L, PY_API_IS_EMBEDDED))
+    if (Py_IsInitialized() && get_python(L)->embedded)
         Py_Finalize();
 }
 
 /* Indicates if Python interpreter was embedded in the Lua */
 static void python_is_embedded(lua_State *L) {
-    if (python_getnumber(L, PY_API_IS_EMBEDDED)) {
+    if (get_python(L)->embedded) {
         lua_pushnumber(L, 1);
     } else {
         lua_pushnil(L);
@@ -526,7 +531,6 @@ static struct luaL_reg py_lib[] = {
     {"system_exit",                       python_system_exit}, // terminates the interpreter (when embedded).
     {"args",                              py_args},
     {"kwargs",                            py_kwargs},
-    {"args_array",                        py_args_array},
     {"is_embedded",                       python_is_embedded}, // report of the python interpreter was embedded in the Lua
     {"get_version",                       py_get_version}, // return release of the extension.
     {"set_unicode_encoding",              py_set_unicode_encoding},
@@ -556,68 +560,86 @@ static struct luaL_reg lua_tag_methods[] = {
     {"gc",       py_object_gc},
     {NULL, NULL}
 };
+/* Return of api names as table */
+static void python_call_function(lua_State *L) {
+    lua_pushobject(L, get_lua_bindtable(L, get_python(L)->lua));
+}
+
+/* api functions call python */
+static void python_gettable_function(lua_State *L) {
+    char *name = luaL_check_string(L, 2);
+    lua_pushobject(L, get_lua_bindtable(L, get_python(L)->lua));
+    lua_pushstring(L, name);
+    lua_pushobject(L, lua_rawgettable(L));
+}
+
+static void python_settable_function(lua_State *L) {
+    char *name = luaL_check_string(L, 2);
+    lua_Object lua_object = lua_getresult(L, 3);
+    set_table_object(L, get_lua_bindtable(L, get_python(L)->lua),
+                     name, lua_object);
+}
 
 /* clean resources */
 static void python_gc_function(lua_State *L) {
+    Python *python = lua_getuserdata(L, lua_getresult(L, 1));
+    if (python) python_free(L, python);
 }
+
+static struct luaL_reg python_tag_methods[] = {
+    {"function", python_call_function},
+    {"gettable", python_gettable_function},
+    {"settable", python_settable_function},
+    {"gc",       python_gc_function},
+    {NULL, NULL}
+};
 
 /* Register module */
 LUA_API int luaopen_python(lua_State *L) {
-    lua_Object python = lua_createtable(L);
+    int index, ntag;
+    Python *python = python_init(L);
+    if (!python) return -1; /* fatal */
 
-    int pyntag = lua_newtag(L);
-    lua_pushcfunction(L, python_gc_function);
-    lua_settagmethod(L, pyntag, "gc");
-    lua_pushobject(L, python);
-    lua_settag(L, pyntag);
+    // python tag methods
+    ntag = lua_newtag(L);
+    index = 0;
+    while (python_tag_methods[index].name) {
+        lua_pushcfunction(L, python_tag_methods[index].func);
+        lua_settagmethod(L, ntag, python_tag_methods[index].name);
+        index++;
+    }
+    lua_pushusertag(L, python, ntag);  // set tag
+    lua_setglobal(L, PY_API_NAME);  // api python (global)
 
-    set_table_string(L, python, PY_UNICODE_ENCODING, "utf8");
-    set_table_string(L, python, PY_UNICODE_ENCODING_ERRORHANDLER, "strict");
-    set_table_number(L, python, PY_OBJECT_BY_REFERENCE, 0);
-    set_table_number(L, python, PY_API_IS_EMBEDDED, 0);  // If Python is inside Lua
-    set_table_number(L, python, PY_LUA_TABLE_CONVERT, 0); // table convert ?
-
+    // python api tags
+    index = 0;
+    while (lua_tag_methods[index].name) {
+        lua_pushcfunction(L, lua_tag_methods[index].func);
+        lua_settagmethod(L, python->lua->tag, lua_tag_methods[index].name);
+        index++;
+    }
     lua_pushcfunction(L, py_args);
     lua_setglobal(L, PY_ARGS_FUNC);
 
     lua_pushcfunction(L, py_kwargs);
     lua_setglobal(L, PY_KWARGS_FUNC);
 
-    lua_pushcfunction(L, py_args_array);
-    lua_setglobal(L, PY_ARGS_ARRAY_FUNC);
-
-    lua_pushobject(L, python);
-    lua_setglobal(L, PY_API_NAME);  // api python
-
-    int index = 0;
-    while (py_lib[index].name) {
-        set_table_fn(L, python, py_lib[index].name, py_lib[index].func);
-        index++;
-    }
-
-    // register all tag methods
-    int ntag = lua_newtag(L);
     index = 0;
-    while (lua_tag_methods[index].name) {
-        lua_pushcfunction(L, lua_tag_methods[index].func);
-        lua_settagmethod(L, ntag, lua_tag_methods[index].name);
+    while (py_lib[index].name) {
+        set_python_api(L, python, py_lib[index].name, py_lib[index].func);
         index++;
     }
-
-    // tag event
-    set_table_number(L, python, PY_API_TAG, ntag);
-
     PyObject *pyObject = Py_True;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_TRUE, py_object_container(L, pyObject, 0), ntag);
+    set_lua_api(L, python->lua, PY_TRUE, py_object_container(L, pyObject, true));
 
     pyObject = Py_False;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_FALSE, py_object_container(L, pyObject, 0), ntag);
+    set_lua_api(L, python->lua, PY_FALSE, py_object_container(L, pyObject, true));
 
     pyObject = Py_None;
     Py_INCREF(pyObject);
-    set_table_usertag(L, python, PY_NONE, py_object_container(L, pyObject, 0), ntag);
+    set_lua_api(L, python->lua, PY_NONE, py_object_container(L, pyObject, true));
     return 0;
 }
 
@@ -625,7 +647,7 @@ LUA_API int luaopen_python(lua_State *L) {
 static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
-        python_setnumber(L, PY_API_IS_EMBEDDED, 1); // If python is inside Lua
+        get_python(L)->embedded = true; /* python is being embedded in the lua */
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {

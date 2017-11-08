@@ -11,53 +11,97 @@
 #include "stack.h"
 #include "lexception.h"
 
-/* Returns the numeric value stored in API */
-int python_getnumber(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+void python_unicode_set_encoding(PythonUnicode *unicode, char *encoding) {
+    strncpy(unicode->encoding, encoding, PY_UNICODE_MAX);
+}
+
+void python_unicode_set_errorhandler(PythonUnicode *unicode, char *errorhandler) {
+    strncpy(unicode->errorhandler, errorhandler, PY_UNICODE_MAX);
+}
+
+PythonUnicode *python_unicode_init(lua_State *L) {
+    PythonUnicode *unicode = malloc(sizeof(PythonUnicode));
+    if (!unicode) return NULL;
+    python_unicode_set_errorhandler(unicode, "strict");
+    python_unicode_set_encoding(unicode, "UTF-8");
+}
+
+Lua *lua_init(lua_State *L) {
+    Lua *lua = malloc(sizeof(Lua));
+    if (!lua) return NULL;
+    lua->tag = lua_newtag(L);
+    lua_pushobject(L, lua_createtable(L));
+    lua->tableref = lua_ref(L, 1); /* table ref */
+    lua->byref = false;
+    lua->embedded = false;
+    lua->tableconvert = false;
+}
+
+/* table with attached attributes */
+lua_Object get_lua_bindtable(lua_State *L, Lua *lua) {
+    lua_Object lua_object = lua_getref(L, lua->tableref);
+    if (!lua_istable(L, lua_object)) {
+        char *msg = "lost table reference!";
+        if (lua->embedded) {
+            python_new_error(L, PyExc_LookupError, msg);
+        } else {
+            lua_new_error(L, msg);
+        }
+    }
+    return lua_object;
+}
+
+/* Python objects as apis functions/attributes */
+void set_lua_api(lua_State *L, Lua *lua, char *name, void *udata) {
+    lua_pushobject(L, get_lua_bindtable(L, lua));
     lua_pushstring(L, name);
-    return (int) lua_getnumber(L, lua_rawgettable(L));
+    lua_pushusertag(L, udata, lua->tag);
+    lua_rawsettable(L);
 }
 
-/* Returns the string value stored in the API */
-char *python_getstring(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
+/* Functions (C) of api python */
+void set_python_api(lua_State *L, Python *python, char *name, lua_CFunction cfn) {
+    lua_pushobject(L, get_lua_bindtable(L, python->lua));
     lua_pushstring(L, name);
-    return lua_getstring(L, lua_rawgettable(L));
+    lua_pushcclosure(L, cfn, 0);
+    lua_rawsettable(L);
 }
 
-/* Returns the string value stored in the API */
-void *python_getuserdata(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return lua_getuserdata(L, lua_rawgettable(L));
+Python *python_init(lua_State *L) {
+    Python *python = malloc(sizeof(Python));
+    if (!python) return NULL;
+    Lua *lua = lua_init(L);
+    if (!lua) {
+        python_free(L, python);
+        return NULL;
+    }
+    PythonUnicode *unicode = python_unicode_init(L);
+    if (!unicode) {
+        python_free(L, python);
+        return NULL;
+    }
+    python->embedded = false;
+    python->unicode = unicode;
+    python->lua = lua;
 }
 
-void python_setuserdata(lua_State *L, char *name, void *pointer) {
-    insert_table(L, lua_getglobal(L, PY_API_NAME), name, pointer, userdata);
+Python *get_python(lua_State *L) {
+    Python *python = lua_getuserdata(L, lua_getglobal(L, PY_API_NAME));
+    if (!python) lua_new_error(L, "lost python userdata!");
+    return python;
 }
 
-/* Returns the table value stored in the API */
-lua_Object python_gettable(lua_State *L, char *name) {
-    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
-    lua_pushstring(L, name);
-    return lua_rawgettable(L);
-}
-
-/* Stores the value in the given key in the API python */
-void python_setstring(lua_State *L, char *name, char *value) {
-    set_table_string(L, lua_getglobal(L, PY_API_NAME), name, value);
-}
-
-/* Stores the value in the given key in the API python */
-void python_setnumber(lua_State *L, char *name, int value) {
-    set_table_number(L, lua_getglobal(L, PY_API_NAME), name, value);
+void python_free(lua_State *L, Python *python) {
+    free(python);
+    free(python->unicode);
+    free(python->lua);
 }
 
 /**
  * Tag event base
  **/
 int python_api_tag(lua_State *L) {
-    return python_getnumber(L, PY_API_TAG);
+    return get_python(L)->lua->tag;
 }
 
 /* Returns the number of elements in a table */

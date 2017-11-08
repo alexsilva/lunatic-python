@@ -513,8 +513,8 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
         PyErr_Clear(); // clean state
         self->isPyType = true;
         int ret = luaopen_python(self->L);
-        if (ret == 0)
-            python_setnumber(self->L, LUA_INSIDE_PYTHON, 1);
+        if (ret == 0) /* lua is being embedded in python */
+            get_python(self->L)->lua->embedded = true;
         return ret;
     } else {
         if (!PyErr_Occurred())  /* If no error was previously configured. */

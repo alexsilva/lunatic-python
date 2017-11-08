@@ -1,18 +1,52 @@
 //
 // Created by alex on 27/09/2015.
 //
-struct JmpError {
-    jmp_buf buff;
-};
 
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
+#include <stdbool.h>
 
 #ifdef python_COMPAT
 #define lua_traceback_checkerror(L) (0)
 #define lua_traceback_message(L) ("")
 #endif
 
+typedef struct _lua {
+    int tableref;
+    bool tableconvert;   /* table convert */
+    bool byref;          /* return strings python by reference */
+    bool embedded;       /* is embedded   */
+    int tag;
+} Lua;
+
+#define PY_UNICODE_MAX 16
+
+typedef struct _python_unicode {
+    char encoding[PY_UNICODE_MAX];
+    char errorhandler[PY_UNICODE_MAX];
+} PythonUnicode;
+
+typedef struct _python {
+    bool embedded;
+    PythonUnicode *unicode;
+    Lua *lua;
+} Python;
+
+Python *get_python(lua_State *L);
+
+void set_python_api(lua_State *L, Python *python, char *name, lua_CFunction cfn);
+void set_lua_api(lua_State *L, Lua *lua, char *name, void *udata);
+
+void python_unicode_set_encoding(PythonUnicode *unicode, char *encoding);
+void python_unicode_set_errorhandler(PythonUnicode *unicode, char *errorhandler);
+
+PythonUnicode *python_unicode_init(lua_State *L);
+
+Lua *lua_init(lua_State *L);
+Python *python_init(lua_State *L);
+void python_free(lua_State *L, Python *python);
+
+lua_Object get_lua_bindtable(lua_State *L, Lua *lua);
 
 /* A generic macro to insert a value in a Lua table. */
 #define insert_table(L, table, index, value, type) \
@@ -78,12 +112,6 @@ void lua_new_error(lua_State *L, char *message);
 void lua_raise_error(lua_State *L, char *format, PyObject *obj);
 char *get_pyobject_str(PyObject *obj);
 void python_new_error(lua_State *L, PyObject *exception, char *message);
-int python_getnumber(lua_State *L, char *name);
-char *python_getstring(lua_State *L, char *name);
-void *python_getuserdata(lua_State *L, char *name);
-int python_try(lua_State *L); void python_catch(lua_State *L);
-void python_setstring(lua_State *L, char *name, char *value);
-void python_setnumber(lua_State *L, char *name, int value);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
 
@@ -95,15 +123,15 @@ int PyObject_IsListInstance(PyObject *obj);
 int PyObject_IsTupleInstance(PyObject *obj);
 int PyObject_IsDictInstance(PyObject *obj);
 
-#define isvalidstatus(res) ((res != UNCHANGED))
+#define isvalidstatus(res) (((res) != UNCHANGED))
 
 #define check_pyobject_index(pyObject) \
     (PyObject_IsListInstance(pyObject) || \
      PyObject_IsTupleInstance(pyObject) || \
      PyObject_IsDictInstance(pyObject))
 
-#endif //LUNATIC_UTILS_H
+#define is_byref(L) (get_python(L)->lua->byref)
+#define set_byref(L, value) (get_python(L)->lua->byref = (value))
 
-#define is_byref(L) python_getnumber(L, PY_OBJECT_BY_REFERENCE)
-#define set_byref(L, value) python_setnumber(L, PY_OBJECT_BY_REFERENCE, value)
+#endif //LUNATIC_UTILS_H
 
