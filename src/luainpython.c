@@ -517,7 +517,8 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
             python_setnumber(self->L, LUA_INSIDE_PYTHON, 1);
         return ret;
     } else {
-        PySys_WriteStderr("%s", "startup failed");
+        if (!PyErr_Occurred())  /* If no error was previously configured. */
+            PySys_WriteStderr("%s", "startup failed");
         return -1;
     }
 };
