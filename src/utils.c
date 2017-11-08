@@ -24,6 +24,7 @@ PythonUnicode *python_unicode_init(lua_State *L) {
     if (!unicode) return NULL;
     python_unicode_set_errorhandler(unicode, "strict");
     python_unicode_set_encoding(unicode, "UTF-8");
+    return unicode;
 }
 
 Lua *lua_init(lua_State *L) {
@@ -35,6 +36,7 @@ Lua *lua_init(lua_State *L) {
     lua->byref = false;
     lua->embedded = false;
     lua->tableconvert = false;
+    return lua;
 }
 
 /* table with attached attributes */
@@ -83,6 +85,7 @@ Python *python_init(lua_State *L) {
     python->embedded = false;
     python->unicode = unicode;
     python->lua = lua;
+    return python;
 }
 
 Python *get_python(lua_State *L) {
