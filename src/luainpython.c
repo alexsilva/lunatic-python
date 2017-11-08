@@ -513,8 +513,11 @@ static int Interpreter_init(InterpreterObject *self, PyObject *args, PyObject *k
         PyErr_Clear(); // clean state
         self->isPyType = true;
         int ret = luaopen_python(self->L);
-        if (ret == 0) /* lua is being embedded in python */
+        if (ret == 0) {/* lua is being embedded in python */
             get_python(self->L)->lua->embedded = true;
+        } else {
+            PyErr_SetString(PyExc_Exception, "python initialization failed");
+        }
         return ret;
     } else {
         if (!PyErr_Occurred())  /* If no error was previously configured. */
