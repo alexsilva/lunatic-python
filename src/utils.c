@@ -95,10 +95,13 @@ Python *get_python(lua_State *L) {
 }
 
 void python_free(lua_State *L, Python *python) {
-    lua_unref(L, python->lua->tableref);
+    if (python->lua != NULL) {
+        lua_unref(L, python->lua->tableref);
+        free(python->lua);
+    } else if (python->unicode != NULL) {
+        free(python->unicode);
+    }
     free(python);
-    free(python->unicode);
-    free(python->lua);
 }
 
 /**
