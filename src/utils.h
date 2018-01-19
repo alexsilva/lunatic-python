@@ -19,7 +19,7 @@ typedef struct _lua {
     int tag;
 } Lua;
 
-#define PY_UNICODE_MAX 16
+#define PY_UNICODE_MAX 32
 
 typedef struct _python_unicode {
     char encoding[PY_UNICODE_MAX];
