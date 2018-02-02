@@ -6,10 +6,12 @@
 #include <string.h>
 #include <lua.h>
 #include <Python.h>
+#include <frameobject.h>
 #include "utils.h"
 #include "constants.h"
 #include "stack.h"
 #include "lexception.h"
+#include "../deps/vstring/vstring.h"
 
 void python_unicode_set_encoding(PythonUnicode *unicode, char *encoding) {
     strncpy(unicode->encoding, encoding, PY_UNICODE_MAX);
@@ -178,56 +180,146 @@ int buffsize_calc(int nargs, ...) {
     return size + 1;
 }
 
-/* lua inside python (interface python) */
-void python_new_error(lua_State *L, PyObject *exception, char *message) {
+static char *get_line_separator(lua_State *L) {
+    return "\n";
+}
+
+static void python_traceback_append(lua_State *L, vstring *vs,
+                             PyTracebackObject *traceback) {
+    if (traceback != NULL && traceback->tb_frame != NULL) {
+        PyFrameObject *frame = traceback->tb_frame;
+        char *ls = get_line_separator(L);
+        char *spaces = "     ";
+        char *s = "Stack trace:";
+
+        vs_pushstr(vs, s, strlen(s));
+        vs_pushstr(vs, ls, strlen(ls));
+
+        while (frame != NULL) {
+            int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
+            const char *filename = PyString_AsString(frame->f_code->co_filename);
+            const char *funcname = PyString_AsString(frame->f_code->co_name);
+
+            vs_pushstr(vs, spaces, strlen(spaces));
+            vs_pushstr(vs, filename, strlen(filename));
+            vs_push(vs, '(');
+            vs_pushint(vs, line);
+            vs_push(vs, ')');
+            vs_pushstr(vs, funcname, strlen(funcname));
+            vs_pushstr(vs, ls, strlen(ls));
+
+            frame = frame->f_back;
+        }
+    }
+}
+
+static void python_traceback_message(lua_State *L, vstring *traceback) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = NULL;
+    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
     if (pvalue || ptype || ptraceback) {
-        error = get_pyobject_str(pvalue);
-        if (!error) {
-            error = get_pyobject_str(ptype);
-            if (!error) error = get_pyobject_str(ptraceback);
+        const char *name;
+        name = get_pyobject_str(ptype);
+        if (name != NULL) {
+            vs_pushstr(traceback, name, strlen(name));
+            free((void *) name);
         }
+        name = get_pyobject_str(pvalue);
+        if (name != NULL) {
+            char *s = ": ";
+            char *ls = get_line_separator(L);
+            vs_pushstr(traceback, s, strlen(s));
+            vs_pushstr(traceback, name, strlen(name));
+            vs_pushstr(traceback, ls, strlen(ls));
+
+            free((void *) name);
+        }
+        python_traceback_append(L, traceback, (PyTracebackObject *) ptraceback);
         Py_XDECREF(ptype);
         Py_XDECREF(pvalue);
         Py_XDECREF(ptraceback);
     }
-    if (!error) {
-        lua_error_fallback(L, exception, message);
-        //PyErr_SetString(exception, message);
-        return;
+}
+
+static void PyErr_SetVString(PyObject *exception, vstring *vs) {
+    PyErr_SetObject(exception, PyString_FromStringAndSize(vs_contents(vs),
+                                                          (Py_ssize_t) vs_len(vs)));
+}
+
+/* lua inside python (interface python) */
+void python_new_error(lua_State *L, PyObject *exception, char *message) {
+    size_t buffsize = 32 * 1024;
+    vstring *vstraceback, *vsmessage;
+
+    vstraceback = NULL;
+    vstraceback = vs_init(vstraceback, NULL, VS_TYPE_DYNAMIC, NULL, buffsize);
+    if (PyErr_Occurred()) python_traceback_message(L, vstraceback);
+
+    vsmessage = NULL;
+    vsmessage = vs_init(vsmessage, NULL, VS_TYPE_DYNAMIC, NULL, buffsize);
+
+    char *ls = get_line_separator(L);
+
+    if (vs_len(vstraceback) > 0) {
+        vs_pushstr(vsmessage, message, strlen(message));
+        vs_pushstr(vsmessage, ls, strlen(ls));
+        vs_pushstr(vsmessage, vs_contents(vstraceback), vs_len(vstraceback));
+        if (get_python(L)->lua->embedded) {
+            const char *ltraceback = lua_traceback_message(L);
+            if (ltraceback != NULL && strlen(ltraceback) > 0) {
+                vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+                free((void *) ltraceback);
+            }
+            PyErr_SetVString(exception, vsmessage);
+        }
+        PyErr_SetVString(exception, vsmessage);
+    } else if (get_python(L)->lua->embedded) {
+        vs_pushstr(vsmessage, message, strlen(message));
+        vs_pushstr(vsmessage, ls, strlen(ls));
+        const char *ltraceback = lua_traceback_message(L);
+        if (ltraceback != NULL && strlen(ltraceback) > 0) {
+            vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+            free((void *) ltraceback);
+        }
+        PyErr_SetVString(exception, vsmessage);
+    } else {
+        PyErr_SetString(exception, message);
     }
-    char *format = "%s\n%s";
-    char buff[buffsize_calc(3, format, message, error)];
-    sprintf(buff, format, message, error);
-    free(error); // free pointer!
-    //PyErr_SetString(exception, &buff[0]);
-    lua_error_fallback(L, exception, &buff[0]);
+    vs_deinit(vstraceback);
+    vs_deinit(vsmessage);
 }
 
 /* python inside lua */
 void lua_new_error(lua_State *L, char *message) {
-    PyObject *ptype, *pvalue, *ptraceback;
-    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-    char *error = NULL;
-    if (pvalue || ptype || ptraceback) {
-        error = get_pyobject_str(pvalue);
-        if (!error) {
-            error = get_pyobject_str(ptype);
-            if (!error) error = get_pyobject_str(ptraceback);
-        }
-        Py_XDECREF(ptype);
-        Py_XDECREF(pvalue);
-        Py_XDECREF(ptraceback);
-    }
-    if (error) {
-        char *format = "%s (%s)";
-        char buff[buffsize_calc(3, format, message, error)];
-        sprintf(buff, format, message, error);
-        free(error); // free pointer!
-        lua_error(L, &buff[0]);
+    size_t buffsize = 32 * 1024;
+    vstring *vstraceback = NULL;
+    vstraceback = vs_init(vstraceback, NULL, VS_TYPE_DYNAMIC, NULL, buffsize);
+
+    if (PyErr_Occurred()) python_traceback_message(L, vstraceback);
+
+    if (vs_len(vstraceback) > 0) {
+        char *ls = get_line_separator(L);
+
+        vstring *vsmessage = NULL;
+        vsmessage = vs_init(vsmessage, NULL, VS_TYPE_DYNAMIC, NULL, buffsize);
+
+        vs_pushstr(vsmessage, message, strlen(message));
+        vs_pushstr(vsmessage, ls, strlen(ls));
+        vs_pushstr(vsmessage, vs_contents(vstraceback), vs_len(vstraceback));
+
+        char *contents = vs_contents(vsmessage);
+        size_t ctsize = (size_t) vs_len(vsmessage);
+        char lmessage[ctsize + 1];
+
+        memset(lmessage, 0, ctsize + 1);
+        strncpy(lmessage, contents, ctsize);
+
+        vs_deinit(vstraceback);
+        vs_deinit(vsmessage);
+
+        lua_error(L, lmessage);
     } else {
+        vs_deinit(vstraceback);
         lua_error(L, message);
     }
 }
