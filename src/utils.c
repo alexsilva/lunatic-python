@@ -266,8 +266,10 @@ void python_new_error(lua_State *L, PyObject *exception, char *message) {
         vs_pushstr(vsmessage, vs_contents(vstraceback), vs_len(vstraceback));
         if (get_python(L)->lua->embedded) {
             const char *ltraceback = lua_traceback_message(L);
-            if (ltraceback != NULL && strlen(ltraceback) > 0) {
-                vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+            if (ltraceback != NULL) {
+                if (strlen(ltraceback) > 0) {
+                    vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+                }
                 free((void *) ltraceback);
             }
             PyErr_SetVString(exception, vsmessage);
@@ -277,8 +279,10 @@ void python_new_error(lua_State *L, PyObject *exception, char *message) {
         vs_pushstr(vsmessage, message, strlen(message));
         vs_pushstr(vsmessage, ls, strlen(ls));
         const char *ltraceback = lua_traceback_message(L);
-        if (ltraceback != NULL && strlen(ltraceback) > 0) {
-            vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+        if (ltraceback != NULL) {
+            if (strlen(ltraceback) > 0) {
+                vs_pushstr(vsmessage, ltraceback, strlen(ltraceback));
+            }
             free((void *) ltraceback);
         }
         PyErr_SetVString(exception, vsmessage);
