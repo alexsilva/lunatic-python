@@ -272,7 +272,6 @@ void python_new_error(lua_State *L, PyObject *exception, char *message) {
                 }
                 free((void *) ltraceback);
             }
-            PyErr_SetVString(exception, vsmessage);
         }
         PyErr_SetVString(exception, vsmessage);
     } else if (get_python(L)->lua->embedded) {

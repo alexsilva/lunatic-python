@@ -8,7 +8,7 @@
 
 #ifdef python_COMPAT
 #define lua_traceback_checkerror(L) (0)
-#define lua_traceback_message(L) ("")
+#define lua_traceback_message(L) (NULL)
 #endif
 
 typedef struct _lua {
