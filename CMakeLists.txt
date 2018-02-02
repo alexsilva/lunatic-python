@@ -12,6 +12,7 @@ link_directories(${LUA_LIBRARIES})
 link_directories(${PYTHON_LIBRARIES})
 
 set(SOURCES
+    deps/vstring/vstring.h
     src/luainpython.c
     src/pythoninlua.c
     src/luaconv.c
