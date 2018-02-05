@@ -186,8 +186,7 @@ static void py_object_repr(lua_State *L) {
         snprintf(buf, 256, "python object: %p", obj);
         lua_pushstring(L, buf);
         PyErr_Clear();
-    } else {
-        py_convert(L, repr);
+    } else if (py_convert(L, repr) == CONVERTED) {
         Py_DECREF(repr);
     }
 }
