@@ -189,22 +189,25 @@ static void python_traceback_append(lua_State *L, vstring *vs,
     if (traceback != NULL && traceback->tb_frame != NULL) {
         PyFrameObject *frame = traceback->tb_frame;
         char *ls = get_line_separator(L);
-        char *spaces = "     ";
-        char *s = "Stack trace:";
+        char *strace = "Stack trace:";
+        char *sfile = "File: \"";
+        char *sline = "\", line ";
+        char *smodule = ", in ";
+        char *sspaces = "  ";
 
-        vs_pushstr(vs, s, strlen(s));
+        vs_pushstr(vs, strace, strlen(strace));
         vs_pushstr(vs, ls, strlen(ls));
 
         while (frame != NULL) {
             int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
             const char *filename = PyString_AsString(frame->f_code->co_filename);
             const char *funcname = PyString_AsString(frame->f_code->co_name);
-
-            vs_pushstr(vs, spaces, strlen(spaces));
+            vs_pushstr(vs, sspaces, strlen(sspaces));
+            vs_pushstr(vs, sfile, strlen(sfile));
             vs_pushstr(vs, filename, strlen(filename));
-            vs_push(vs, '(');
+            vs_pushstr(vs, sline, strlen(sline));
             vs_pushint(vs, line);
-            vs_push(vs, ')');
+            vs_pushstr(vs, smodule, strlen(smodule));
             vs_pushstr(vs, funcname, strlen(funcname));
             vs_pushstr(vs, ls, strlen(ls));
 
