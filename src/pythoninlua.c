@@ -219,7 +219,7 @@ static int py_run(lua_State *L, int eval) {
         lua_error(L, "Can't get __main__ module");
     }
     d = PyModule_GetDict(m);
-    o = PyRun_StringFlags(s, eval ? Py_eval_input : Py_single_input,
+    o = PyRun_StringFlags(s, eval ? Py_eval_input : Py_file_input,
                           d, d, NULL);
     free(buffer);
     if (!o) {
