@@ -194,7 +194,7 @@ static void py_object_repr(lua_State *L) {
 static int py_run(lua_State *L, int eval) {
     const char *s;
     char *buffer = NULL;
-    PyObject *m, *d, *o;
+    PyObject *module, *globals, *obj;
     Conversion ret;
     size_t len;
 
@@ -213,21 +213,22 @@ static int py_run(lua_State *L, int eval) {
         buffer[len] = '\0';
         s = buffer;
     }
-    m = PyImport_AddModule("__main__");
-    if (!m) {
+    module = PyImport_AddModule("__main__");
+    if (!module) {
         free(buffer);
         lua_error(L, "Can't get __main__ module");
     }
-    d = PyModule_GetDict(m);
-    o = PyRun_StringFlags(s, eval ? Py_eval_input : Py_file_input,
-                          d, d, NULL);
+    globals = PyModule_GetDict(module);
+
+    obj = PyRun_StringFlags(s, eval ? Py_eval_input : Py_file_input,
+                            globals, globals, NULL);
     free(buffer);
-    if (!o) {
+    if (!obj) {
         lua_new_error(L, "run custom code");
         return 0;
     }
-    if ((ret = py_convert(L, o)) == CONVERTED) {
-        Py_DECREF(o);
+    if ((ret = py_convert(L, obj)) == CONVERTED) {
+        Py_DECREF(obj);
     }
 #if PY_MAJOR_VERSION < 3
     if (Py_FlushLine())
