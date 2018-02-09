@@ -272,14 +272,14 @@ python.eval("check_kwargs_long")(pykwargs{table = tbl})
 
 python.execute([[
 import os, sys
-class OS(object):
+class System(object):
     def getcwd(self): return os.getcwd()
     def getdefaultencoding(self): return sys.getdefaultencoding()
 def simple_func(): return 1
 ]])
 
-assert(python.eval("OS")().getcwd() == os.getcwd(), "eval#getcwd")
-assert(python.eval("OS")().getdefaultencoding() == sys.getdefaultencoding(), "eval#getdefaultencoding")
+assert(python.eval("System")().getcwd() == os.getcwd(), "eval#getcwd")
+assert(python.eval("System")().getdefaultencoding() == sys.getdefaultencoding(), "eval#getdefaultencoding")
 assert(python.eval("simple_func")() == 1, "eval#simple_func#1")
 
 -- rewrite
