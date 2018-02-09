@@ -270,6 +270,26 @@ def check_kwargs_long(**kwargs):
 
 python.eval("check_kwargs_long")(pykwargs{table = tbl})
 
+python.execute([[
+import os, sys
+class OS(object):
+    def getcwd(self): return os.getcwd()
+    def getdefaultencoding(self): return sys.getdefaultencoding()
+def simple_func(): return 1
+]])
+
+assert(python.eval("OS")().getcwd() == os.getcwd(), "eval#getcwd")
+assert(python.eval("OS")().getdefaultencoding() == sys.getdefaultencoding(), "eval#getdefaultencoding")
+assert(python.eval("simple_func")() == 1, "eval#simple_func#1")
+
+-- rewrite
+python.execute([[
+old_simple_func = simple_func
+def simple_func(): return old_simple_func() + 1
+]])
+
+assert(python.eval("simple_func")() == 2, "eval#simple_func#2")
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
