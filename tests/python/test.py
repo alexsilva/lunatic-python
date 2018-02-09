@@ -1,6 +1,9 @@
 import os
 import sys
 
+# Fix clion IOError
+sys.stdout = os.fdopen(os.dup(sys.stdout.fileno()), sys.stdout.mode)
+
 sys.path.append(os.getcwd())
 
 import lua
