@@ -74,19 +74,17 @@ void set_python_api(lua_State *L, Python *python, char *name, lua_CFunction cfn)
 Python *python_init(lua_State *L) {
     Python *python = malloc(sizeof(Python));
     if (!python) return NULL;
-    Lua *lua = lua_init(L);
-    if (!lua) {
-        python_free(L, python);
-        return NULL;
-    }
-    PythonUnicode *unicode = python_unicode_init(L);
-    if (!unicode) {
-        python_free(L, python);
-        return NULL;
-    }
     python->embedded = false;
-    python->unicode = unicode;
-    python->lua = lua;
+    python->lua = lua_init(L);
+    if (!python->lua) {
+        python_free(L, python);
+        return NULL;
+    }
+    python->unicode = python_unicode_init(L);
+    if (!python->unicode) {
+        python_free(L, python);
+        return NULL;
+    }
     return python;
 }
 
