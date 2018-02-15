@@ -196,7 +196,7 @@ static void python_traceback_append(lua_State *L, vstring *vs,
         vs_pushstr(vs, strace, strlen(strace));
         vs_pushstr(vs, ls, strlen(ls));
 
-        while (frame != NULL) {
+        while (true) {
             int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
             const char *filename = PyString_AsString(frame->f_code->co_filename);
             const char *funcname = PyString_AsString(frame->f_code->co_name);
@@ -207,9 +207,10 @@ static void python_traceback_append(lua_State *L, vstring *vs,
             vs_pushint(vs, line);
             vs_pushstr(vs, smodule, strlen(smodule));
             vs_pushstr(vs, funcname, strlen(funcname));
-            vs_pushstr(vs, ls, strlen(ls));
-
             frame = frame->f_back;
+            if (frame == NULL)
+                break;
+            vs_pushstr(vs, ls, strlen(ls));
         }
     }
 }
