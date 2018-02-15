@@ -25,6 +25,13 @@ def reversed_relation_iter(arg):
 
 
 class LuaInterpreter(lua.Interpreter):
+
+    def __getattr__(self, name):
+        return self.eval(name)
+
+    def __setattr__(self, key, value):
+        self.setglobal(key, value)
+
     def __enter__(self):
         return self
 
@@ -52,13 +59,15 @@ def func_type_check(origin, arg):
 
 
 def fn(interpreter, index):
-    # The global can not be returned for python (using eval)
-    interpreter.setglobal("PY_INDEX", index)
+    interpreter.pycounter = index
     interpreter.execute("""
     local builtins = python.builtins()
-    assert(tag(PY_INDEX) == python.tag() and builtins.isinstance(PY_INDEX, builtins.int),
-          'setglobal: fail!')
+    assert(tag(pycounter) == python.tag() and 
+           builtins.isinstance(pycounter, builtins.int),
+          'lua#setglobal: failed to set global!')
     """)
+
+    assert interpreter.pycounter == index, "failed to get lua global"
     assert interpreter.eval("10") == 10, "error in the int conversion"
     assert interpreter.eval("1.0000001") == 1.0000001, "error in the float conversion"
     assert interpreter.eval("\"a\"") == "a", "error evaluating a"
