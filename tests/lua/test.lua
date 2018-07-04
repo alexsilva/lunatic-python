@@ -290,6 +290,19 @@ def simple_func(): return old_simple_func() + 1
 
 assert(python.eval("simple_func")() == 2, "eval#simple_func#2")
 
+local number_int_str = "107942027"
+local number_float_str = ".1"
+local number_str = number_int_str..number_float_str
+
+local number = tonumber(number_str)
+
+local number_int = builtins.int(number)
+assert(tostring(number_int) == number_int_str, "int convert failed!")
+
+local number_float = builtins.float(number)
+
+assert(tostring(number_float) == number_str, "float convert failed!")
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
