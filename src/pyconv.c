@@ -162,13 +162,10 @@ Conversion py_convert(lua_State *L, PyObject *o) {
 #endif
 #if PY_MAJOR_VERSION < 3
     } else if (PyInt_Check(o)) {
-        lua_pushnumber(L, PyInt_AsLong(o));
+        lua_pushnumber(L, PyFloat_AsDouble(o));
         ret = CONVERTED;
 #endif
-    } else if (PyLong_Check(o)) {
-        lua_pushnumber(L, PyLong_AsLong(o));
-        ret = CONVERTED;
-    } else if (PyFloat_Check(o)) {
+    } else if (PyFloat_Check(o) || PyLong_Check(o)) {
         lua_pushnumber(L, PyFloat_AsDouble(o));
         ret = CONVERTED;
     } else if (LuaObject_Check(o)) {
