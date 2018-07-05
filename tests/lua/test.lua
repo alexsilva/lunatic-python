@@ -296,12 +296,8 @@ local number_str = number_int_str..number_float_str
 
 local number = tonumber(number_str)
 
-local number_int = builtins.int(number)
-assert(tostring(number_int) == number_int_str, "int convert failed!")
-
-local number_float = builtins.float(number)
-
-assert(tostring(number_float) == number_str, "float convert failed!")
+local int_number_ref = python.numberbyrefc(builtins.int, number)
+assert(builtins.isinstance(int_number_ref, builtins.int), "invalid int ref!")
 
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
