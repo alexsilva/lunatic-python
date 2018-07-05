@@ -380,20 +380,35 @@ static void py_get_version(lua_State *L) {
     lua_pushstring(L, PY_EXT_VERSION);
 }
 
+
 /* Turn off the conversion of object */
-static void py_byref(lua_State *L) {
-    int stacked = is_byref(L);
-    if (!stacked) set_byref(L, 1);
-    py_object_index_get(L);
-    if (!stacked) set_byref(L, 0);
+static void python_byref(lua_State *L,
+                         lua_CFunction cfunction,
+                         bool *reftype) {
+    int stacked = *reftype;
+    if (!stacked) *reftype = true;
+    cfunction(L);
+    if (!stacked) *reftype = false;
+}
+
+
+/* Turn off the conversion of object */
+static void py_stringbyref(lua_State *L) {
+    python_byref(L, py_object_index_get, &get_python(L)->lua->stringbyref);
 }
 
 /* Turn off the conversion of object */
-static void py_byrefc(lua_State *L) {
-    int stacked = is_byref(L);
-    if (!stacked) set_byref(L, 1);
-    py_object_call(L);
-    if (!stacked) set_byref(L, 0);
+static void py_stringbyrefc(lua_State *L) {
+    python_byref(L, py_object_call, &get_python(L)->lua->stringbyref);
+}
+
+/* Turn off the conversion of object */
+static void py_numberbyref(lua_State *L) {
+    python_byref(L, py_object_index_get, &get_python(L)->lua->numberbyref);
+}
+
+static void py_numberbyref_call(lua_State *L) {
+    python_byref(L, py_object_call, &get_python(L)->lua->numberbyref);
 }
 
 /* Returns the number of registration of the events tag */
@@ -495,7 +510,8 @@ static void pyobject_slice(lua_State *L) {
 static void py_state_restore(lua_State *L) {
     Python *python = get_python(L);
     python->lua->tableconvert = false;
-    python->lua->byref = false;
+    python->lua->stringbyref = false;
+    python->lua->numberbyref = false;
     if (PyErr_Occurred()) PyErr_Clear();
 }
 
@@ -537,8 +553,12 @@ static struct luaL_reg py_lib[] = {
     {"get_unicode_encoding",              py_get_unicode_encoding},
     {"get_unicode_encoding_errorhandler", py_get_unicode_encoding_errorhandler},
     {"set_unicode_encoding_errorhandler", py_set_unicode_encoding_errorhandler},
-    {"byref",                             py_byref}, // returns the result reference (no conversion).
-    {"byrefc",                            py_byrefc}, // returns the result reference (no conversion).
+    {"byref",                             py_stringbyref}, // returns the result reference (no conversion).
+    {"byrefc",                            py_stringbyrefc}, // returns the result reference (no conversion).
+    {"strbyref",                          py_stringbyref}, // returns the result reference (no conversion).
+    {"strbyrefc",                         py_stringbyrefc}, // returns the result reference (no conversion).
+    {"numberbyref",                       py_numberbyref}, // returns the result reference (no conversion).
+    {"numberbyrefc",                      py_numberbyref_call}, // returns the result reference (no conversion).
     {"tag",                               py_get_tag}, // returns the container tag objects python.
     {"dict",                              table2dict}, // returns a converted table to dictionary.
     {"tuple",                             table2tuple}, // returns a converted table to tuple.

@@ -127,6 +127,7 @@ static Conversion xpush_pyobject_container(lua_State *L, PyObject *obj) {
 
 Conversion py_convert(lua_State *L, PyObject *o) {
     Conversion ret;
+    Python *python = get_python(L);
     if (o == Py_None || o == Py_False) {
         lua_pushnil(L);
         ret = CONVERTED;
@@ -141,7 +142,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         ret = CONVERTED;
 #else
     } else if (PyString_Check(o)) {
-        if (is_byref(L)) {
+        if (python->lua->stringbyref) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;
@@ -150,7 +151,7 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = CONVERTED;
         }
     } else if (PyUnicode_Check(o)) {
-        if (is_byref(L)) {
+        if (python->lua->stringbyref) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;
@@ -162,12 +163,20 @@ Conversion py_convert(lua_State *L, PyObject *o) {
 #endif
 #if PY_MAJOR_VERSION < 3
     } else if (PyInt_Check(o)) {
-        lua_pushnumber(L, PyFloat_AsDouble(o));
-        ret = CONVERTED;
+        if (python->lua->numberbyref) {
+            ret = push_pyobject_container(L, o, false);
+        } else {
+            lua_pushnumber(L, PyFloat_AsDouble(o));
+            ret = CONVERTED;
+        }
 #endif
     } else if (PyFloat_Check(o) || PyLong_Check(o)) {
-        lua_pushnumber(L, PyFloat_AsDouble(o));
-        ret = CONVERTED;
+        if (python->lua->numberbyref) {
+            ret = push_pyobject_container(L, o, false);
+        } else {
+            lua_pushnumber(L, PyFloat_AsDouble(o));
+            ret = CONVERTED;
+        }
     } else if (LuaObject_Check(o)) {
         lua_pushobject(L, lua_getref(L, ((LuaObject*)o)->ref));
         ret = CONVERTED;

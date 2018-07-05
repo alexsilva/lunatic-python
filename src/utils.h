@@ -14,7 +14,8 @@
 typedef struct _lua {
     int tableref;
     bool tableconvert;   /* table convert */
-    bool byref;          /* return strings python by reference */
+    bool stringbyref;       /* return strings python by reference */
+    bool numberbyref;    /* return strings python by reference */
     bool embedded;       /* is embedded   */
     int tag;
 } Lua;
@@ -130,8 +131,8 @@ int PyObject_IsDictInstance(PyObject *obj);
      PyObject_IsTupleInstance(pyObject) || \
      PyObject_IsDictInstance(pyObject))
 
-#define is_byref(L) (get_python(L)->lua->byref)
-#define set_byref(L, value) (get_python(L)->lua->byref = (value))
+#define is_byref(L) (get_python(L)->lua->stringbyref)
+#define set_byref(L, value) (get_python(L)->lua->stringbyref = (value))
 
 #endif //LUNATIC_UTILS_H
 

@@ -35,7 +35,8 @@ Lua *lua_init(lua_State *L) {
     lua->tag = lua_newtag(L);
     lua_pushobject(L, lua_createtable(L));
     lua->tableref = lua_ref(L, 1); /* table ref */
-    lua->byref = false;
+    lua->stringbyref = false;
+    lua->numberbyref = false;
     lua->embedded = false;
     lua->tableconvert = false;
     return lua;
