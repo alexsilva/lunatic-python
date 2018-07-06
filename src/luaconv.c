@@ -282,11 +282,17 @@ PyObject *get_pobject(lua_State *L, lua_Object userdata) {
 }
 
 static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
-    double num = lua_getnumber(interpreter->L, lobj);
-    if (rintf((float) num) == num) {  // is int?
-        *ret = PyInt_FromLong((long) num);
+    double number = lua_getnumber(interpreter->L, lobj);
+    if (number >= INT_MIN && number <= INT_MAX) {
+        if (rint(number) == number) {  // is int ?
+            *ret = PyInt_FromLong((long) number);
+        } else {
+            *ret = PyFloat_FromDouble(number);
+        }
+    } else if (rint(number) == number) {  // is long ?
+        *ret = PyLong_FromDouble(number);
     } else {
-        *ret = PyFloat_FromDouble(num);
+        *ret = PyFloat_FromDouble(number);
     }
 }
 

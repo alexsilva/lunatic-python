@@ -166,11 +166,18 @@ Conversion py_convert(lua_State *L, PyObject *o) {
         if (python->lua->numberbyref) {
             ret = push_pyobject_container(L, o, false);
         } else {
-            lua_pushnumber(L, PyFloat_AsDouble(o));
+            lua_pushnumber(L, PyInt_AsLong(o));
             ret = CONVERTED;
         }
 #endif
-    } else if (PyFloat_Check(o) || PyLong_Check(o)) {
+    } else if (PyLong_Check(o)) {
+        if (python->lua->numberbyref) {
+            ret = push_pyobject_container(L, o, false);
+        } else {
+            lua_pushnumber(L, PyLong_AsDouble(o));
+            ret = CONVERTED;
+        }
+    } else if (PyFloat_Check(o)) {
         if (python->lua->numberbyref) {
             ret = push_pyobject_container(L, o, false);
         } else {
