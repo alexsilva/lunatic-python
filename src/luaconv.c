@@ -332,6 +332,7 @@ static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, P
 
 PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
                                          lua_Object lobj) {
+    lua_beginblock(interpreter->L);
     PyObject *ret = NULL;
     TObject *o = lapi_address(interpreter->L, lobj);
     switch (ttype(o)) { // Lua 3.2 source code builtin.c
@@ -359,6 +360,7 @@ PyObject *lua_interpreter_object_convert(InterpreterObject *interpreter,
         default:
             lua_error(interpreter->L, "unknown type!");
     }
+    lua_endblock(interpreter->L);
     return ret;
 }
 

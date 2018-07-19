@@ -436,6 +436,7 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
 
 /* Function that allows you to add a global variable in the lua interpreter */
 PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
+    lua_beginblock(self->L);
     const char *name = NULL;
     PyObject *pyObject = NULL;
 
@@ -446,6 +447,7 @@ PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
     Py_INCREF(pyObject); // lua ref
 
     lua_setglobal(self->L, (char *) name);
+    lua_endblock(self->L);
     Py_RETURN_NONE;
 }
 
