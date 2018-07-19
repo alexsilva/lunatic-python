@@ -303,7 +303,6 @@ static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 }
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
-    lua_beginblock(interpreter->L);
     Python *python = get_python(interpreter->L);
     if (python->lua->embedded && !python->lua->tableconvert) { // Lua inside Python
         *ret = LuaObject_New(interpreter, lobj);
@@ -312,7 +311,6 @@ static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyOb
     } else {
         *ret = get_py_dict(interpreter->L, lobj);
     }
-    lua_endblock(interpreter->L);
 }
 
 static void luserdata_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
