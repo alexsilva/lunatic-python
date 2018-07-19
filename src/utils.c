@@ -77,6 +77,7 @@ Python *python_init(lua_State *L) {
     if (!python) return NULL;
     python->embedded = false;
     python->lua = lua_init(L);
+    python->unicode = NULL;
     if (!python->lua) {
         python_free(L, python);
         return NULL;
