@@ -99,7 +99,8 @@ void python_free(lua_State *L, Python *python) {
     if (python->lua != NULL) {
         lua_unref(L, python->lua->tableref);
         free(python->lua);
-    } else if (python->unicode != NULL) {
+    }
+    if (python->unicode != NULL) {
         free(python->unicode);
     }
     free(python);
