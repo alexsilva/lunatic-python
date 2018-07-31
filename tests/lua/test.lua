@@ -299,6 +299,22 @@ local number = tonumber(number_str)
 local int_number_ref = python.numberbyrefc(builtins.int, number)
 assert(builtins.isinstance(int_number_ref, builtins.int), "invalid int ref!")
 
+
+local check_items = function(iter, start)
+    assert(iter[start] == "a", tostring(iter[start]) .." != 'a'")
+    assert(iter[start + 1] == "b", tostring(iter[start + 1]) .." != 'b'")
+    assert(iter[start + 2] == "c", tostring(iter[start + 2]) .." != 'c'")
+    return iter
+end
+
+local table = {}
+tinsert(table, "a")
+tinsert(table, "b")
+tinsert(table, "c")
+
+check_items(python.table(check_items(python.list(table), 0)), 1)
+check_items(python.table(check_items(python.tuple(table), 0)), 1)
+
 -- Ends the Python interpreter, freeing resources to OS
 if (python.is_embedded()) then
     python.system_exit()
