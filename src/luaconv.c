@@ -100,66 +100,58 @@ bool is_indexed_array(lua_State *L, lua_Object ltable) {
     return true;
 }
 
-/**
- * Convert a lua table for python tuple
- **/
-PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
-    int nargs = lua_tablesize(L, ltable);
-    PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "#4 failed to create arguments tuple");
-    set_table_nil(L, ltable, "n"); // remove "n"
-    int nextindex = lua_next(L, ltable, 0);
-    int index = 0, stackpos = 2;
-    PyObject *arg;
-    while (nextindex > 0) {
-        arg = lua_stack_convert(L, stackpos);
-        if (!arg) {
-            Py_DECREF(tuple);
-            char *format = "failed to convert argument #%d";
-            char buff[strlen(format) + 32];
-            sprintf(buff, format, index + 1);
-            lua_new_error(L, &buff[0]);
-        }
-        if (PyTuple_SetItem(tuple, index, arg) != 0) {
-            Py_XDECREF(arg);
-            Py_DECREF(tuple);
-            lua_new_error(L, "failed to set item in tuple");
-        }
-        nextindex = lua_next(L, ltable, nextindex);
-        index++;
-    }
-    return tuple;
-}
-
-/**
- * Convert a lua table for python tuple
- **/
-PyObject *ltable2list(lua_State *L, lua_Object ltable) {
-    PyObject *list = PyList_New(0);
-    if (!list) lua_new_error(L, "failed to create list");
+typedef int (*python_CFunctionSetItem) (
+        PyObject *iterable,
+        Py_ssize_t pos,
+        PyObject *pyObject);
+PyObject *py_iterable_convert(lua_State *L,
+                              lua_Object ltable,
+                              PyObject *iterable,
+                              python_CFunctionSetItem pycFunc) {
     set_table_nil(L, ltable, "n"); // remove "n"
     int index = lua_next(L, ltable, 0);
     int stackpos = 1;
     PyObject *value;
     double key;
     while (index > 0) {
-        key = lua_getnumber(L, lua_getparam(L, stackpos)) - 1;  // start 0
+        key = lua_getnumber(L, lua_getparam(L, stackpos));  // start 0
         value = lua_stack_convert(L, stackpos + 1);
         if (!value) {
-            Py_DECREF(list);
-            char *format = "failed to convert argument at #%d";
+            Py_DECREF(iterable);
+            char *format = "failed to convert value at #%d";
             char buff[strlen(format) + 32];
             sprintf(buff, format, (int) key);
             lua_new_error(L, &buff[0]);
         }
-        if (PyList_Insert(list, (Py_ssize_t) key, value) != 0) {
-            Py_DECREF(value);
-            Py_DECREF(list);
-            lua_new_error(L, "failed to set item in list");
+        if (pycFunc(iterable, (Py_ssize_t) (key  - 1), value) != 0) {
+            Py_XDECREF(value);
+            Py_DECREF(iterable);
+            lua_new_error(L, "failed to set item");
         }
         index = lua_next(L, ltable, index);
     }
-    return list;
+
+    return iterable;
+}
+
+/**
+ * Convert a lua table for python tuple
+ **/
+PyObject *ltable_convert_tuple(lua_State *L, lua_Object ltable) {
+    int nargs = lua_tablesize(L, ltable);
+    PyObject *tuple = PyTuple_New(nargs);
+    if (!tuple) { lua_new_error(L, "#4 failed to create arguments tuple"); }
+    return py_iterable_convert(L, ltable, tuple, PyTuple_SetItem);
+}
+
+/**
+ * Convert a lua table for python tuple
+ **/
+PyObject *ltable2list(lua_State *L, lua_Object ltable) {
+    int nargs = lua_tablesize(L, ltable);
+    PyObject *list = PyList_New(nargs);
+    if (!list) { lua_new_error(L, "failed to create list"); }
+    return py_iterable_convert(L, ltable, list, PyList_SetItem);
 }
 
 /* Convert arguments in the stack lua to tuple */
