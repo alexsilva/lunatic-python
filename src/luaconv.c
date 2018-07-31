@@ -158,7 +158,7 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
 PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) lua_new_error(L, "#2 failed to create arguments tuple");
+    if (!tuple) { lua_new_error(L, "failed to create arguments tuple #2"); }
     int index, pos;
     PyObject *arg;
     for (index = 0; index < nargs; index++) {
