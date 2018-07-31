@@ -126,7 +126,12 @@ PyObject *py_iterable_convert(lua_State *L,
         if (pycFunc(iterable, (Py_ssize_t) (key  - 1), value) != 0) {
             Py_XDECREF(value);
             Py_DECREF(iterable);
-            lua_new_error(L, "failed to set item");
+            bool is_array = is_indexed_array(L, ltable);
+            char *indexed = is_array ? "yes": "no";
+            char *format ="failed to set item (numeric keys (%s))";
+            char buff[buffsize_calc(2, format, indexed)];
+            sprintf(buff, format, indexed);
+            lua_new_error(L, &buff[0]);
         }
         index = lua_next(L, ltable, index);
     }
