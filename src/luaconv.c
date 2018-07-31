@@ -138,25 +138,26 @@ PyObject *ltable2list(lua_State *L, lua_Object ltable) {
     PyObject *list = PyList_New(0);
     if (!list) lua_new_error(L, "failed to create list");
     set_table_nil(L, ltable, "n"); // remove "n"
-    int nextindex = lua_next(L, ltable, 0);
-    int index = 0, stackpos = 2;
-    PyObject *arg;
-    while (nextindex > 0) {
-        arg = lua_stack_convert(L, stackpos);
-        if (!arg) {
+    int index = lua_next(L, ltable, 0);
+    int stackpos = 1;
+    PyObject *value;
+    double key;
+    while (index > 0) {
+        key = lua_getnumber(L, lua_getparam(L, stackpos)) - 1;  // start 0
+        value = lua_stack_convert(L, stackpos + 1);
+        if (!value) {
             Py_DECREF(list);
-            char *format = "failed to convert argument #%d";
+            char *format = "failed to convert argument at #%d";
             char buff[strlen(format) + 32];
-            sprintf(buff, format, index + 1);
+            sprintf(buff, format, (int) key);
             lua_new_error(L, &buff[0]);
         }
-        if (PyList_Append(list, arg) != 0) {
-            Py_DECREF(arg);
+        if (PyList_Insert(list, (Py_ssize_t) key, value) != 0) {
+            Py_DECREF(value);
             Py_DECREF(list);
             lua_new_error(L, "failed to set item in list");
         }
-        nextindex = lua_next(L, ltable, nextindex);
-        index++;
+        index = lua_next(L, ltable, index);
     }
     return list;
 }
