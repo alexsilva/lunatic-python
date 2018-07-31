@@ -110,7 +110,7 @@ PyObject *py_iterable_convert(lua_State *L,
                               python_CFunctionSetItem pycFunc) {
     set_table_nil(L, ltable, "n"); // remove "n"
     int index = lua_next(L, ltable, 0);
-    int stackpos = 1;
+    int refcount, stackpos = 1;
     PyObject *value;
     double key;
     while (index > 0) {
@@ -123,8 +123,9 @@ PyObject *py_iterable_convert(lua_State *L,
             sprintf(buff, format, (int) key);
             lua_new_error(L, &buff[0]);
         }
+        refcount = Py_REFCNT(value);
         if (pycFunc(iterable, (Py_ssize_t) (key  - 1), value) != 0) {
-            Py_XDECREF(value);
+            if ((refcount - Py_REFCNT(value)) == 0) { Py_DECREF(value); }
             Py_DECREF(iterable);
             bool is_array = is_indexed_array(L, ltable);
             char *indexed = is_array ? "yes": "no";
@@ -164,7 +165,7 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
     int nargs = lua_gettop(L) - stackpos;
     PyObject *tuple = PyTuple_New(nargs);
     if (!tuple) { lua_new_error(L, "failed to create arguments tuple #2"); }
-    int index, pos;
+    int index, pos, refcount;
     PyObject *arg;
     for (index = 0; index < nargs; index++) {
         pos = index + stackpos + 1;
@@ -176,8 +177,9 @@ PyObject *get_py_tuple(lua_State *L, int stackpos) {
             sprintf(buff, format, index + 1);
             lua_new_error(L, &buff[0]);
         }
+        refcount = Py_REFCNT(arg);
         if (PyTuple_SetItem(tuple, index, arg) != 0) {
-            Py_XDECREF(arg);
+            if ((refcount - Py_REFCNT(arg)) == 0) { Py_DECREF(arg); }
             Py_DECREF(tuple);
             lua_new_error(L, "failed to set item in tuple");
         }
