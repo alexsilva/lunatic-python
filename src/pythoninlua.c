@@ -473,7 +473,7 @@ static void table2dict(lua_State *L) {
 static void table2tuple(lua_State *L) {
     Python *python = get_python(L);
     python->lua->tableconvert = true;
-    push_pyobject_container(L, ltable_convert_tuple(L, luaL_tablearg(L, 1)), true);
+    push_pyobject_container(L, ltable2tuple(L, luaL_tablearg(L, 1)), true);
     python->lua->tableconvert = false;
 }
 
