@@ -140,7 +140,7 @@ PyObject *py_iterable_convert(lua_State *L,
 PyObject *ltable2tuple(lua_State *L, lua_Object ltable) {
     int nargs = lua_tablesize(L, ltable);
     PyObject *tuple = PyTuple_New(nargs);
-    if (!tuple) { lua_new_error(L, "#4 failed to create arguments tuple"); }
+    if (!tuple) { lua_new_error(L, "failed to create tuple #4"); }
     return py_iterable_convert(L, ltable, tuple, PyTuple_SetItem);
 }
 
