@@ -7,6 +7,8 @@
 
 #include "stdbool.h"
 #include "luainpython.h"
+#include <Python.h>
+#include <lua.h>
 
 typedef struct {
     PyObject *object;

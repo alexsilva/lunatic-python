@@ -11,7 +11,10 @@ include_directories(${PYTHON_INCLUDE_DIR})
 link_directories(${LUA_LIBRARIES})
 link_directories(${PYTHON_LIBRARIES})
 
+include_directories("src/fileio")
+
 set(SOURCES
+    src/fileio/fileio.c
     deps/vstring/vstring.h
     src/luainpython.c
     src/pythoninlua.c

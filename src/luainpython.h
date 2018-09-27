@@ -26,6 +26,8 @@
 #define LUA_EXT_VERSION "3.2.2"
 
 #include <stdbool.h>
+#include <Python.h>
+#include <lua.h>
 
 typedef struct {
     PyObject_HEAD

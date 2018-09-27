@@ -5,6 +5,8 @@
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
 #include <stdbool.h>
+#include <Python.h>
+#include <lua.h>
 
 #ifdef python_COMPAT
 #define lua_traceback_checkerror(L) (0)
@@ -31,6 +33,7 @@ typedef struct _python {
     bool embedded;
     PythonUnicode *unicode;
     Lua *lua;
+    bool io;
 } Python;
 
 Python *get_python(lua_State *L);
