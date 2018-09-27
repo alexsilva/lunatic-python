@@ -2,7 +2,9 @@ import os
 import sys
 
 # Fix clion IOError
-sys.stdout = os.fdopen(os.dup(sys.stdout.fileno()), sys.stdout.mode)
+sys.stdout = os.fdopen(os.dup(sys.stdout.fileno()),
+                       sys.stdout.mode,
+                       1024)
 
 sys.path.append(os.getcwd())
 
@@ -60,6 +62,15 @@ def func_type_check(origin, arg):
 
 def fn(interpreter, index):
     interpreter.pycounter = index
+    interpreter.execute(r"""
+    function register_io(stdout) 
+        _OUTPUT = stdout
+        _STDOUT = _OUTPUT
+        python.io_register()
+    end
+    """)
+    interpreter.eval("register_io")(sys.stdout)
+
     interpreter.execute("""
     local builtins = python.builtins()
     assert(tag(pycounter) == python.tag() and 
