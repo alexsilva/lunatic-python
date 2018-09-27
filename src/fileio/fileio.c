@@ -8,6 +8,8 @@
 #define FSTDOUT  "_STDOUT"
 #define FSTDIN   "_STDIN"
 
+#define MAXPRINT 50
+
 
 /* Open a new python file */
 static void openfile(lua_State *L, char *filename, char *mode) {
@@ -108,11 +110,51 @@ static void io_write(lua_State *L) {
 }
 
 
+static void write_print(lua_State *L, PyObject *file, char *s) {
+    PyObject *py_file_write = PyString_FromString("write");
+    PyObject *value = NULL, *py_object = NULL;
+    py_object = PyString_FromString(s);
+    value = PyObject_CallMethodObjArgs(file, py_file_write, py_object, NULL);
+    Py_DECREF(py_object);
+    if (!value) {
+        lua_pushnil(L);
+        lua_pushstring(L, "write failed!");
+    } else {
+        Py_DECREF(value);
+    }
+    Py_DECREF(py_file_write);
+}
+
+static void io_print(lua_State *L) {
+    lua_Object args[MAXPRINT];
+    lua_Object obj;
+    int number = 0;
+    int index;
+    while ((obj = lua_getparam(L, number+1)) != LUA_NOOBJECT) {
+        luaL_arg_check(L, number < MAXPRINT, number+1, "too many arguments");
+        args[number++] = obj;
+    }
+    PyObject *file = getfilebyname(L, FOUTPUT);
+    for (index=0; index<number; index++) {
+        lua_pushobject(L, args[index]);
+        if (lua_call(L, "tostring"))
+            lua_error(L, "error in `tostring' called by `print'");
+        obj = lua_getresult(L, 1);
+        if (!lua_isstring(L, obj))
+            lua_error(L, "`tostring' must return a string to `print'");
+        if (index > 0) write_print(L, file, "\t");
+        write_print(L, file, lua_getstring(L, obj));
+    }
+    write_print(L, file, "\n");
+}
+
+
 struct luaL_reg file_io_function[] = {
         {"openfile",  io_openfile},
         {"writeto",   io_writeto},
         {"closefile", io_closefile},
         {"write",     io_write},
+        {"print",     io_print},
         {NULL, NULL}
 };
 
