@@ -12,37 +12,45 @@
 
 
 /* Open a new python file */
-static void openfile(lua_State *L, char *filename, char *mode) {
+static PyObject *openfile(lua_State *L, char *filename, char *mode) {
     PyObject *file = PyFile_FromString(filename, mode);
     if (!file) {
         lua_pushnil(L);
         lua_pushstring(L, "failed to open file");
         PyErr_Clear();   // clear error stack
-    } else {
-        push_pyobject_container(L, file, false);
     }
+    return file;
 }
 
 /* Open a new python file */
 void io_openfile(lua_State *L) {
     char *filename = luaL_check_string(L, 1);
     char *mode = luaL_opt_string(L, 2, "r");
-    openfile(L, filename, mode);
+    PyObject *file = openfile(L, filename, mode);
+    if (file) {
+        push_pyobject_container(L, file, false);
+    }
 }
 
 static PyObject *closefile(lua_State *L, PyObject *file) {
-    PyObject *py_file_close = PyString_FromString("close");
-    PyObject *value = NULL;
-    if (py_file_close) {
-        value = PyObject_CallMethodObjArgs(file, py_file_close, NULL);
-        Py_DECREF(py_file_close);
+    if (file) {
+        PyObject *py_file_close = PyString_FromString("close");
+        if (py_file_close) {
+            PyObject *value = PyObject_CallMethodObjArgs(file, py_file_close, NULL);
+            Py_DECREF(py_file_close);
+            return value;
+        }
     }
-    return value;
+    return NULL;
 }
 
+static void setglogalfile(lua_State *L, char *name, PyObject *file) {
+    push_pyobject_container(L, file, false);
+    lua_rawgetglobal(L, name);
+}
 
 static PyObject *getfilebyname(lua_State *L, char *name) {
-    return get_pobject(L, lua_getglobal(L, name));
+    return get_pobject(L, lua_rawgetglobal(L, name));
 }
 
 
@@ -50,6 +58,7 @@ static void io_closefile(lua_State *L) {
     lua_Object lobj = lua_getparam(L, 1);
     if (is_object_container(L, lobj)) {
         Py_XDECREF(closefile(L, get_pobject(L, lobj)));
+        if (PyErr_Occurred()) { PyErr_Clear(); }
     }
 }
 
@@ -58,17 +67,22 @@ static void io_writeto(lua_State *L) {
     lua_Object f = lua_getparam(L, 1);
 
     if (f == LUA_NOOBJECT) {
-        PyObject *object = getfilebyname(L, FOUTPUT);
-        closefile(L, object);
+        Py_XDECREF(closefile(L, getfilebyname(L, FOUTPUT))); // FOUTPUT.close
+        if (PyErr_Occurred()) { PyErr_Clear(); }
 
         PyObject *file = getfilebyname(L, FSTDOUT);
+        setglogalfile(L, FOUTPUT, file);  // FOUTPUT = FSTDOUT
+
         push_pyobject_container(L, file, false);
 
     } else if (is_object_container(L, f)) {
         push_pyobject_container(L, get_pobject(L, f), false);
     } else {
         //  opens and returns the new file
-        openfile(L, luaL_check_string(L, 1), "w");
+        PyObject *pyfile = openfile(L, luaL_check_string(L, 1), "w");
+        if (!pyfile) {
+            setglogalfile(L, FOUTPUT, pyfile);
+        }
     }
 }
 
