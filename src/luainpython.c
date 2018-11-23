@@ -163,8 +163,10 @@ static int LuaObject_setattr(LuaObject *self, PyObject *attr, PyObject *value) {
         if (value == NULL) {
             lua_pushnil(self->interpreter->L);
             res = CONVERTED;
-        } else {
-            res = py_convert(self->interpreter->L, value); // push value ?
+        } else if ((res = py_convert(self->interpreter->L, value)) == WRAPPED) { // push value ?
+            // The object is being managed by the Lua
+            // This is a borrowed reference
+            Py_INCREF(value);
         }
         if (isvalidstatus(res)) {
             lua_settable(self->interpreter->L);
