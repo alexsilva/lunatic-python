@@ -1,17 +1,12 @@
 import os
 import sys
 
-# Fix clion IOError
-sys.stdout = os.fdopen(os.dup(sys.stdout.fileno()),
-                       sys.stdout.mode,
-                       1024)
-
 sys.path.append(os.getcwd())
 
 import lua
 
-print "lib version: ", lua.get_version()
-print 'in lua: ', ' | '.join(dir(lua))
+print("lib version: ", lua.get_version())
+print('in lua: ', ' | '.join(dir(lua)))
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -117,10 +112,10 @@ def fn(interpreter, index):
     assert data['a'] == 15, "table index value set error"
 
     for i in data['c']:
-        print 'value c: ', i
+        print('value c: ', i)
 
     for i in data['d']:
-        print i, ": ", data['d'][i]
+        print(i, ": ", data['d'][i])
 
     table = interpreter.eval("{}")
 
@@ -139,14 +134,14 @@ def fn(interpreter, index):
         assert i in ['item-1', 'item-2'], '#2 item not found %s' % i
 
     lua_speak = interpreter.eval("lua_speak")
-    print "callable (%s) function %s" % (callable(lua_speak), lua_speak)
+    print("callable (%s) function %s" % (callable(lua_speak), lua_speak))
 
     print(lua_speak(*("Lua", index), **{}))
 
     data = interpreter.eval("{a={b={c={d={e={f={g={h={i={'a','b','c'}, hi=lua_speak},gh='hello'},"
                             "fg=1.0},ef='a'},de=1},cd={1,2,3}},bc={1,2,3}},ab={1,2,3},}}")
 
-    print data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index)
+    print(data['a']['b']['c']['d']['e']['f']['g']['h']['hi']('lua struct!', index))
 
     letters = interpreter.eval("{'a', 'b', 'c'}")
     for i, v in enumerate(letters, 0):
@@ -164,10 +159,10 @@ def fn(interpreter, index):
 
     # load test of python embed!
 
-    print 'running test script 1'
+    print('running test script 1')
     interpreter.require(os.path.join(PATH, "..", "lua", "test.lua"))
 
-    print 'running test script 2'
+    print('running test script 2')
     interpreter.require(os.path.join(PATH, "..", "lua", "test2.lua"))
 
 
