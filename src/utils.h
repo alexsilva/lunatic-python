@@ -4,6 +4,7 @@
 
 #ifndef LUNATIC_UTILS_H
 #define LUNATIC_UTILS_H
+#include "../deps/strdup/strdup.h"
 #include <stdbool.h>
 #include <Python.h>
 #include <lua.h>
@@ -118,10 +119,6 @@ char *get_pyobject_str(PyObject *obj);
 void python_new_error(lua_State *L, PyObject *exception, char *message);
 int lua_tablesize(lua_State *L, lua_Object ltable);
 int python_api_tag(lua_State *L);
-
-#ifndef strdup
-char *strdup(const char *s);
-#endif
 
 int PyObject_IsListInstance(PyObject *obj);
 int PyObject_IsTupleInstance(PyObject *obj);
