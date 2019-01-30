@@ -15,7 +15,7 @@ if (not python) then  -- LUA -> PYTHON - LUA
     assert(python, "undefined python object")
 
     -- python home
-    python.system_init(getenv("PYTHON27_HOME") or "C:\\Python27");
+    python.system_init(getenv("PYTHON37_HOME") or "C:\\Python27");
 end
 print(format("python ext <%s> is embedded in lua <%s>", python.get_version(), tostring(python.is_embedded())))
 
