@@ -122,28 +122,12 @@ int lua_tablesize(lua_State *L, lua_Object ltable) {
     return (int) lua_getnumber(L, lua_getresult(L, 1));
 }
 
-#ifndef strdup
-char *strdup(const char * s) {
-    size_t len = strlen(s) + 1;
-    char *p = malloc(len);
-    return p ? memcpy(p, s, len) : NULL;
-}
-#endif
-
 static char *tostring(PyObject *obj) {
-    PyObject *pObjStr = PyObject_Str(obj);
-    char *str;
-    if (pObjStr) {
-        str = PyString_AsString(pObjStr);
-        if (str && strlen(str) == 0) {
-            Py_DECREF(pObjStr);
-            return NULL;
-        }
+    char *str = PyBytes_AsString(obj);;
+    if (str) {
         str = strdup(str);
-        Py_DECREF(pObjStr);
     } else {
         PyErr_Clear();
-        str = NULL;
     }
     return str;
 }
@@ -202,8 +186,8 @@ static void python_traceback_append(lua_State *L, vstring *vs,
 
         while (true) {
             int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
-            const char *filename = PyString_AsString(frame->f_code->co_filename);
-            const char *funcname = PyString_AsString(frame->f_code->co_name);
+            const char *filename = PyBytes_AsString(frame->f_code->co_filename);
+            const char *funcname = PyBytes_AsString(frame->f_code->co_name);
             vs_pushstr(vs, sspaces, strlen(sspaces));
             vs_pushstr(vs, sfile, strlen(sfile));
             vs_pushstr(vs, filename, strlen(filename));
@@ -248,7 +232,7 @@ static void python_traceback_message(lua_State *L, vstring *traceback) {
 }
 
 static void PyErr_SetVString(PyObject *exception, vstring *vs) {
-    PyErr_SetObject(exception, PyString_FromStringAndSize(vs_contents(vs),
+    PyErr_SetObject(exception, PyBytes_FromStringAndSize(vs_contents(vs),
                                                           (Py_ssize_t) vs_len(vs)));
 }
 
