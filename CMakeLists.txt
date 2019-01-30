@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3.0)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 
 project(Lunatic)
 
@@ -16,6 +16,7 @@ include_directories("src/fileio")
 set(SOURCES
     src/fileio/fileio.c
     deps/vstring/vstring.h
+    deps/strdup/strdup.h
     src/luainpython.c
     src/pythoninlua.c
     src/luaconv.c
@@ -64,12 +65,12 @@ set_target_properties(python PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 set_target_properties(lua PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
 if (UNIX)
-    set(LINK_LIBRARY python2.7)
+    set(LINK_LIBRARY pytho3.7)
     target_link_libraries(python ${LINK_LIBRARY})
     target_link_libraries(lua ${LINK_LIBRARY})
 else()
-    target_link_libraries(python python27 lua32ng lualib32ng)
-    target_link_libraries(lua python27 lua32ngw lualib32ngw)
+    target_link_libraries(python python37 lua32ng lualib32ng)
+    target_link_libraries(lua python37 lua32ngw lualib32ngw)
 endif ()
 
 
