@@ -38,7 +38,7 @@ def TestFunc(*args, **kwargs):
 
 python.execute([[
 def TestFunc2(limit, *args, **kwargs):
-    assert range(1,limit) == list(args[0]), '[TestFunc2] args no match!'
+    assert list(range(1,limit)) == list(args[0]), '[TestFunc2] args no match!'
 ]])
 
 python.execute([[
@@ -75,7 +75,7 @@ def TestFunc6(*args, **kwargs):
 
 python.execute([[
 def TestFunc7(*args):
-    assert cmp(args, ('a', 'b', 'c', 1, 2, 3)) == 0, '[TestFunc7] args no match!'
+    assert args == ('a', 'b', 'c', 1, 2, 3) == 0, '[TestFunc7] args no match!'
     return args
 ]])
 
@@ -96,13 +96,20 @@ globals.TestFunc4(pykwargs{a=1, b=2, c=3})
 globals.TestFunc5(pyargs(1,2,3,4))
 globals.TestFunc6(pyargs(), pykwargs{})
 
+local functools = python.import("functools")
+
+print("shorted custom lua method")
+
 -- lua callback teste
 function shorfn(a, b)
-    return % builtins.cmp(a, b)
+    return a - b
 end
 
 local res_expected = builtins.iter({-5, -1, 0, 1, 4, 7, 10, 100})
-local result = builtins.sorted({1, -1, 4, 10, 0, 100, 7, -5}, shorfn)
+local result = builtins.sorted(
+    pyargs({1, -1, 4, 10, 0, 100, 7, -5}),
+    pykwargs{key = functools.cmp_to_key(shorfn)
+})
 local v = builtins.next(res_expected);
 
 while (v) do

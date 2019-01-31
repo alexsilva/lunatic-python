@@ -15,55 +15,71 @@ if (not python) then  -- LUA -> PYTHON - LUA
     assert(python, "undefined python object")
 
     -- python home
-    python.system_init(getenv("PYTHON37_HOME") or "C:\\Python27");
+    python.system_init(getenv("PYTHON3_HOME"));
 end
 print(format("python ext <%s> is embedded in lua <%s>", python.get_version(), tostring(python.is_embedded())))
 
 local builtins = python.builtins()
 local os = python.import("os")
+local tempfile = python.import("tempfile")
+local tempdir = tempfile.gettempdir()
+local math = python.import("math")
+local PI = math.pi
 
-local filepath = os.path.join(os.getcwd(), 'popen.txt')
-local popen = builtins.open(filepath, "w+")
+print("open and read pattern")
+local sendtext = " other new alson feature enline"
+local stext = tostring(PI).." python lua"..sendtext
+local filepath = os.path.join(tempdir, 'popen.txt')
+local popen = builtins.open(filepath, python.str('w+'))
+popen.write(stext)
 
-popen.write("11111111111 assdfasdfasdf x a b c dddddd")
+print("read content")
 popen.flush()
 popen.seek(0)
+local content = python.readfile(popen, ".*")
+assert(content == stext)
 
-a, b, c = python.readfile(popen, "*w", "*w", ".*")
+print("read pattern")
+popen.seek(0)
+local nb, pytext, luatext, etext = python.readfile(popen, "*n", "*w", "*w", ".*")
+assert(type(nb) == "number", format("'%s'<%s> != 'number'", type(nb), nb))
+assert(nb == PI, format("'%s' != '%s'", nb, PI))
+assert(pytext == "python", format("'%s' != 'python'", pytext))
+assert(luatext == "lua", format("'%s' != 'lua'", luatext))
+assert(etext == sendtext, format("'%s' != '%s'", etext, sendtext))
 
-print("value: ["..a.."]")
-print("value: ["..b.."]")
-print("value: ["..c.."]")
-
+print("close file|remove")
 -- clean
 popen.close()
 os.remove(filepath)
 
+print("check python tags")
 assert(tag(builtins) == python.tag() and tag(os) == python.tag(), "invalid tag!")
 
-local str = "maçã"
-assert(builtins.unicode(str, 'utf-8') == str)
-
-local types = python.import("types")
-
-assert(builtins.isinstance(python.None, types.NoneType), "None type check error")
-assert(builtins.isinstance(python.False, types.BooleanType), "False type check error")
-assert(builtins.isinstance(python.True, types.BooleanType), "True type check error")
-
+print("check bool convert types")
 assert(builtins.bool(python.None) == nil, "None object check error")
 assert(builtins.bool(python.False) == nil, "False boolean check error")
 assert(builtins.bool(python.True) == 1, "True boolean check error")
 
-local sys = python.import("sys")
+print("print sys.path")
 
-print("Python sys.path")
-builtins.map(function(path) print(path) end, sys.path)
+local pyforeach = python.execute([[
+def pyforeach(fn, items):
+    for item in items:
+        fn(item)
+]]).eval("pyforeach")
+
+local sys = python.import("sys")
+pyforeach(function(path)
+    %builtins.print(path)
+end, sys.path)
 
 local globals = python.globals()
 assert(type(globals) == "userdata", "globals is not a userdata")
 
 local builtins = python.builtins()
 assert(type(builtins) == "userdata", "builtins is not a userdata")
+print("--------------")
 
 assert(builtins.isinstance(python.tuple{1,2,3}, builtins.tuple), "tuple error!")
 assert(builtins.isinstance(python.list{1,2,3,4,5}, builtins.list), "list error!")
@@ -72,8 +88,7 @@ assert(builtins.isinstance(python.dict{a=10, b=builtins.range(5)}, builtins.dict
 assert(builtins.isinstance(python.asargs(builtins.list(python.dict{a = 1, b = 2, c = 3})), builtins.tuple), "#1 tuple expected")
 assert(builtins.isinstance(python.asargs(python.tuple{"a", "b", "c"}), builtins.tuple), "#2 tuple expected")
 assert(builtins.isinstance(python.asargs(python.list{1,2,3}), builtins.tuple), "#3 tuple expected")
-assert(builtins.isinstance(python.asargs(builtins.range(3)), builtins.tuple), "#4 tuple expected")
-
+assert(builtins.isinstance(python.asargs(builtins.list(builtins.range(3))), builtins.tuple), "#4 tuple expected")
 assert(builtins.isinstance(python.askwargs(python.dict{a = 1, b = 2, c = 3}), builtins.dict), "#1 dict expected")
 
 local l = python.list{"a", "b", "c", "d"}
@@ -113,7 +128,7 @@ assert(python.get_unicode_encoding_errorhandler() == errorhandler, "invalid enco
 
 -- references
 local strref = python.byrefc(builtins.str, "python")
-assert(builtins.isinstance(strref, builtins.tuple({builtins.str, builtins.unicode})), "type ref check error!")
+assert(builtins.isinstance(strref, python.tuple{builtins.str, builtins.bytes}), "type ref check error!")
 assert(strref.upper() == "PYTHON", "invalid ref call") -- Only works in the model references
 
 local key = "name"
@@ -143,18 +158,20 @@ Lua is implemented as a library, written in clean C, the common subset of Standa
 assert(builtins.len(string) == strlen(string), "strlen no match")
 
 local struct = python.import("struct")
-local bstr = struct.pack('hhl', 1, 2, 3)
-
+local bstrpack = python.byrefc(struct.pack, 'hhl', 1, 2, 3)
 local temfile = python.import("tempfile")
 local filepath = os.path.join(temfile.gettempdir(), "tempfiletext.bin")
 local file = builtins.open(filepath, "wb")
-file.write(bstr)
+file.write(bstrpack)
 file.close()
 
-local res = struct.unpack('hhl', builtins.open(filepath, "rb").read())
+print("open file | unpack bytes")
+file = builtins.open(filepath, "rb")
+local res = struct.unpack('hhl', python.byrefc(file.read))
 assert(res[0] == 1, "binary string no match")
 assert(res[1] == 2, "binary string no match")
 assert(res[2] == 3, "binary string no match")
+file.close()
 
 python.execute('import json')
 local loadjson = python.eval([[json.loads('{"a": 100, "b": 2000, "c": 300, "items": 100}')]])
@@ -178,14 +195,14 @@ end
 local dict = python.eval("{'a': 'a value'}")
 local keys = python.asattr(dict).keys()
 
-assert(python.repr(keys) == "['a']", "dict repr object error")
+assert(python.repr(keys) == "dict_keys(['a'])", "dict repr object error")
 assert(builtins.len(keys) == 1, "dict size no match")
-assert(keys[0] == 'a', "dict key no match")
+assert(builtins.list(keys)[0] == 'a', "dict key no match")
 
 local list = python.eval("[1,2,3,3]")
 local lsize = builtins.len(list)
 
-assert(list[0] == 1, "list by index invalid value")
+assert(builtins.list(list)[0] == 1, "list by index invalid value")
 assert(python.asattr(list).pop(0) == 1, "list pop invalid value")
 assert(lsize - 1 == builtins.len(list), "size of unexpected list")
 
@@ -251,8 +268,7 @@ dict[sys] = "sys module"
 dict["str"] = "simple str"
 assert(dict[sys] and dict[os])
 
-local string = python.import("string")
-assert(string.split("1", ",")[0] == "1")
+assert(builtins.str.split("1", ",")[0] == "1")
 
 -- Test the conversion of a table with many items
 local random = python.import("random")
