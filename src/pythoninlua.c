@@ -670,20 +670,16 @@ static void python_system_init(lua_State *L) {
     char *python_home = luaL_check_string(L, 1);
     if (!Py_IsInitialized()) {
         get_python(L)->embedded = true; /* python is being embedded in the lua */
+        PyObject *luam, *mainm, *maind;
+        wchar_t *argv[] = {L"<lua_bootstrap>", 0};
+        Py_SetProgramName(argv[0]);
+        Py_SetPythonHome(Py_DecodeLocale(python_home, NULL));
+        Py_InitializeEx(0);
         if (PyType_Ready(&LuaObject_Type) == 0) {
             Py_INCREF(&LuaObject_Type);
         } else {
             lua_error(L, "failure initializing lua object type");
         }
-        PyObject *luam, *mainm, *maind;
-#if PY_MAJOR_VERSION >= 3
-        wchar_t *argv[] = {L"<lua_bootstrap>", 0};
-#else
-        char *argv[] = {"<lua_bootstrap>", 0};
-#endif
-        Py_SetProgramName(argv[0]);
-        Py_SetPythonHome(python_home);
-        Py_InitializeEx(0);
         PySys_SetArgv(1, argv);
         /* Import 'lua' automatically. */
         luam = PyImport_ImportModule("lua_bootstrap");
