@@ -75,12 +75,12 @@ lua_Object py_object_raw(lua_State *L, PyObject *obj,
         Py_ssize_t index, size = PyObject_Size(obj);
         PyObject *ikey, *value;
         for (index = 0; index < size; index++) {
-            ikey = PyInt_FromSsize_t(index);
+            ikey = PyLong_FromSsize_t(index);
             value = PyObject_GetItem(obj, ikey);
             Py_DECREF(ikey);
             if (PyObject_IsDictInstance(value) || PyObject_IsListInstance(value) ||
                 PyObject_IsTupleInstance(value)) {
-                ikey = PyInt_FromSsize_t(index + 1);
+                ikey = PyLong_FromSsize_t(index + 1);
                 if (py_object_raw(L, value, ltable, ikey) == LUA_NOOBJECT) {
                     Py_DECREF(ikey); Py_DECREF(value);
                     lua_raise_error(L, "raw type not supported \"%s\"", value);
@@ -133,19 +133,12 @@ Conversion py_convert(lua_State *L, PyObject *o) {
     } else if (o == Py_True) {
         lua_pushnumber(L, 1);
         ret = CONVERTED;
-#if PY_MAJOR_VERSION >= 3
-        } else if (PyUnicode_Check(o)) {
-        Py_ssize_t len;
-        char *s = PyUnicode_AsUTF8AndSize(o, &len);
-        lua_pushstring(L, s);
-        ret = CONVERTED;
-#else
-    } else if (PyString_Check(o)) {
+    } else if (PyBytes_Check(o)) {
         if (python->lua->stringbyref) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;
-            get_pyobject_string_buffer(L, o, &str);
+            get_py_bytes_buffer(L, o, &str);
             lua_pushlstring(L, str.buff, str.size);
             ret = CONVERTED;
         }
@@ -154,21 +147,12 @@ Conversion py_convert(lua_State *L, PyObject *o) {
             ret = xpush_pyobject_container(L, o);
         } else {
             String str;
-            PyObject *pyStr = get_pyobject_encoded_string_buffer(L, o, &str);
+            PyObject *value = get_py_unicode_encoded(L, o, &str);
+            get_py_bytes_buffer(L, value, &str);
             lua_pushlstring(L, str.buff, str.size);
-            Py_DECREF(pyStr);
+            Py_DECREF(value);
             ret = CONVERTED;
         }
-#endif
-#if PY_MAJOR_VERSION < 3
-    } else if (PyInt_Check(o)) {
-        if (python->lua->numberbyref) {
-            ret = push_pyobject_container(L, o, false);
-        } else {
-            lua_pushnumber(L, PyInt_AsLong(o));
-            ret = CONVERTED;
-        }
-#endif
     } else if (PyLong_Check(o)) {
         if (python->lua->numberbyref) {
             ret = push_pyobject_container(L, o, false);
