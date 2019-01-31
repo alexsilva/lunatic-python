@@ -508,6 +508,27 @@ static void pyobject_slice(lua_State *L) {
     }
 }
 
+static void py_str(lua_State *L) {
+    //Python *python = get_python(L);
+    lua_Object o = lua_getparam(L, 1);
+    luaL_arg_check(L, lua_isstring(L, o), 1, "string expected");
+
+    long slength = lua_strlen(L, o);
+    char *str = lua_getstring(L, o);
+
+    char *encoding = luaL_opt_string(L, 2, "UTF-8");
+    char *error = luaL_opt_string(L, 3, "strict");
+
+    PyObject *pylsize = PyLong_FromLong(slength);
+    Py_ssize_t tsize = PyLong_AsSsize_t(pylsize);
+
+    PyObject *pystr = PyUnicode_Decode(str, tsize, encoding, error);
+    if (!pystr) lua_new_error(L, "failed str decode");
+
+    push_pyobject_container(L, pystr, false);
+    Py_DecRef(pylsize);
+}
+
 static void py_state_restore(lua_State *L) {
     Python *python = get_python(L);
     python->lua->tableconvert = false;
@@ -567,6 +588,7 @@ static struct luaL_reg py_lib[] = {
     {"table",                             pyobj2table}, // convert dict, list or tuple for a table.
     {"raw",                               pyobj2table}, // convert dict, list or tuple for a table.
     {"slice",                             pyobject_slice},
+    {"str",                               py_str},
     {"asargs",                            py_asargs},
     {"askwargs",                          py_askwargs},
     {"readfile",                          py_readfile},
