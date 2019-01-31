@@ -189,9 +189,9 @@ static PyObject *LuaObject_str(LuaObject *self) {
     char buff[64];
     switch (ttype(o)) { // Lua 3.2 source code builtin.c
         case LUA_T_NUMBER:
-            return PyString_FromFormat("<Lua number %ld>", (long) lua_getnumber(self->interpreter->L, lobj));
+            return PyUnicode_FromFormat("<Lua number %ld>", (long) lua_getnumber(self->interpreter->L, lobj));
         case LUA_T_STRING:
-            return PyString_FromFormat("<Lua string size %ld>", lua_strlen(self->interpreter->L, lobj));
+            return PyUnicode_FromFormat("<Lua string size %ld>", lua_strlen(self->interpreter->L, lobj));
         case LUA_T_ARRAY:
             sprintf(buff, "<Lua table at %p>", (void *)o->value.a);
             break;
@@ -208,12 +208,12 @@ static PyObject *LuaObject_str(LuaObject *self) {
             sprintf(buff, "<Lua userdata at %p>", o->value.ts->u.d.v);
             break;
         case LUA_T_NIL:
-            return PyString_FromString("nil");
+            return PyUnicode_FromFormat("nil");
         default:
-            return PyString_FromString("invalid type");
+            return PyUnicode_FromFormat("invalid type");
     }
     lua_endblock(self->interpreter->L);
-    return PyString_FromString(buff);
+    return PyUnicode_FromFormat(buff);
 }
 
 static PyObject *LuaObject_call(LuaObject *self, PyObject *args) {
@@ -261,36 +261,16 @@ static void LuaObjectIter_dealloc(luaiterobject *li) {
     PyObject_GC_Del(li);
 }
 
-PyTypeObject LuaObjectIter_Type = {
+static PyTypeObject LuaObjectIter_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "LuaObject_iterator",                       /* tp_name */
-    sizeof(luaiterobject),                      /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor) LuaObjectIter_dealloc,         /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc) LuaObjectIter_next,          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,
+    .tp_name = "LuaObject_iterator",                        /* tp_name */
+    .tp_basicsize = sizeof(luaiterobject),                  /* tp_basicsize */
+    .tp_itemsize = 0,                                       /* tp_itemsize */
+    .tp_dealloc = (destructor) LuaObjectIter_dealloc,       /* tp_dealloc */
+    .tp_getattro = PyObject_GenericGetAttr,                 /* tp_getattro */
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    .tp_iter = PyObject_SelfIter,                           /* tp_iter */
+    .tp_iternext = (iternextfunc) LuaObjectIter_next,       /* tp_iternext */
 };
 
 static PyObject *LuaObjectIter_new(LuaObject *luaobject, PyTypeObject *itertype) {
@@ -351,49 +331,27 @@ static PyMappingMethods LuaObject_as_mapping = {
 
 PyTypeObject LuaObject_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "lua.LuaObject",          /*tp_name*/
-    sizeof(LuaObject),        /*tp_basicsize*/
-    0,                        /*tp_itemsize*/
-    (destructor)LuaObject_dealloc, /*tp_dealloc*/
-    0,                        /*tp_print*/
-    0,                        /*tp_getattr*/
-    0,                        /*tp_setattr*/
-    0,                        /*tp_compare*/
-    (reprfunc) LuaObject_str, /*tp_repr*/
-    0,                        /*tp_as_number*/
-    0,                        /*tp_as_sequence*/
-    &LuaObject_as_mapping,    /*tp_as_mapping*/
-    0,                        /*tp_hash*/
-    (ternaryfunc) LuaObject_call, /*tp_call*/
-    (reprfunc) LuaObject_str, /*tp_str*/
-    (getattrofunc) LuaObject_getattr, /*tp_getattro*/
-    (setattrofunc) LuaObject_setattr, /*tp_setattro*/
-    0,                        /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "custom lua object",      /*tp_doc*/
-    0,                        /*tp_traverse*/
-    0,                        /*tp_clear*/
-    0,                        /*tp_richcompare*/
-    0,                        /*tp_weaklistoffset*/
-    (getiterfunc) LuaObject_iter, /*tp_iter*/
-    0,                        /*tp_iternext*/
-    0,                        /*tp_methods*/
-    0,                        /*tp_members*/
-    0,                        /*tp_getset*/
-    0,                        /*tp_base*/
-    0,                        /*tp_dict*/
-    0,                        /*tp_descr_get*/
-    0,                        /*tp_descr_set*/
-    0,                        /*tp_dictoffset*/
-    (initproc) LuaObject_init,/*tp_init*/
-    PyType_GenericAlloc,      /*tp_alloc*/
-    PyType_GenericNew,        /*tp_new*/
-    PyObject_Del,             /*tp_free*/
-    0,                        /*tp_is_gc*/
+    .tp_name = "lua.LuaObject",          /*tp_name*/
+    .tp_basicsize = sizeof(LuaObject),        /*tp_basicsize*/
+    .tp_itemsize = 0,                        /*tp_itemsize*/
+    .tp_dealloc = (destructor)LuaObject_dealloc, /*tp_dealloc*/
+    .tp_repr = (reprfunc) LuaObject_str, /*tp_repr*/
+    .tp_as_mapping = &LuaObject_as_mapping,    /*tp_as_mapping*/
+    .tp_call = (ternaryfunc) LuaObject_call, /*tp_call*/
+    .tp_str = (reprfunc) LuaObject_str, /*tp_str*/
+    .tp_getattro = (getattrofunc) LuaObject_getattr, /*tp_getattro*/
+    .tp_setattro = (setattrofunc) LuaObject_setattr, /*tp_setattro*/
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+    .tp_doc = "custom lua object",      /*tp_doc*/
+    .tp_iter = (getiterfunc) LuaObject_iter, /*tp_iter*/
+    .tp_init = (initproc) LuaObject_init,/*tp_init*/
+    .tp_alloc = PyType_GenericAlloc,      /*tp_alloc*/
+    .tp_new = PyType_GenericNew,        /*tp_new*/
+    .tp_free = PyObject_Del,             /*tp_free*/
 };
 
 
-PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
+static PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
     lua_beginblock(self->L);
     PyObject *ret = NULL;
     char *buf = NULL;
@@ -437,7 +395,7 @@ PyObject *Lua_run(InterpreterObject *self, PyObject *args, int eval) {
 }
 
 /* Function that allows you to add a global variable in the lua interpreter */
-PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
+static PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
     lua_beginblock(self->L);
     const char *name = NULL;
     PyObject *pyObject = NULL;
@@ -454,15 +412,15 @@ PyObject *Lua_setglobal(InterpreterObject *self, PyObject *args) {
 }
 
 
-PyObject *Interpreter_execute(InterpreterObject *self, PyObject *args) {
+static PyObject *Interpreter_execute(InterpreterObject *self, PyObject *args) {
     return Lua_run(self, args, 0);
 }
 
-PyObject *Interpreter_eval(InterpreterObject *self, PyObject *args) {
+static PyObject *Interpreter_eval(InterpreterObject *self, PyObject *args) {
     return Lua_run(self, args, 1);
 }
 
-PyObject *Interpreter_globals(InterpreterObject *self, PyObject *args) {
+static PyObject *Interpreter_globals(InterpreterObject *self, PyObject *args) {
     PyObject *ret = NULL;
     lua_Object lobj = lua_getglobal(self->L, "_G");
     if (lua_isnil(self->L, lobj)) {
@@ -488,7 +446,7 @@ static PyObject *Interpreter_dofile(InterpreterObject *self, PyObject *args) {
         return NULL;
     }
     lua_endblock(self->L);
-    return PyInt_FromLong(ret);
+    return PyLong_FromLong(ret);
 }
 
 /*
@@ -541,7 +499,7 @@ static void Interpreter_dealloc(InterpreterObject *self) {
 #ifdef CGILUA_ENV
 static PyObject *Interpreter_unlock_state(InterpreterObject *self) {
     self->L->lockedState = 0;
-    return PyInt_FromLong(self->L->lockedState);
+    return PyLong_FromLong(self->L->lockedState);
 }
 #endif
 
@@ -565,52 +523,22 @@ static PyMethodDef Interpreter_methods[] = {
 
 
 static PyObject *lua_get_version(InterpreterObject *self, PyObject *args) {
-    return PyString_FromString(LUA_EXT_VERSION);
-
+    return PyBytes_FromString(LUA_EXT_VERSION);
 }
 
 static PyTypeObject InterpreterObject_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "lua.Interpreter",      /*tp_name*/
-    sizeof(InterpreterObject), /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor) Interpreter_dealloc, /*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    0,                         /*tp_str*/
-    0,                         /*tp_getattro*/
-    0,                         /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,/*tp_flags*/
-    "Lua interpreter",         /* tp_doc */
-    0,		                  /* tp_traverse */
-    0,		                  /* tp_clear */
-    0,		                  /* tp_richcompare */
-    0,		                  /* tp_weaklistoffset */
-    0,		                  /* tp_iter */
-    0,		                  /* tp_iternext */
-    Interpreter_methods,      /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    (initproc)Interpreter_init,/* tp_init */
-    PyType_GenericAlloc,       /* tp_alloc */
-    PyType_GenericNew,         /* tp_new */
-    PyObject_Del,              /*tp_free*/
-    0,                         /*tp_is_gc*/
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "lua.Interpreter",      /*tp_name*/
+    .tp_basicsize = sizeof(InterpreterObject), /*tp_basicsize*/
+    .tp_itemsize = 0,                         /*tp_itemsize*/
+    .tp_dealloc =(destructor) Interpreter_dealloc, /*tp_dealloc*/
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,/*tp_flags*/
+    .tp_doc = "Lua interpreter",         /* tp_doc */
+    .tp_methods = Interpreter_methods,      /* tp_methods */
+    .tp_init = (initproc)Interpreter_init,/* tp_init */
+    .tp_alloc = PyType_GenericAlloc,       /* tp_alloc */
+    .tp_new = PyType_GenericNew,         /* tp_new */
+    .tp_free = PyObject_Del,              /*tp_free*/
 };
 
 static PyMethodDef lua_methods[] = {
@@ -619,38 +547,27 @@ static PyMethodDef lua_methods[] = {
     {NULL, NULL}
 };
 
-#if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef lua_module = {
     PyModuleDef_HEAD_INIT,
-    "lua",
-    "Lunatic-Python Python-Lua bridge",
-    -1,
-    lua_methods
+    .m_name = "lua",
+    .m_doc = "Lunatic-Python Python-Lua bridge",
+    .m_methods = lua_methods,
+    .m_size = -1,
 };
-#endif
 
 PyMODINIT_FUNC PyInit_lua(void) {
-    PyObject *m;
-
-#if PY_MAJOR_VERSION >= 3
     if (PyType_Ready(&LuaObject_Type) < 0)
         return NULL;
-    m = PyModule_Create(&lua_module);
-    if (m == NULL) return NULL;
-#else
-    if (PyType_Ready(&LuaObject_Type) < 0)
-        return;
 
     if (PyType_Ready(&InterpreterObject_Type) < 0)
-        return;
+        return NULL;
 
     if (PyType_Ready(&LuaObjectIter_Type) < 0)
-        return;
+        return NULL;
 
-    m = Py_InitModule3("lua", lua_methods,
-                       "Lunatic-Python Python-Lua bridge");
-    if (m == NULL) return;
-#endif
+    PyObject *m = PyModule_Create(&lua_module);
+    if (m == NULL)
+        return NULL;
 
     Py_INCREF(&LuaObject_Type);
     Py_INCREF(&InterpreterObject_Type);

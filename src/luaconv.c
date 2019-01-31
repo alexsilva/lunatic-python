@@ -285,7 +285,7 @@ static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
     double number = lua_getnumber(interpreter->L, lobj);
     if (number >= INT_MIN && number <= INT_MAX) {
         if (rint(number) == number) {  // is int ?
-            *ret = PyInt_FromLong((long) number);
+            *ret = PyLong_FromDouble(number);
         } else {
             *ret = PyFloat_FromDouble(number);
         }
@@ -299,7 +299,7 @@ static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
     const char *s = lua_getstring(interpreter->L, lobj);
     int len = lua_strlen(interpreter->L, lobj);
-    *ret = PyString_FromStringAndSize(s, len);
+    *ret = PyUnicode_FromStringAndSize(s, len);
 }
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
