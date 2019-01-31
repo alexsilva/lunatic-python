@@ -38,12 +38,21 @@ char *luaI_classend(lua_State *L, char *p) {
     }
 }
 
+static void get_string(PyObject *pyval, char **buff) {
+    if PyUnicode_Check(pyval) {
+        *buff = (char*) PyUnicode_AsUTF8(pyval);
+    } else {
+        *buff = PyBytes_AsString(pyval);
+    }
+}
+
 /* Reads a single byte from file */
 static int _read_single_char(PyObject *o) {
-    PyObject *callresult = PyObject_CallMethod(o, "read", "i", 1);
-    char *str = PyString_AsString(callresult);
+    PyObject *data = PyObject_CallMethod(o, "read", "i", 1);
+    char *str = NULL;
+    get_string(data, &str);
     int result = strcmp(str, "") == 0 ? EOF : *str;
-    Py_DECREF(callresult);
+    Py_DECREF(data);
     return result;
 }
 
@@ -114,20 +123,24 @@ static int read_pattern(lua_State *L, PyObject *o, char *p, int *lastreadchar) {
 
 /* Reads all remaining content from the file */
 static int read_file(lua_State *L, PyObject *o, int *lastreadchar) {
-    PyObject *callresult = PyObject_CallMethod(o, "read", NULL);
-    if (callresult) {
-        PyObject *result = callresult;
+    PyObject *data = PyObject_CallMethod(o, "read", NULL);
+    if (data) {
+        PyObject *pybuff = data;
         if (*lastreadchar != 0) {
             // restore the last character
-            char v[] = {(char) *lastreadchar, '\0'};
-            result = PyString_FromString(v);
-            PyString_Concat(&result, callresult);
-            if (!result) lua_raise_error(L, "concatenating part of string of \"%s\"", o);
-            Py_DECREF(callresult);
+            char v[] = {(char) *lastreadchar};
+            if (PyUnicode_Check(data)) {
+                pybuff = PyUnicode_FromStringAndSize(v, 1);
+                PyUnicode_AppendAndDel(&pybuff, data);
+            } else {
+                pybuff = PyBytes_FromString(v);
+                PyBytes_ConcatAndDel(&pybuff, data);
+            }
+            if (!pybuff) lua_raise_error(L, "concatenating part of string of \"%s\"", o);
             *lastreadchar = 0;
         }
-        if (py_convert(L, result) == CONVERTED)
-            Py_DECREF(result);
+        if (py_convert(L, pybuff) == CONVERTED)
+            Py_DECREF(pybuff);
     } else {
         lua_raise_error(L, "call function python read of \"%s\"", o);
     }
@@ -167,9 +180,9 @@ static int read_number(lua_State *L, PyObject *o, int *lastreadchar) {
     if (strcmp(numbuff, ".") == 0 || strlen(numbuff) == 0) {
         return 0; /* read fails */
     }
-    PyObject *number = PyString_FromString(numbuff);
+    PyObject *number = PyBytes_FromString(numbuff);
     if (!number) raise_number_error(L, &numbuff[0]);
-    PyObject *result = PyFloat_FromString(number, NULL);
+    PyObject *result = PyFloat_FromString(number);
     Py_DECREF(number);
     if (result) {
         if (py_convert(L, result) == CONVERTED)
