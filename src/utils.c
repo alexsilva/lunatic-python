@@ -123,13 +123,17 @@ int lua_tablesize(lua_State *L, lua_Object ltable) {
 }
 
 static char *tostring(PyObject *obj) {
-    char *str = PyBytes_AsString(obj);;
-    if (str) {
-        str = strdup(str);
+    PyObject *pystr = PyObject_Str(obj);
+    char *value = NULL;
+    if (pystr) {
+        value = (char *)PyUnicode_AsUTF8(pystr);
+        if (value && strlen(value) > 0)
+            value = strdup(value);
+        Py_DecRef(pystr);
     } else {
         PyErr_Clear();
     }
-    return str;
+    return value;
 }
 
 #define ATTRNAME "__name__"
@@ -174,32 +178,34 @@ static void python_traceback_append(lua_State *L, vstring *vs,
                              PyTracebackObject *traceback) {
     if (traceback != NULL && traceback->tb_frame != NULL) {
         PyFrameObject *frame = traceback->tb_frame;
-        char *ls = get_line_separator(L);
-        char *strace = "Stack trace:";
-        char *sfile = "File: \"";
-        char *sline = "\", line ";
-        char *smodule = ", in ";
+        char *nline = get_line_separator(L);
+        char *strace = "Stack Trace: ";
+        char *in_file = "File: \"";
+        char *in_line = "\", line ";
+        char *in_module = ", in ";
         char *sspaces = "  ";
-
+        const char *filename, *funcname;
+        int line;
         vs_pushstr(vs, strace, strlen(strace));
-        vs_pushstr(vs, ls, strlen(ls));
-
+        vs_pushstr(vs, nline, strlen(nline));
         while (true) {
-            int line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
-            const char *filename = PyBytes_AsString(frame->f_code->co_filename);
-            const char *funcname = PyBytes_AsString(frame->f_code->co_name);
+            line = PyCode_Addr2Line(frame->f_code, frame->f_lasti);
+            filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+            funcname = PyUnicode_AsUTF8(frame->f_code->co_name);
             vs_pushstr(vs, sspaces, strlen(sspaces));
-            vs_pushstr(vs, sfile, strlen(sfile));
+            vs_pushstr(vs, in_file, strlen(in_file));
             vs_pushstr(vs, filename, strlen(filename));
-            vs_pushstr(vs, sline, strlen(sline));
+            vs_pushstr(vs, in_line, strlen(in_line));
             vs_pushint(vs, line);
-            vs_pushstr(vs, smodule, strlen(smodule));
+            vs_pushstr(vs, in_module, strlen(in_module));
             vs_pushstr(vs, funcname, strlen(funcname));
             frame = frame->f_back;
             if (frame == NULL)
                 break;
-            vs_pushstr(vs, ls, strlen(ls));
+            vs_pushstr(vs, nline, strlen(nline));
         }
+        // end of string
+        vs_push(vs, '\0');
     }
 }
 
@@ -208,21 +214,20 @@ static void python_traceback_message(lua_State *L, vstring *traceback) {
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
     if (pvalue || ptype || ptraceback) {
-        const char *name;
-        name = get_pyobject_str(ptype);
-        if (name != NULL) {
-            vs_pushstr(traceback, name, strlen(name));
-            free((void *) name);
+        const char *str;
+        char *sep = ": ";
+        char *nline = get_line_separator(L);
+        str = get_pyobject_str(ptype);
+        if (str != NULL) {
+            vs_pushstr(traceback, str, strlen(str));
+            vs_pushstr(traceback, sep, strlen(sep));
+            free((void *) str);
         }
-        name = get_pyobject_str(pvalue);
-        if (name != NULL) {
-            char *s = ": ";
-            char *ls = get_line_separator(L);
-            vs_pushstr(traceback, s, strlen(s));
-            vs_pushstr(traceback, name, strlen(name));
-            vs_pushstr(traceback, ls, strlen(ls));
-
-            free((void *) name);
+        str = get_pyobject_str(pvalue);
+        if (str != NULL) {
+            vs_pushstr(traceback, str, strlen(str));
+            vs_pushstr(traceback, nline, strlen(nline));
+            free((void *) str);
         }
         python_traceback_append(L, traceback, (PyTracebackObject *) ptraceback);
         Py_XDECREF(ptype);
@@ -291,13 +296,13 @@ void lua_new_error(lua_State *L, char *message) {
     if (PyErr_Occurred()) python_traceback_message(L, vstraceback);
 
     if (vs_len(vstraceback) > 0) {
-        char *ls = get_line_separator(L);
+        char *nline = get_line_separator(L);
 
         vstring *vsmessage = NULL;
         vsmessage = vs_init(vsmessage, NULL, VS_TYPE_DYNAMIC, NULL, buffsize);
 
         vs_pushstr(vsmessage, message, strlen(message));
-        vs_pushstr(vsmessage, ls, strlen(ls));
+        vs_pushstr(vsmessage, nline, strlen(nline));
         vs_pushstr(vsmessage, vs_contents(vstraceback), vs_len(vstraceback));
 
         char *contents = vs_contents(vsmessage);
