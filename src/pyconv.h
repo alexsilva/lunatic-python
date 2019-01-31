@@ -36,7 +36,7 @@ Conversion push_pyobject_container(lua_State *L, PyObject *obj, bool asindx);
 Conversion py_convert(lua_State *L, PyObject *o);
 void pyobj2table(lua_State *L);
 
-void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str);
-PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String *str);
+void get_py_bytes_buffer(lua_State *L, PyObject *obj, String *str);
+PyObject *get_py_unicode_encoded(lua_State *L, PyObject *obj, String *str);
 
 #endif //LUNATIC_PYCONV_H

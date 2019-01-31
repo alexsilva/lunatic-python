@@ -7,18 +7,17 @@
 #include "constants.h"
 
 /* python string bytes */
-void get_pyobject_string_buffer(lua_State *L, PyObject *obj, String *str) {
-    PyString_AsStringAndSize(obj, &str->buff, &str->size);
+void get_py_bytes_buffer(lua_State *L, PyObject *obj, String *str) {
+    PyBytes_AsStringAndSize(obj, &str->buff, &str->size);
     if (!str->buff) lua_new_error(L, "converting string");
 }
 
 /* python string unicode as string bytes */
-PyObject *get_pyobject_encoded_string_buffer(lua_State *L, PyObject *obj, String *str) {
+PyObject *get_py_unicode_encoded(lua_State *L, PyObject *obj, String *str) {
     PythonUnicode *unicode = get_python(L)->unicode;
-    PyObject *pyStr = PyUnicode_AsEncodedString(obj, unicode->encoding, unicode->errorhandler);
-    if (!pyStr) lua_new_error(L, "converting unicode string");
-    get_pyobject_string_buffer(L, pyStr, str);
-    return pyStr;
+    PyObject *value = PyUnicode_AsEncodedString(obj, unicode->encoding, unicode->errorhandler);
+    if (!value) lua_new_error(L, "converting unicode string");
+    return value;
 }
 
 #pragma clang diagnostic push

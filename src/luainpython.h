@@ -35,7 +35,7 @@ typedef struct {
     bool isPyType;
 } InterpreterObject;
 
-extern PyTypeObject LuaObject_Type;
+PyTypeObject LuaObject_Type;
 
 #if PY_MAJOR_VERSION < 3
 #define PyInit_lua initlua
