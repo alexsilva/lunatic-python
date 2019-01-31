@@ -7,11 +7,10 @@ project(Lunatic)
 include_directories(${LUA_INCLUDE_DIR})
 include_directories(${LUA_INCLUDE_EXTRA})
 include_directories(${PYTHON_INCLUDE_DIR})
+include_directories("src/fileio")
 
 link_directories(${LUA_LIBRARIES})
 link_directories(${PYTHON_LIBRARIES})
-
-include_directories("src/fileio")
 
 set(SOURCES
     src/fileio/fileio.c
