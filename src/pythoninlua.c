@@ -192,22 +192,17 @@ static void py_object_repr(lua_State *L) {
     }
 }
 
-static int py_run(lua_State *L, int eval) {
-    const char *s;
-    char *buffer = NULL;
+static bool py_run(lua_State *L, int eval) {
+    const char *s = luaL_check_string(L, 1);
     PyObject *module, *globals, *obj;
-    Conversion ret;
+    char *buffer = NULL;
     size_t len;
-
-    s = luaL_check_string(L, 1);
-    if (!s)
-        return 0;
-
     if (!eval) {
         len = strlen(s) + 1;
         buffer = (char *) malloc(len + 1);
         if (!buffer) {
             lua_error(L, "Failed allocating buffer for execution");
+            return false; // no has effect
         }
         strcpy(buffer, s);
         buffer[len - 1] = '\n';
@@ -226,20 +221,20 @@ static int py_run(lua_State *L, int eval) {
     free(buffer);
     if (!obj) {
         lua_new_error(L, "run custom code");
-        return 0;
-    }
-    if ((ret = py_convert(L, obj)) == CONVERTED) {
+        return false;  // no has effect
+    } else if(!eval) {
+        Py_DECREF(obj);
+    } else if (py_convert(L, obj) == CONVERTED) {
         Py_DECREF(obj);
     }
-#if PY_MAJOR_VERSION < 3
-    if (Py_FlushLine())
-#endif
-    PyErr_Clear();
-    return ret;
+    // legacy code
+    if (PyErr_Occurred()) PyErr_Clear();
+    return true;
 }
 
 static void py_execute(lua_State *L) {
     py_run(L, 0);
+    lua_pushobject(L, lua_getglobal(L, PY_API_NAME));
 }
 
 static void py_eval(lua_State *L) {
