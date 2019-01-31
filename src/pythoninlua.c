@@ -25,7 +25,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <stdbool.h>
-#include "fileio.h"
 
 #include "pythoninlua.h"
 
@@ -588,7 +587,6 @@ static struct luaL_reg py_lib[] = {
     {"askwargs",                          py_askwargs},
     {"readfile",                          py_readfile},
     {"restore",                           py_state_restore},
-    {"io_register",                            fileio_register},
     {NULL, NULL}
 };
 
