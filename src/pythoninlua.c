@@ -99,8 +99,11 @@ static void py_object_call(lua_State *L) {
 }
 
 static int set_py_object_index(lua_State *L, py_object *pobj, int keyn, int valuen) {
+    Python *python = get_python(L);
+    python->lua->ikey = true;
     PyObject *key = lua_stack_convert(L, keyn);
-    if (!key) luaL_argerror(L, 1, "failed to convert key");
+    python->lua->ikey = false;
+    if (!key) { luaL_argerror(L, 1, "failed to convert key"); }
     lua_Object lval = lua_getparam(L, valuen);
     if (!lua_isnil(L, lval)) {
         PyObject *value = lua_object_convert(L, lval);
@@ -136,7 +139,10 @@ static void py_object_index_set(lua_State *L) {
 }
 
 static int get_py_object_index(lua_State *L, py_object *pobj, int keyn) {
+    Python *python = get_python(L);
+    python->lua->ikey = true;
     PyObject *key = lua_stack_convert(L, keyn);
+    python->lua->ikey = false;
     Conversion ret = UNCHANGED;
     PyObject *item;
     if (!key) luaL_argerror(L, 1, "failed to convert key");
@@ -517,18 +523,19 @@ static void py_str(lua_State *L) {
     Py_ssize_t tsize = PyLong_AsSsize_t(pylsize);
 
     PyObject *pystr = PyUnicode_Decode(str, tsize, encoding, error);
-    if (!pystr) lua_new_error(L, "failed str decode");
-
+    if (!pystr) {
+        Py_DecRef(pylsize);
+        lua_new_error(L, "failed str decode");
+    }
     push_pyobject_container(L, pystr, false);
     Py_DecRef(pylsize);
 }
 
 static void py_state_restore(lua_State *L) {
     Python *python = get_python(L);
-    python->lua->tableconvert = false;
-    python->lua->stringbyref = false;
-    python->lua->numberbyref = false;
-    if (PyErr_Occurred()) PyErr_Clear();
+    python->lua->tableconvert = python->lua->stringbyref =
+    python->lua->numberbyref  = python->lua->ikey = false;
+    if (PyErr_Occurred()) { PyErr_Clear(); }
 }
 
 static void python_system_init(lua_State *L);

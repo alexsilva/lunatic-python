@@ -20,6 +20,7 @@ typedef struct _lua {
     bool stringbyref;       /* return strings python by reference */
     bool numberbyref;    /* return strings python by reference */
     bool embedded;       /* is embedded   */
+    bool ikey;
     int tag;
 } Lua;
 
