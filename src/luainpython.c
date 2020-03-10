@@ -125,21 +125,20 @@ static void LuaObject_dealloc(LuaObject *self) {
 static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     lua_beginblock(self->interpreter->L);
     lua_Object ltable = lua_getref(self->interpreter->L, self->ref);
+    PyObject *ret = NULL;
     if (lua_isnil(self->interpreter->L, ltable)) {
-        PyErr_SetString(PyExc_RuntimeError, "lost reference");
-        return NULL;
+        PyErr_SetString(PyExc_AttributeError, "lost reference");
     } else if (!lua_istable(self->interpreter->L, ltable) &&
                !lua_isuserdata(self->interpreter->L, ltable)) {
-        PyErr_SetString(PyExc_RuntimeError, "not an indexable value");
-        return NULL;
-    }
-    PyObject *ret = NULL;
-    lua_pushobject(self->interpreter->L, ltable); // push table
-    if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
-        lua_Object lobj = lua_gettable(self->interpreter->L);
-        ret = lua_interpreter_object_convert(self->interpreter, lobj); // convert
+        PyErr_SetString(PyExc_ValueError, "not an indexable value");
     } else {
-        PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
+        lua_pushobject(self->interpreter->L, ltable); // push table
+        if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
+            lua_Object lobj = lua_gettable(self->interpreter->L);
+            ret = lua_interpreter_object_convert(self->interpreter, lobj); // convert
+        } else {
+            PyErr_SetString(PyExc_ValueError, "can't convert attr/key");
+        }
     }
     lua_endblock(self->interpreter->L);
     return ret;
