@@ -127,10 +127,10 @@ static PyObject *LuaObject_getattr(LuaObject *self, PyObject *attr) {
     lua_Object ltable = lua_getref(self->interpreter->L, self->ref);
     PyObject *ret = NULL;
     if (lua_isnil(self->interpreter->L, ltable)) {
-        PyErr_SetString(PyExc_AttributeError, "lost reference");
+        PyErr_SetString(PyExc_ValueError, "lost reference");
     } else if (!lua_istable(self->interpreter->L, ltable) &&
                !lua_isuserdata(self->interpreter->L, ltable)) {
-        PyErr_SetString(PyExc_ValueError, "not an indexable value");
+        PyErr_SetString(PyExc_AttributeError, "not an indexable value");
     } else {
         lua_pushobject(self->interpreter->L, ltable); // push table
         if (py_convert(self->interpreter->L, attr) != UNCHANGED) { // push key
