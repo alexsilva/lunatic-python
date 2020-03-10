@@ -319,11 +319,7 @@ static int LuaObject_init(LuaObject *self, PyObject *args, PyObject *kwargs) {
 }
 
 static PyMappingMethods LuaObject_as_mapping = {
-#if PY_VERSION_HEX >= 0x02050000
     (lenfunc)LuaObject_length,    /*mp_length*/
-#else
-    (inquiry)LuaObject_length,    /*mp_length*/
-#endif
     (binaryfunc)LuaObject_subscript,/*mp_subscript*/
     (objobjargproc)LuaObject_ass_subscript,/*mp_ass_subscript*/
 };
