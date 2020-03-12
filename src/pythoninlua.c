@@ -538,7 +538,7 @@ static void py_bytes(lua_State *L) {
     PyObject *pystr = PyBytes_FromStringAndSize(lstr, tsize);
     if (!pystr) {
         Py_DecRef(pylsize);
-        lua_new_error(L, "failed str decode");
+        lua_new_error(L, "failed to convert bytes");
     }
     push_pyobject_container(L, pystr, false);
     Py_DecRef(pylsize);
