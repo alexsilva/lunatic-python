@@ -39,7 +39,6 @@ Lua *lua_init(lua_State *L) {
     lua->numberbyref = false;
     lua->embedded = false;
     lua->tableconvert = false;
-    lua->ikey = false;
     return lua;
 }
 

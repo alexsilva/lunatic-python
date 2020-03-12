@@ -224,15 +224,12 @@ PyObject *get_py_dict(lua_State *L, lua_Object ltable) {
     if (!dict) lua_new_error(L, "failed to create key words arguments dict");
     PyObject *key, *value;
     int index = lua_next(L, ltable, 0);
-    Python *python = get_python(L);
     int stackpos;
     lua_Object lkey;
     while (index > 0) {
         stackpos = 1;
         lkey = lua_getparam(L, stackpos);
-        python->lua->ikey = true;
         key = lua_object_convert(L, lkey);
-        python->lua->ikey = false;
         if (!key) {
             Py_DECREF(dict);
             raise_key_error(L, "failed to convert key \"%s\"", lkey);
@@ -300,13 +297,9 @@ static void lnumber_convert(InterpreterObject *interpreter, lua_Object lobj, PyO
 }
 
 static void lstring_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
-    lua_State *L = interpreter->L;
-    const char *s = lua_getstring(L, lobj);
-    int len = lua_strlen(L, lobj);
-    Python *python = get_python(L);
-    *ret = python->lua->ikey ?
-       PyUnicode_FromStringAndSize(s, len):
-        PyBytes_FromStringAndSize(s, len);
+    const char *s = lua_getstring(interpreter->L, lobj);
+    int len = lua_strlen(interpreter->L, lobj);
+    *ret = PyUnicode_FromStringAndSize(s, len);
 }
 
 static void ltable_convert(InterpreterObject *interpreter, lua_Object lobj, PyObject **ret) {
