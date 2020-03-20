@@ -97,8 +97,11 @@ static PyObject *LuaCall(LuaObject *self, lua_Object lobj, PyObject *args) {
                 PyErr_Format(PyExc_TypeError, "failed to convert return #%d", index);
                 Py_DECREF(ret);
                 return NULL;
+            } else if (PyTuple_SetItem(ret, index, arg) == -1) {
+                PyErr_Format(PyExc_TypeError, "failed to convert tuple index #%d", index);
+                Py_DECREF(ret);
+                return NULL;
             }
-            PyTuple_SetItem(ret, index, arg);
         }
     } else if (!PyErr_Occurred()) {
         Py_INCREF(Py_None);
