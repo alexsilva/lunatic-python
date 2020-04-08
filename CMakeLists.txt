@@ -4,12 +4,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 
 project(Lunatic)
 
-include_directories(${LUA_INCLUDE_DIR})
-include_directories(${LUA_INCLUDE_EXTRA})
-include_directories(${PYTHON_INCLUDE_DIR})
+include_directories(
+    ${LUA_INCLUDE_DIR}
+    ${LUA_INCLUDE_EXTRA}
+    ${PYTHON_INCLUDE_DIR}
+)
 
-link_directories(${LUA_LIBRARIES})
-link_directories(${PYTHON_LIBRARIES})
+link_directories(${LUA_LIBRARIES} ${PYTHON_LIBRARIES})
 
 set(SOURCES
     deps/vstring/vstring.h
@@ -35,32 +36,26 @@ if (WIN32)
 endif()
 
 add_library(python MODULE ${SOURCES})
-add_library(lua MODULE ${SOURCES} src/lexception.h)
+add_library(lua MODULE ${SOURCES})
+
+set(LUA_LINK_LIBS lua32ngw lualib32ngw)
 
 if (CGILUA_ENV)
     add_definitions(-DCGILUA_ENV=ON)
     include_directories(${cgilua_SOURCE_DIR})
-    target_link_libraries(lua cgilua)
-    target_link_libraries(python cgilua)
+    set(LUA_LINK_LIBS cgilua)
 endif()
 
 target_compile_definitions(python PRIVATE python_COMPAT)
 
 if (WIN32)
     set_target_properties(lua PROPERTIES PREFIX "" SUFFIX ".pyd")
-else ()
+    set(LINK_LIBRARY python37)
+else()
     set_target_properties(lua PROPERTIES PREFIX "")
+    set(LINK_LIBRARY python3.7m)
 endif()
 
-set(LUA_LIBS lua32ngw lualib32ngw)
 
-if (UNIX)
-    set(LINK_LIBRARY python3.7m ${LUA_LIBS})
-    target_link_libraries(python ${LINK_LIBRARY})
-    target_link_libraries(lua ${LINK_LIBRARY})
-else()
-    target_link_libraries(python python37 ${LUA_LIBS})
-    target_link_libraries(lua python37 ${LUA_LIBS})
-endif ()
-
-
+target_link_libraries(python ${LINK_LIBRARY} ${LUA_LINK_LIBS})
+target_link_libraries(lua ${LINK_LIBRARY} ${LUA_LINK_LIBS})
