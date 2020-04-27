@@ -38,24 +38,25 @@ endif()
 add_library(python MODULE ${SOURCES})
 add_library(lua MODULE ${SOURCES})
 
-set(LUA_LINK_LIBS lua32ngw lualib32ngw)
+set(LINK_LIBRARY lua32ngw lualib32ngw)
 
 if (CGILUA_ENV)
     add_definitions(-DCGILUA_ENV=ON)
     include_directories(${cgilua_SOURCE_DIR})
-    set(LUA_LINK_LIBS cgilua)
+    set(LINK_LIBRARY ${LINK_LIBRARY} cgilua)
 endif()
 
 target_compile_definitions(python PRIVATE python_COMPAT)
 
 if (WIN32)
     set_target_properties(lua PROPERTIES PREFIX "" SUFFIX ".pyd")
-    set(LINK_LIBRARY python37)
+    set(LINK_LIBRARY ${LINK_LIBRARY} python37)
 else()
     set_target_properties(lua PROPERTIES PREFIX "")
-    set(LINK_LIBRARY python3.7m)
+    set(LINK_LIBRARY python3.7m ${LINK_LIBRARY})
 endif()
 
+target_link_libraries(python ${LINK_LIBRARY})
+target_link_libraries(lua ${LINK_LIBRARY})
 
-target_link_libraries(python ${LINK_LIBRARY} ${LUA_LINK_LIBS})
-target_link_libraries(lua ${LINK_LIBRARY} ${LUA_LINK_LIBS})
+message("LINK_LIBRARY ${LINK_LIBRARY}")
