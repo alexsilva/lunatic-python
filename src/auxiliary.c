@@ -20,6 +20,7 @@
 #define NEED_OTHER (EOF-1)  /* just some flag different from EOF */
 
 
+#ifdef _WIN32
 /* Lua source api */
 char *luaI_classend(lua_State *L, char *p) {
     switch (*p++) {
@@ -37,6 +38,7 @@ char *luaI_classend(lua_State *L, char *p) {
             return p;
     }
 }
+#endif
 
 static void get_string(PyObject *pyval, char **buff) {
     if PyUnicode_Check(pyval) {
