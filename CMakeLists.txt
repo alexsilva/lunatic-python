@@ -36,7 +36,7 @@ if (WIN32)
 endif()
 
 add_library(python MODULE ${SOURCES})
-add_library(lua MODULE ${SOURCES})
+add_library(lua SHARED ${SOURCES})
 
 set(LINK_LIBRARY lua32ngw lualib32ngw)
 
